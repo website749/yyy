@@ -346,30 +346,6 @@ const DEFAULT_REGIONS = {
   }
 };
 
-// ទិន្នន័យបម្រុងទុក (Pre-loaded Data) ដើម្បីឲ្យពេលចូល App ភ្លាមលោតឃើញទិន្នន័យភ្លាមៗតែម្តង (0ms delay)
-const DEFAULT_PRELOAD_LOCATIONS = [
-  {
-    id: 'preload_1', title: 'វិទ្យាល័យស្តៅសន្តិភាព', category: 'សាលារៀន', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ',
-    image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=500&q=80', desc: 'សាលារៀនផ្តល់ចំណេះដឹងទូទៅសម្រាប់សិស្សានុសិស្សក្នុងស្រុករតនមណ្ឌល។',
-    status: 'approved', views: 850, timestamp: Date.now(), contacts: [{ name: 'នាយកសាលា', phone: '012 000 000' }]
-  },
-  {
-    id: 'preload_2', title: 'ប៉ុស្តិ៍នគរបាលរដ្ឋបាលស្តៅ', category: 'ប៉ូលិស', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ',
-    image: 'https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=500&q=80', desc: 'បម្រើសេវាសន្តិសុខ និងសណ្តាប់ធ្នាប់ជូនប្រជាពលរដ្ឋ២៤ម៉ោង។',
-    status: 'approved', views: 530, timestamp: Date.now() - 1000, contacts: [{ name: 'ប្រចាំការ', phone: '012 111 111' }]
-  },
-  {
-    id: 'preload_3', title: 'មណ្ឌលសុខភាពស្តៅ', category: 'មន្ទីរពេទ្យ', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ',
-    image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&q=80', desc: 'ផ្តល់សេវាពិនិត្យ និងព្យាបាលជំងឺទូទៅជូនប្រជាពលរដ្ឋក្នុងមូលដ្ឋាន។',
-    status: 'approved', views: 420, timestamp: Date.now() - 2000, contacts: [{ name: 'សង្គ្រោះបន្ទាន់', phone: '012 222 222' }]
-  },
-  {
-    id: 'preload_4', title: 'សាលាឃុំស្តៅ', category: 'ឃុំ', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ',
-    image: 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=500&q=80', desc: 'ផ្តល់សេវារដ្ឋបាលសាធារណៈជូនប្រជាពលរដ្ឋ។',
-    status: 'approved', views: 290, timestamp: Date.now() - 3000, contacts: [{ name: 'មេឃុំ', phone: '012 333 333' }]
-  }
-];
-
 // Simple anti-abuse text analysis tool
 const containsAbuse = (text) => {
   const badWords = ["troll", "fuck", "bad", "spam", "scam", "អាខ្លៅ", "អាឆ្កែ", "ចោរ", "ល្ងង់", "ឡប់", "ឆ្កួត"];
@@ -692,6 +668,7 @@ export default function App() {
 
   const [customBg, setCustomBg] = useState(() => localStorage.getItem('tp_cache_customBg') || '#f8fafc');
   const [gatewayBg, setGatewayBg] = useState(() => localStorage.getItem('tp_cache_gatewayBg') || '');
+  const [homeBannerIcon, setHomeBannerIcon] = useState(() => localStorage.getItem('tp_cache_homeBannerIcon') || '');
   
   // Instant profile loading from local cache
   const [profile, setProfile] = useState(() => {
@@ -715,8 +692,8 @@ export default function App() {
              if (parsed && parsed.length > 0) return parsed;
          }
      } catch(e) {}
-     // បញ្ចូលទិន្នន័យបម្រុងទុកពីដើមទី ដើម្បីកុំឲ្យ App លោតទទេស្អាតពេលទើបបើកដំណើរការដំបូង!
-     return DEFAULT_PRELOAD_LOCATIONS;
+     // លុបទិន្នន័យបម្រុងទុក (Demo Data) ចេញ ១០០%។ បើគ្មាន Cache ទេ វានឹងរង់ចាំទាញទិន្នន័យពិតពី Server តែម្តង (មិនលោតទិន្នន័យក្លែងក្លាយឡើយ)
+     return [];
   });  
   const [usersList, setUsersList] = useState(() => {
      try { const c = localStorage.getItem('tp_cache_users'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
@@ -750,8 +727,13 @@ export default function App() {
     // បង្កើនចំនួនអ្នកចូលមើលនៅក្នុង Database
     if (db && loc.id) {
        try {
+           let incAmount = 1;
+           // បើមើលមុខងារ Boost (ON) វានឹងលោតចំនួនអ្នកមើលទិន្នន័យពី ១២ ទៅ ១៥ ដង ក្នុងមួយដង
+           if (boostModeEnabled) {
+               incAmount = Math.floor(Math.random() * 4) + 12; 
+           }
            const locRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_admin_data', loc.id);
-           await updateDoc(locRef, { views: increment(1) });
+           await updateDoc(locRef, { views: increment(incAmount) });
        } catch (e) {
            console.log("View count error:", e);
        }
@@ -833,7 +815,8 @@ export default function App() {
     const handleVisitorStats = async () => {
       if (!db) return;
       try {
-        const isAlreadyCounted = localStorage.getItem('tp_visitor_counted');
+        // ប្តូរទៅប្រើ sessionStorage ដើម្បីឲ្យរាល់ពេលចូល App (Reload/New Session) វានឹងរាប់ចំនួនអ្នកមើលថ្មី មិនមែនជាប់គាំងរហូតទេ
+        const isAlreadyCounted = sessionStorage.getItem('tp_visitor_counted_session');
         if (!isAlreadyCounted) {
           let isBoost = false;
           try {
@@ -842,13 +825,14 @@ export default function App() {
           } catch(e) {}
           
           const statsRef = doc(db, 'artifacts', appId, 'public', 'stats');
-          let fakeInc = isBoost ? (Math.floor(Math.random() * 6) + 10) : 0;
+          // ពេលបើកមុខងារ Boost នឹងលោតម្តង ១២ ទៅ ១៥នាក់។ តែបើបិទ គឺលោត ០ (បូក ១ ធម្មតា)
+          let fakeInc = isBoost ? (Math.floor(Math.random() * 4) + 12) : 0; 
           
           await setDoc(statsRef, { 
               visitorCount: increment(1),
               fakeUsers: increment(fakeInc)
           }, { merge: true });
-          localStorage.setItem('tp_visitor_counted', 'true');
+          sessionStorage.setItem('tp_visitor_counted_session', 'true');
         }
       } catch (e) {}
     };
@@ -1098,6 +1082,10 @@ export default function App() {
            if (sdata.gatewayBg !== undefined) {
               setGatewayBg(sdata.gatewayBg || '');
               localStorage.setItem('tp_cache_gatewayBg', sdata.gatewayBg || '');
+           }
+           if (sdata.homeBannerIcon !== undefined) {
+              setHomeBannerIcon(sdata.homeBannerIcon || '');
+              localStorage.setItem('tp_cache_homeBannerIcon', sdata.homeBannerIcon || '');
            }
         }
     }, () => {});
@@ -1925,7 +1913,7 @@ export default function App() {
                 {language === 'en' ? 'Sdao Santepheap High School' : 'វិទ្យាល័យស្តៅសន្តិភាព'}
             </h1>
             <p className={`text-[11px] ${cosmicTheme || gatewayBg ? 'text-[#0F2B5C] bg-white/80' : 'text-[#0F2B5C] bg-white/10'} font-bold uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-sm mt-1`}>
-                {language === 'en' ? 'VMC Youth Sdao Santepheap 2026' : 'យុវជន vmc វិ.ស្តៅសន្តិភាព 2026'}
+                {language === 'en' ? 'VMC Youth Sdao Santepheap 2026' : 'យុវជន vmc វិទ្យាល័យស្តៅសន្តិភាព 2026'}
             </p>
         </div>
 
@@ -2011,7 +1999,7 @@ export default function App() {
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative w-full max-w-7xl mx-auto overflow-hidden">
-           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} /></div>}
+           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} /></div>}
            {currentView === 'info' && (
              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2">
                <InfoView 
@@ -2051,7 +2039,7 @@ export default function App() {
            {currentView === 'admin' && isAdmin && (
               <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2">
                 <AdminDashboard 
-                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved}
+                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
                 />
               </div>
            )}
@@ -2429,7 +2417,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2579,7 +2567,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
     );
 };
 
-const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin }) => {
+const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon }) => {
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
   const filtered = (locations || []).filter(l => {
@@ -2647,7 +2635,11 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
              </button>
          </div>
          <div className="w-[70px] h-[70px] shrink-0 z-10 overflow-hidden rounded-full bg-white border-2 border-[#38BDF8] flex items-center justify-center p-0.5">
-             <GraduationCap className="w-10 h-10 text-[#0F2B5C]" />
+             {homeBannerIcon ? (
+                <img src={homeBannerIcon} alt="Banner Icon" className="w-full h-full object-cover rounded-full" />
+             ) : (
+                <GraduationCap className="w-10 h-10 text-[#0F2B5C]" />
+             )}
          </div>
       </div>
 
@@ -4333,7 +4325,7 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
   );
 };
 
-const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved }) => {
+const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
   const [editingLoc, setEditingLoc] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -5059,9 +5051,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
         {[
           {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
           {id: 'how_to', label: 'គ្រប់គ្រង របៀបប្រើប្រាស់'},
-          {id: 'chat_manage', label: 'គ្រប់គ្រងទំនាក់ទំនង'},
-          {id: 'chat_monitor', label: 'គ្រប់គ្រងបទល្មើស'},
-          {id: 'broadcast', label: 'ប្រកាសព័ត៌មាន (Broadcast)'},          
           {id: 'appeals', label: 'សំណើសម្រុះសម្រួល'},
           {id: 'approvals', label: 'អនុម័តសំណើរ'},
           {id: 'security', label: 'Security & Logs'},
@@ -5151,81 +5140,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                             <input type="text" value={howToData.videoUrl || ''} onChange={e => setHowToData({...howToData, videoUrl: e.target.value})} className="w-full bg-white border border-slate-200 rounded-lg px-2 py-2 text-[12px] font-bold outline-none" placeholder="ឧ. https://www.youtube.com/watch?v=..."/>
                         </div>
                     </div>
-                </div>
-             </div>
-          )}
-
-          {activeTab === 'broadcast' && (
-             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center mb-3 border-l-4 border-amber-500 pl-2">
-                   <h3 className="font-black text-[13px] text-[#0F2B5C] flex items-center gap-1.5"><Megaphone className="w-4.5 h-4.5 text-amber-500"/> ប្រកាសព័ត៌មានទូទៅ (Broadcast)</h3>
-                </div>
-                
-                <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 mb-4">
-                    <p className="text-[11px] font-bold text-amber-700 leading-relaxed">
-                        សារដែលអ្នកសរសេរនៅទីនេះ នឹងត្រូវបានផ្ញើចូលទៅកាន់ប្រអប់សារ (Chat) របស់ User ទាំងអស់ដែលប្រើប្រាស់ Web App នេះភ្លាមៗ។ 
-                        សូមប្រើប្រាស់មុខងារនេះសម្រាប់តែការផ្តល់ព័ត៌មានសំខាន់ៗប៉ុណ្ណោះ។
-                    </p>
-                </div>
-
-                <div className="space-y-3 mb-6">
-                    <div>
-                        <label className="text-[11px] font-bold text-slate-600 block mb-1">អត្ថបទសារប្រកាស</label>
-                        <textarea 
-                           value={broadcastMessage}
-                           onChange={e => setBroadcastMessage(e.target.value)}
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[13px] font-medium outline-none h-32 resize-none text-slate-800"
-                           placeholder="សរសេរសារដែលចង់ប្រកាសនៅទីនេះ..."
-                        ></textarea>
-                    </div>
-                    <button 
-                       onClick={handleSendBroadcast}
-                       className="w-full btn-gradient py-3.5 rounded-xl font-black text-[13px] shadow-md flex justify-center items-center gap-2 active:scale-95 transition-transform"
-                    >
-                       <Megaphone className="w-4.5 h-4.5"/> ផ្ញើសារប្រកាសទៅកាន់គ្រប់គ្នា (Send to All)
-                    </button>
-                </div>
-
-                <div className="space-y-3 border-t border-slate-100 pt-4">
-                   <h4 className="font-black text-[12px] text-slate-800 pb-1">ប្រវត្តិសារប្រកាស (Recent Broadcasts)</h4>
-                   <div className="max-h-[300px] overflow-y-auto pr-1 hide-scrollbar space-y-2">
-                      {chats.filter(c => c && c.target === 'all' && c.userId === 'admin_ramit_fixed_uid').sort((a,b) => b.timestamp - a.timestamp).length === 0 ? (
-                          <p className="text-center py-4 text-[11px] text-slate-400 font-bold border border-dashed border-slate-200 rounded-xl bg-slate-50">គ្មានសារប្រកាសនៅឡើយទេ</p>
-                      ) : (
-                          chats.filter(c => c && c.target === 'all' && c.userId === 'admin_ramit_fixed_uid').sort((a,b) => b.timestamp - a.timestamp).map(msg => (
-                             <div key={msg.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm relative">
-                                 {editingBroadcast?.id === msg.id ? (
-                                    <div className="space-y-2">
-                                       <textarea value={editBroadcastText} onChange={e=>setEditBroadcastText(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg p-2 text-[12px] font-medium h-24 outline-none resize-none"></textarea>
-                                       <div className="flex gap-2">
-                                          <button onClick={async () => {
-                                             if(!editBroadcastText.trim()) return;
-                                             if(db) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA', msg.id), { text: editBroadcastText.trim(), edited: true }).catch(()=>{});
-                                             setEditingBroadcast(null);
-                                             showToast('កែប្រែជោគជ័យ ✅', 'success');
-                                          }} className="px-3 py-1.5 bg-[#10b981] text-white rounded-lg text-[11px] font-black shadow-sm">រក្សាទុក</button>
-                                          <button onClick={()=>setEditingBroadcast(null)} className="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-300">បោះបង់</button>
-                                       </div>
-                                    </div>
-                                 ) : (
-                                    <>
-                                       <div className="flex justify-between items-start gap-2 mb-2">
-                                          <span className="text-[10px] text-slate-500 font-bold bg-white px-1.5 py-0.5 rounded border border-slate-200">{new Date(msg.timestamp).toLocaleString()} {msg.edited && <span className="text-sky-500">(edited)</span>}</span>
-                                          <div className="flex gap-1.5 shrink-0">
-                                             <button onClick={()=>{setEditingBroadcast(msg); setEditBroadcastText(msg.text);}} className="text-sky-500 p-1.5 bg-white shadow-sm border border-slate-200 rounded-md hover:bg-sky-50"><Edit3 className="w-3.5 h-3.5"/></button>
-                                             <button onClick={()=>openConfirm("លុបសារប្រកាស", "តើអ្នកពិតជាចង់លុបសារប្រកាសនេះចេញពីប្រអប់សារអ្នកប្រើប្រាស់មែនទេ?", async () => {
-                                                if(db) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA', msg.id)).catch(()=>{});
-                                                showToast('លុបសារប្រកាសជោគជ័យ ✅');
-                                             })} className="text-rose-500 p-1.5 bg-white shadow-sm border border-slate-200 rounded-md hover:bg-rose-50"><Trash2 className="w-3.5 h-3.5"/></button>
-                                          </div>
-                                       </div>
-                                       <p className="text-[12.5px] text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">{safeStr(msg.text)}</p>
-                                    </>
-                                 )}
-                             </div>
-                          ))
-                      )}
-                   </div>
                 </div>
              </div>
           )}
@@ -5349,6 +5263,44 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
 
                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
                      <div>
+                        <h4 className="font-bold text-[12.5px] text-slate-800">ប្ដូររូបភាពក្នុងប្រអប់ទិន្នន័យទំព័រដើម (Home Banner Icon)</h4>
+                        <p className="text-[10px] text-slate-500 mt-0.5">ប្តូររូបមួកបញ្ចាំងការសិក្សាទៅជារូបភាពផ្សេងដែលអ្នកចង់បាន។</p>
+                     </div>
+                     <div className="flex items-center gap-3">
+                         <div className="w-14 h-14 rounded-full border-2 border-[#38BDF8] bg-white flex items-center justify-center overflow-hidden p-0.5">
+                             {homeBannerIcon ? <img src={homeBannerIcon} alt="Banner Icon" className="w-full h-full object-cover rounded-full" /> : <GraduationCap className="w-8 h-8 text-[#0F2B5C]" />}
+                         </div>
+                         <div className="flex gap-2">
+                             <label className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-slate-700 rounded-xl cursor-pointer shadow-sm active:scale-95 transition-transform">
+                                 Upload រូបភាព
+                                 <input type="file" accept="image/*" onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                       const r = new FileReader();
+                                       r.onload = async () => {
+                                          const b64 = r.result;
+                                          setHomeBannerIcon(b64);
+                                          if (db) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'theme'), { homeBannerIcon: b64 }, { merge: true }).catch(()=>{});
+                                          showToast('បានប្តូររូបភាព Banner ទំព័រដើមជោគជ័យ ✅');
+                                       };
+                                       r.readAsDataURL(e.target.files[0]);
+                                    }
+                                 }} className="hidden" />
+                             </label>
+                             {homeBannerIcon && (
+                                 <button onClick={async () => {
+                                    setHomeBannerIcon('');
+                                    if (db) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'theme'), { homeBannerIcon: '' }, { merge: true }).catch(()=>{});
+                                    showToast('បានកំណត់ទៅលំនាំដើមវិញ');
+                                 }} className="px-3 py-2 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-[11px] font-bold shadow-sm active:scale-95">
+                                     លុបចេញ
+                                 </button>
+                             )}
+                         </div>
+                     </div>
+                 </div>
+
+                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                     <div>
                         <h4 className="font-bold text-[12.5px] text-slate-800">ប្ដូរពណ៌ផ្ទៃក្រោយទូទៅ (Custom App Background Color)</h4>
                         <p className="text-[10px] text-slate-500 mt-0.5">ជ្រើសរើសពណ៌សម្រាប់ផ្ទៃខាងក្រោយទូទៅរបស់កម្មវិធីនៅលើទូរស័ព្ទដៃ។</p>
                      </div>
@@ -5395,108 +5347,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
             </div>
           )}
 
-          {activeTab === 'chat_monitor' && (
-             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 animate-in fade-in duration-200">
-                <div className="flex justify-between items-center mb-3 border-l-4 border-rose-500 pl-2">
-                   <h3 className="font-black text-[12.5px] text-[#0F2B5C]">ការតាមដាន និងគ្រប់គ្រងបទល្មើស (Moderation)</h3>
-                </div>
-
-                <div className="flex gap-2 items-center mb-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <div className="relative flex-1">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input 
-                           type="text" 
-                           placeholder="ស្វែងរកសមាជិកតាមឈ្មោះ ឬ UID..." 
-                           value={userSearchQuery}
-                           onChange={e => setUserSearchQuery(e.target.value)}
-                           className="w-full bg-white border border-slate-200 rounded-lg py-2 pl-9 pr-3 text-[12.5px] font-bold"
-                        />
-                    </div>
-                    {selectedUsersForDelete.length > 0 ? (
-                        <button 
-                           onClick={handleBulkDeleteUsers} 
-                           className="px-3 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 active:scale-95 transition-all text-[11px] font-black flex items-center gap-1" 
-                           title="លុបជម្រើស"
-                        >
-                           <Trash2 className="w-4 h-4" /> លុប ({selectedUsersForDelete.length})
-                        </button>
-                    ) : (
-                        <button 
-                           onClick={handleWipeAllUsers} 
-                           className="p-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 active:scale-95 transition-all" 
-                           title="លុបសមាជិកទាំងអស់"
-                        >
-                           <Trash2 className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-
-                <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1 hide-scrollbar">
-                   {searchedUsersList?.length === 0 ? <p className="text-center py-6 text-[11px] font-bold text-slate-400">គ្មាន User ស្របតាមការស្វែងរកទេ</p> :
-                     searchedUsersList.sort((a,b)=>(b.lastActive||0)-(a.lastActive||0)).map(u => {
-                        if (!u) return null;
-                        const isOnline = (Date.now() - (u.lastActive||0)) < 120000;
-                        if (u.isBanned) return null; 
-
-                        return (
-                           <div key={u.id} className="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 shadow-sm">
-                              <div className="flex items-center gap-2.5">
-                                 <input 
-                                     type="checkbox" 
-                                     checked={selectedUsersForDelete.includes(u.id)}
-                                     onChange={(e) => {
-                                         if (e.target.checked) setSelectedUsersForDelete([...selectedUsersForDelete, u.id]);
-                                         else setSelectedUsersForDelete(selectedUsersForDelete.filter(id => id !== u.id));
-                                     }}
-                                     className="w-4 h-4 rounded border-slate-300 text-[#0F2B5C] cursor-pointer"
-                                 />
-                                 <div className="relative">
-                                    <img src={u.avatar} className="w-8 h-8 rounded-full object-cover border border-slate-200 bg-white" alt="av" />
-                                    <div className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
-                                 </div>
-                                 <div>
-                                    <h4 className="font-bold text-[12px] text-[#0F2B5C] flex flex-wrap items-center gap-1">
-                                       {safeStr(u.username)}
-                                       {u.warnings > 0 && <span className="bg-amber-100 text-amber-600 text-[8px] px-1.5 py-0.5 rounded font-black border border-amber-200">Warnings: {u.warnings}</span>}
-                                    </h4>
-                                    <p className="text-[8.5px] text-slate-400 tracking-wider font-bold">UID: {safeStr(u.id).substring(0, 10)}...</p>
-                                 </div>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                 <button onClick={() => handleWarnUser(u)} className="px-2 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg text-[9px] font-bold active:scale-95" title="ព្រមាន">ព្រមាន</button>
-                                 <button onClick={() => handleBanUser(u)} className="px-2 py-1 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg text-[9px] font-bold active:scale-95" title="Block">Block</button>
-                                 <button onClick={() => handleForceLogoutUser(u)} className="px-2 py-1 bg-red-600 text-white rounded-lg text-[9px] font-bold active:scale-95" title="ដក Web App">ដក Web App</button>
-                                 
-                                 <button onClick={() => handleDeleteTrollUser(u)} className="p-1.5 bg-rose-50 text-rose-500 border border-rose-100 rounded-lg ml-0.5" title="លុបគណនី">
-                                     <Trash2 className="w-3.5 h-3.5" />
-                                 </button>
-                                 <button 
-                                    onClick={() => {
-                                        const tMap = new Map();
-                                        chats.forEach(c => {
-                                           if (c && c.userId === u.id && c.target) tMap.set(c.target, c.target);
-                                           else if (c && c.target === u.id && c.userId) tMap.set(c.userId, c.userId);
-                                        });
-                                        const tList = Array.from(tMap.keys());
-                                        const defaultTarget = tList.length > 0 ? tList[0] : 'admin_ramit_fixed_uid';
-                                        
-                                        setMonitoringUser(u);
-                                        setMonitoringTarget(defaultTarget);
-                                    }} 
-                                    className="p-1.5 bg-sky-50 text-[#38BDF8] border border-sky-100 rounded-lg" 
-                                    title="ផ្ទាំងតាមដានឆាត"
-                                 >
-                                    <Eye className="w-3.5 h-3.5" />
-                                 </button>
-                              </div>
-                           </div>
-                        )
-                     })
-                   }
-                </div>
-             </div>
-          )}
-
           {activeTab === 'appeals' && (
              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 animate-in fade-in duration-200">
                 <h3 className="font-black text-[12.5px] border-l-4 border-sky-500 pl-2 text-[#0F2B5C] mb-3">សំណើសម្រុះសម្រួលទណ្ឌកម្ម (Appeals List)</h3>
@@ -5525,89 +5375,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                          </div>
                       ))
                    )}
-                </div>
-             </div>
-          )}
-
-          {activeTab === 'chat_manage' && (
-             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                <h3 className="font-black text-[12.5px] border-l-4 border-[#38BDF8] pl-2 text-[#0F2B5C]">បន្ថែមទំនាក់ទំនងសម្រាប់ Chat</h3>
-                
-                <form onSubmit={handleAddChatTarget} className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <div>
-                         <label className="text-[10px] font-bold text-slate-500 block mb-0.5">ជ្រើសរើសស្រុក</label>
-                         <select value={newChatDistrictType} onChange={e=>setNewChatDistrictType(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[12px] font-bold text-slate-800">
-                             <option value="រតនមណ្ឌល">ស្រុករតនមណ្ឌល</option>
-                             <option value="ផ្សេងៗ">ស្រុកផ្សេងៗ</option>
-                         </select>
-                      </div>
-                      {newChatDistrictType === 'ផ្សេងៗ' && (
-                         <div className="animate-in fade-in">
-                            <label className="text-[10px] font-bold text-slate-500 block mb-0.5">បញ្ចូលឈ្មោះស្រុក</label>
-                            <input type="text" value={newChatCustomDistrict} onChange={e=>setNewChatCustomDistrict(e.target.value)} required placeholder="ឧ: ស្រុកបាណន់..." className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[12px] font-bold text-slate-800" />
-                         </div>
-                      )}
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      <div>
-                         <label className="text-[10px] font-bold text-slate-500 block mb-0.5">ឈ្មោះទំនាក់ទំនង (Label)</label>
-                         <input type="text" value={newChatLabel} onChange={e=>setNewChatLabel(e.target.value)} required placeholder="ឧ: ប៉ុស្តិ៍ប៉ូលិសស្តៅ..." className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[12px] font-bold text-slate-800" />
-                      </div>
-                      <div>
-                         <label className="text-[10px] font-bold text-slate-500 block mb-0.5">តួនាទី (Role)</label>
-                         <input type="text" value={newChatRole} onChange={e=>setNewChatRole(e.target.value)} required placeholder="ឧ: រដ្ឋបាល..." className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-[12px] font-bold text-slate-800" />
-                      </div>
-                      
-                      <div>
-                         <label className="text-[10px] font-bold text-slate-500 block mb-0.5">រូបតំណាង</label>
-                         <label className="relative flex flex-col items-center justify-center w-full h-8 border border-dashed border-slate-300 bg-white rounded-lg cursor-pointer overflow-hidden shadow-sm">
-                            {newChatAvatar ? (
-                               <div className="flex items-center gap-1 px-2">
-                                  <img src={newChatAvatar} alt="Mini-avatar" className="w-5 h-5 rounded-full object-cover border border-slate-200" />
-                                  <span className="text-[10px] font-bold text-emerald-600 truncate max-w-[80px]">រួចរាល់</span>
-                               </div>
-                            ) : (
-                               <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1"><ImageSvgIcon className="w-3.5 h-3.5 text-slate-400"/> Upload រូប</span>
-                            )}
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              className="hidden"
-                              onChange={e => {
-                                 if (e.target.files && e.target.files[0]) {
-                                    const r = new FileReader();
-                                    r.onload = () => setNewChatAvatar(r.result);
-                                    r.readAsDataURL(e.target.files[0]);
-                                 }
-                              }} 
-                            />
-                         </label>
-                      </div>
-                   </div>
-                   <button type="submit" className="bg-[#0F2B5C] text-white px-3 py-1.5 rounded-lg text-[10.5px] font-black shadow-sm mt-1">
-                      + បន្ថែមទំនាក់ទំនង
-                   </button>
-                </form>
-
-                <div className="space-y-1.5">
-                   <h4 className="font-black text-[10px] text-slate-500 uppercase tracking-widest">បញ្ជីទំនាក់ទំនងបច្ចុប្បន្ន</h4>
-                   <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1 hide-scrollbar">
-                      {chatTargets && chatTargets.map(t => t && (
-                          <div key={t.id} className="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-                             <div className="flex items-center gap-2">
-                                <img src={t.avatar} className="w-8 h-8 rounded-full object-cover border border-slate-200 bg-white" alt="avatar" />
-                                <div>
-                                   <p className="text-[12px] font-black text-[#0F2B5C]">{safeStr(t.label)}</p>
-                                   <span className="text-[9.5px] text-slate-500 font-bold block">{safeStr(t.district)} • {safeStr(t.role)}</span>
-                                </div>
-                             </div>
-                             <button onClick={()=>handleDeleteChatTarget(t.id)} className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-lg border border-rose-100">
-                                <Trash2 className="w-3.5 h-3.5"/>
-                             </button>
-                          </div>
-                      ))}
-                   </div>
                 </div>
              </div>
           )}
@@ -5718,108 +5485,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
              </div>
           )}
       </div>
-
-      {monitoringUser && (
-         <div className="fixed inset-0 z-[2500] bg-slate-900/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4 pointer-events-auto">
-            <div className="bg-white w-full max-w-lg rounded-t-2xl md:rounded-[20px] overflow-hidden shadow-2xl flex flex-col h-[75dvh] md:h-[550px] border border-slate-200 animate-in slide-in-from-bottom duration-300">
-               <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center shrink-0">
-                  <div className="flex items-center gap-2">
-                     <img src={monitoringUser.avatar} className="w-7 h-7 rounded-full object-cover border border-slate-200 bg-white" alt="avatar" />
-                     <div>
-                        <h4 className="font-black text-[12.5px] text-[#0F2B5C] leading-none">តាមដានគណនី: {safeStr(monitoringUser.username)}</h4>
-                        <span className="text-[9px] text-slate-400 font-bold block mt-0.5 leading-none truncate max-w-[150px]">UID: {monitoringUser.id}</span>
-                     </div>
-                  </div>
-                  <button onClick={() => setMonitoringUser(null)} className="p-1.5 bg-white border border-slate-200 rounded-full"><X className="w-4 h-4"/></button>
-               </div>
-
-               <div className="bg-slate-100 p-1.5 border-b border-slate-200 flex gap-1.5 shrink-0 overflow-x-auto hide-scrollbar">
-                  {(() => {
-                     const targetsMap = new Map();
-                     chats.forEach(c => {
-                        if (c && c.userId === monitoringUser.id) {
-                           if (c.target && !targetsMap.has(c.target)) targetsMap.set(c.target, c.target);
-                        } else if (c && c.target === monitoringUser.id) {
-                           if (c.userId && !targetsMap.has(c.userId)) targetsMap.set(c.userId, c.userId);
-                        }
-                     });
-                     
-                     const dynamicTargets = Array.from(targetsMap.entries()).map(([id, _]) => {
-                         let label = id;
-                         if (id === 'admin_ramit_fixed_uid') label = 'Admin Support';
-                         else {
-                            const t = chatTargets.find(x => x.id === id);
-                            if (t) label = t.label;
-                            else {
-                               const u = usersList.find(x => x.id === id);
-                               if (u) label = u.username;
-                            }
-                         }
-                         return { id, label };
-                     });
-
-                     if (dynamicTargets.length === 0) return <span className="text-[10px] text-slate-500 font-bold p-1">មិនទាន់មានដៃគូឆាតទេ</span>;
-
-                     return dynamicTargets.map(targetTab => (
-                         <button 
-                            key={targetTab.id}
-                            onClick={() => setMonitoringTarget(targetTab.id)}
-                            className={`px-3 py-1.5 whitespace-nowrap rounded-lg text-[9.5px] font-black transition-all border ${monitoringTarget === targetTab.id ? 'bg-[#0F2B5C] text-white border-transparent shadow-sm' : 'bg-white text-slate-500 border-slate-200'}`}
-                         >
-                            {targetTab.label}
-                         </button>
-                     ));
-                  })()}
-               </div>
-
-               <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50 telegram-bg hide-scrollbar">
-                  {chats.filter(c => c && ((c.userId === monitoringUser.id && c.target === monitoringTarget) || (c.userId === monitoringTarget && c.target === monitoringUser.id))).length === 0 ? (
-                     <div className="text-center py-10 text-slate-400 font-bold text-[11px]">
-                        សូមជ្រើសរើសដៃគូឆាតខាងលើ ដើម្បីមើលសារ (បើមាន)
-                     </div>
-                  ) : (
-                     chats.filter(c => c && ((c.userId === monitoringUser.id && c.target === monitoringTarget) || (c.userId === monitoringTarget && c.target === monitoringUser.id))).map(msg => (
-                        <div key={msg.id} className={`flex ${msg.userId === monitoringUser.id ? 'justify-end' : 'justify-start'} animate-in fade-in`}>
-                           <div className={`max-w-[85%] border rounded-xl p-2.5 shadow-sm text-left ${msg.userId === monitoringUser.id ? 'bg-sky-50 border-sky-100' : 'bg-white border-slate-200'}`}>
-                              <span className="text-[9px] font-black text-[#0F2B5C] block mb-0.5">
-                                 {safeStr(msg.userName)}
-                              </span>
-                              
-                              {msg.msgType === 'location' ? (
-                                 <div className="p-2 bg-green-50 border border-green-200 rounded-lg space-y-1.5 mt-0.5">
-                                    <span className="text-[9px] text-green-800 font-bold block">🗺️ ទីតាំងភូមិសាស្ត្រ (GPS)</span>
-                                    <a href={msg.mapUrl} target="_blank" rel="noreferrer" className="block text-center py-1 bg-green-600 text-white rounded text-[9px] font-black">បើកលើផែនទី</a>
-                                 </div>
-                              ) : msg.msgType === 'image' ? (
-                                 <img src={msg.imageUrl} className="max-w-full rounded-lg border border-slate-200" alt="attachment" />
-                              ) : msg.msgType === 'audio' ? (
-                                 <TelegramVoiceBubble 
-                                    audioUrl={msg.audioUrl} 
-                                    durationSec={msg.durationSec} 
-                                    durationStr={msg.duration} 
-                                    messageId={msg.id}
-                                    activeAudioId={activeAudioId}
-                                    setActiveAudioId={setActiveAudioId}
-                                 />
-                              ) : (
-                                 <p className="text-[12px] text-slate-700 font-medium leading-relaxed">{safeStr(msg.text)}</p>
-                              )}
-                              
-                              <span className="text-[8px] text-slate-400 block mt-1 text-right">
-                                 {new Date(msg.timestamp).toLocaleString()}
-                              </span>
-                           </div>
-                        </div>
-                     ))
-                  )}
-               </div>
-               
-               <div className="p-2.5 bg-slate-100 border-t border-slate-200 flex justify-end">
-                  <button onClick={() => setMonitoringUser(null)} className="px-4 py-1.5 bg-slate-800 text-white rounded-lg text-[11px] font-bold">ចាកចេញ</button>
-               </div>
-            </div>
-         </div>
-      )}
     </div>
   );
 };
