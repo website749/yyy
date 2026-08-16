@@ -701,6 +701,11 @@ export default function App() {
   const [chats, setChats] = useState(() => {
      try { const c = localStorage.getItem('tp_cache_chats'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
   });          
+  const [chatTargets, setChatTargets] = useState(() => {
+     try { const c = localStorage.getItem('tp_cache_chatTargets'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
+  });
+  const [myContacts, setMyContacts] = useState([]); 
+  const [friendRequests, setFriendRequests] = useState([]);
   const [cyberLogs, setCyberLogs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [favorites, setFavorites] = useState({});
@@ -709,6 +714,7 @@ export default function App() {
   });
   const [appeals, setAppeals] = useState([]);
   const [cosmicTheme, setCosmicTheme] = useState(() => localStorage.getItem('tp_cosmic') === 'true');
+  const [chatFeatureEnabled, setChatFeatureEnabled] = useState(() => localStorage.getItem('tp_chat_enabled') !== 'false');
 
   const [boostModeEnabled, setBoostModeEnabled] = useState(() => localStorage.getItem('tp_boost_enabled') === 'true');
   const [boostFeatureRemoved, setBoostFeatureRemoved] = useState(() => localStorage.getItem('tp_boost_removed') === 'true');
@@ -739,6 +745,7 @@ export default function App() {
   const [gpsCoords, setGpsCoords] = useState(null);
   
   const previousChatCount = useRef(0);
+  const [activeChatUser, setActiveChatUser] = useState(null);
   
   const [isSoundMuted, setIsSoundMuted] = useState(() => localStorage.getItem('tp_sound_muted') === 'true');
   const [appealText, setAppealText] = useState('');

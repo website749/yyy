@@ -1,0 +1,3830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Base Admin Dashboard</title>
+
+  <!-- Google Fonts for a modern look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Phosphor Icons for sleek iconography -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* =========================================================
+       RESET & THEME (Dark, Modern Aesthetic)
+    ========================================================= */
+
+    /* =========================================================
+   USERS ANALYTICS
+========================================================= */
+
+.analytics-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.analytics-period {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  padding: 5px;
+  border-radius: 10px;
+}
+
+.analytics-period button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.analytics-period button.active {
+  background: var(--primary);
+  color: white;
+}
+
+.analytics-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.analytics-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.analytics-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--primary);
+  opacity: .7;
+}
+
+.analytics-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.analytics-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-color);
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+  font-size: 20px;
+}
+
+.analytics-label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.analytics-value {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.analytics-growth {
+  margin-top: 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.analytics-growth.up {
+  color: var(--success);
+}
+
+.analytics-growth.down {
+  color: var(--danger);
+}
+
+.analytics-growth.neutral {
+  color: var(--text-muted);
+}
+
+.analytics-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.analytics-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.analytics-panel-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.analytics-panel-subtitle {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+
+.user-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.summary-item {
+  background: var(--bg-base);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.summary-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+@media (max-width: 1000px) {
+  .analytics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .analytics-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analytics-period {
+    overflow-x: auto;
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-card {
+    padding: 18px;
+  }
+}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      /* Dark Theme Colors based on reference image */
+      --bg-base: #0a0a0a;
+      --bg-surface: #111111;
+      --bg-surface-hover: #1a1a1a;
+      
+      --border-color: #2a2a2a;
+      --border-light: rgba(255,255,255,0.1);
+
+      --text-main: #f0f0f0;
+      --text-muted: #888888;
+      --text-accent: #e5e5e5;
+
+      /* Primary Brand Color - A soft, glowing orange/copper from the image */
+      --primary: #d97757;
+      --primary-glow: rgba(217, 119, 87, 0.15);
+      
+      --success: #4ade80;
+      --danger: #ef4444;
+
+      --sidebar-width: 250px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      
+      --transition-fast: 0.15s ease;
+      --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      /* Subtle radial gradient background effect */
+      background-image: radial-gradient(circle at 50% 0%, rgba(217, 119, 87, 0.05) 0%, transparent 50%);
+    }
+
+    button, input {
+      font-family: inherit;
+      outline: none;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    /* Scrollbar styling for dark theme */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #444;
+    }
+
+    /* =========================================================
+       APP LAYOUT
+    ========================================================= */
+    .app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* =========================================================
+       SIDEBAR
+    ========================================================= */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-base);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+      transition: transform var(--transition-smooth);
+    }
+
+    .brand {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #a8523b);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .brand-text {
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 24px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-left: 12px;
+      font-weight: 600;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+      background: transparent;
+      border: 1px solid transparent;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item i {
+      font-size: 18px;
+      transition: color var(--transition-fast);
+    }
+
+    .nav-item:hover {
+      background-color: var(--bg-surface);
+      color: var(--text-main);
+    }
+
+    .nav-item.active {
+      background-color: var(--bg-surface);
+      border-color: var(--border-color);
+      color: var(--text-main);
+    }
+
+    .nav-item.active i {
+      color: var(--primary);
+      text-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .badge {
+      margin-left: auto;
+      background-color: var(--primary);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 12px;
+    }
+
+    /* =========================================================
+       MAIN CONTENT AREA
+    ========================================================= */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* TOP HEADER */
+    .header {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(10, 10, 10, 0.8);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      font-size: 20px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+      box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      transition: all var(--transition-fast);
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-surface);
+      border-color: var(--border-light);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-left: 20px;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      display: grid;
+      place-items: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-main);
+    }
+
+    /* =========================================================
+       PAGE CONTENT (The sleek cards)
+    ========================================================= */
+    .page-container {
+      padding: 40px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      display: none;
+    }
+    
+    .page-container.active {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      margin-bottom: 32px;
+      text-align: center; /* Centered like the reference image */
+    }
+
+    .section-header h1 {
+      font-size: 42px;
+      font-weight: 600;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* The glowing industry tabs from reference */
+    .tabs-container {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 48px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1px;
+    }
+
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding-bottom: 16px;
+      position: relative;
+      transition: color var(--transition-fast);
+      width: 80px;
+    }
+
+    .tab-icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-md);
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      transition: all var(--transition-fast);
+    }
+
+    .tab span {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .tab:hover, .tab.active {
+      color: var(--text-main);
+    }
+
+    .tab.active .tab-icon-wrap {
+      border-color: var(--border-light);
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.02);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: var(--primary);
+      box-shadow: 0 -2px 10px var(--primary-glow);
+    }
+
+    /* Cards Grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .feature-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--transition-fast), border-color var(--transition-fast);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Subtle inner glow effect on cards */
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+        pointer-events: none;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-light);
+    }
+
+    .card-visual {
+      height: 80px;
+      background-color: var(--bg-base);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+    }
+
+    .visual-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+    
+    .visual-text {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .feature-card h3 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* =========================================================
+       TABLE & LIST STYLES (for Users/Locations)
+    ========================================================= */
+    .data-panel {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-top: 24px;
+    }
+
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      width: 250px;
+    }
+
+    .search-box i {
+      color: var(--text-muted);
+      margin-right: 8px;
+    }
+
+    .search-box input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      width: 100%;
+      font-size: 13px;
+    }
+    
+    .search-box input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      padding: 16px 24px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 16px 24px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .user-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-name {
+      font-weight: 500;
+    }
+
+    .user-id {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+    }
+
+    .status-badge.online i { color: var(--success); }
+    .status-badge.offline i { color: var(--text-muted); }
+
+    .btn {
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+    }
+
+    .btn:hover {
+      background: var(--bg-surface-hover);
+      border-color: var(--border-light);
+    }
+    
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .btn-primary:hover {
+        background: #c2674a;
+    }
+
+    /* =========================================================
+       RESPONSIVE DESIGN
+    ========================================================= */
+    @media (max-width: 1024px) {
+      .feature-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .menu-toggle {
+        display: flex;
+      }
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+      .tabs-container {
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding-bottom: 10px;
+      }
+      .section-header h1 {
+        font-size: 32px;
+      }
+    }
+    
+    /* Overlay for mobile sidebar */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(2px);
+        z-index: 90;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    /* Utility for empty states */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+    .empty-state i {
+        font-size: 32px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    /* =========================================================
+       LOGIN SCREEN
+    ========================================================= */
+   /* =========================================================
+   LOGIN SCREEN - Background Image + Blur + Dark Effect
+========================================================= */
+
+#loginScreen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1000;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  overflow: hidden;
+  isolation: isolate;
+
+  background: #050505;
+}
+
+/* Background image */
+#loginScreen::before {
+  content: '';
+  position: absolute;
+  inset: -25px;
+
+  background-image: url('./root.png');
+  background-size: cover;
+  background-position: center;
+
+  filter: blur(7px);
+  transform: scale(1.06);
+
+  opacity: 0.55;
+
+  z-index: -2;
+}
+
+/* Dark / shadow overlay */
+#loginScreen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(0, 0, 0, 0.20) 0%,
+      rgba(0, 0, 0, 0.58) 55%,
+      rgba(0, 0, 0, 0.88) 100%
+    );
+
+  z-index: -1;
+  pointer-events: none;
+}
+
+    /* Add a dark overlay to make the login box stand out */
+    #loginScreen::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: -1;
+    }
+
+    .login-box {
+  position: relative;
+  z-index: 2;
+
+  width: calc(100% - 32px);
+  max-width: 400px;
+
+  padding: 40px;
+
+  background: rgba(12, 12, 12, 0.68);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  border-radius: 20px;
+
+  text-align: center;
+
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary), #a8523b);
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 24px;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .login-box h2 {
+      margin-bottom: 8px;
+      font-size: 24px;
+    }
+
+    .login-box p {
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .password-input-group {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .password-input-group i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 18px;
+    }
+
+    #passwordInput {
+  width: 100%;
+
+  padding: 14px 16px 14px 44px;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  border-radius: 10px;
+
+  color: var(--text-main);
+
+  font-size: 16px;
+
+  transition: all 0.25s ease;
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#passwordInput:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 3px rgba(217, 119, 87, 0.10),
+    0 0 25px rgba(217, 119, 87, 0.12);
+}
+
+    #passwordInput:focus {
+      border-color: var(--primary);
+    }
+
+    #loginBtn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #loginError {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+  </style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">DB</div>
+    <h2>Welcome to Base</h2>
+    <p>Enter the master password to access the system.</p>
+    <div id="page-users" class="page-container">
+      <!-- =========================================================
+     USERS ANALYTICS
+========================================================= -->
+
+<div class="analytics-toolbar">
+
+  <div>
+    <div style="font-size:14px;font-weight:600;">
+      User Analytics
+    </div>
+
+    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+      Monitor user growth and registration activity
+    </div>
+  </div>
+
+  <div class="analytics-period">
+
+    <button
+      class="active"
+      data-period="day"
+      onclick="changeAnalyticsPeriod('day', this)"
+    >
+      Day
+    </button>
+
+    <button
+      data-period="month"
+      onclick="changeAnalyticsPeriod('month', this)"
+    >
+      Month
+    </button>
+
+    <button
+      data-period="year"
+      onclick="changeAnalyticsPeriod('year', this)"
+    >
+      Year
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- STAT CARDS -->
+
+<div class="analytics-grid">
+
+  <!-- TOTAL -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          Total Users
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-users"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsTotalUsers"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsTotalGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+
+  <!-- TODAY -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          New Today
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-user-plus"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsToday"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsTodayGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+
+  <!-- MONTH -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          This Month
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-calendar"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsMonth"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsMonthGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+
+  <!-- YEAR -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          This Year
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-chart-line-up"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsYear"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsYearGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- USER GROWTH GRAPH -->
+
+<div class="analytics-panel">
+
+  <div class="analytics-panel-header">
+
+    <div>
+
+      <div class="analytics-panel-title">
+        User Growth
+      </div>
+
+      <div
+        class="analytics-panel-subtitle"
+        id="analyticsChartSubtitle"
+      >
+        New users registered each day
+      </div>
+
+    </div>
+
+    <button
+      class="btn"
+      onclick="updateUsersAnalytics()"
+    >
+      <i class="ph ph-arrows-clockwise"></i>
+      Refresh
+    </button>
+
+  </div>
+
+
+  <div class="chart-wrapper">
+
+    <canvas
+      id="userGrowthChart"
+      class="user-chart"
+    ></canvas>
+
+  </div>
+
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="analytics-summary">
+
+  <div class="summary-item">
+
+    <div class="summary-label">
+      Active Users
+    </div>
+
+    <div
+      class="summary-value"
+      id="analyticsActiveUsers"
+    >
+      0
+    </div>
+
+  </div>
+
+
+  <div class="summary-item">
+
+    <div class="summary-label">
+      New Users This Month
+    </div>
+
+    <div
+      class="summary-value"
+      id="analyticsNewMonth"
+    >
+      0
+    </div>
+
+  </div>
+
+
+  <div class="summary-item">
+
+    <div class="summary-label">
+      Percentage
+    </div>
+
+    <div
+      class="summary-value"
+      id="analyticsGrowthPercent"
+    >
+      0%
+    </div>
+
+  </div>
+
+</div>
+    </div>
+    <div class="password-input-group">
+      <i class="ph ph-lock-key"></i>
+      <input type="password" id="passwordInput" placeholder="Enter password" onkeypress="handleLoginKeyPress(event)">
+    </div>
+    
+    <button class="btn btn-primary" id="loginBtn" onclick="checkPassword()">Access Dashboard</button>
+    <div id="loginError">Access Denied. Incorrect Password.</div>
+  </div>
+</div>
+
+<div class="app-container" id="mainApp" style="display: none;">
+  
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">DB</div>
+      <div class="brand-text">Base</div>
+    </div>
+    
+    <nav class="sidebar-nav">
+      <div>
+        <div class="nav-group-title">Overview</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+              <i class="ph ph-squares-four"></i>
+              Dashboard
+            </button>
+          </li>
+        </ul>
+      </div>
+      
+      <div>
+        <div class="nav-group-title">Management</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item" data-page="users" onclick="navigateTo('users')">
+              <i class="ph ph-users"></i>
+              Users
+              <span class="badge" id="userCountBadge">7</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-item" data-page="locations" onclick="navigateTo('locations')">
+              <i class="ph ph-map-pin"></i>
+              Locations
+            </button>
+          </li>
+          <li>
+            <button class="nav-item" data-page="reports" onclick="navigateTo('reports')">
+              <i class="ph ph-file-text"></i>
+              Reports
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="nav-group-title">System</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-item" data-page="security" onclick="navigateTo('security')">
+              <i class="ph ph-shield-check"></i>
+              Security
+            </button>
+          </li>
+          <li>
+            <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+              <i class="ph ph-gear"></i>
+              Settings
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </aside>
+  
+  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <main class="main-content">
+    
+    <header class="header">
+      <div class="header-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+          <i class="ph ph-list"></i>
+        </button>
+        <div class="page-title" id="pageTitle">Overview</div>
+      </div>
+      
+      <div class="header-right">
+        <div class="status-indicator">
+          <span class="dot"></span> System Online
+        </div>
+        <button class="icon-btn" onclick="alert('Notifications')">
+          <i class="ph ph-bell"></i>
+        </button>
+        <div class="user-profile">
+          <div class="avatar">A</div>
+        </div>
+      </div>
+    </header>
+
+    <div id="page-dashboard" class="page-container active">
+      
+      <div class="section-header">
+        <h1>Dashboard Overview</h1>
+        <p>Monitor your platform's core metrics and quickly access management tools. The system is operating normally.</p>
+      </div>
+
+      <!-- Glowing Tabs resembling the "Industries" section in the image -->
+      <div class="tabs-container">
+        <button class="tab active">
+          <div class="tab-icon-wrap"><i class="ph ph-chart-line-up"></i></div>
+          <span>Metrics</span>
+        </button>
+        <button class="tab" onclick="navigateTo('users')">
+          <div class="tab-icon-wrap"><i class="ph ph-users"></i></div>
+          <span>Users</span>
+        </button>
+        <button class="tab" onclick="navigateTo('locations')">
+          <div class="tab-icon-wrap"><i class="ph ph-map-pin"></i></div>
+          <span>Places</span>
+        </button>
+        <button class="tab" onclick="navigateTo('security')">
+          <div class="tab-icon-wrap"><i class="ph ph-shield"></i></div>
+          <span>Security</span>
+        </button>
+      </div>
+
+      <!-- Features Grid resembling the bottom cards in the image -->
+      <div class="feature-grid">
+        
+        <div class="feature-card">
+          <div class="card-visual">
+            <div class="visual-icon"><i class="ph ph-users"></i></div>
+            <div class="visual-text">Total Registered Users</div>
+          </div>
+          <h3>User Base</h3>
+          <p>You currently have <strong style="color:var(--text-main)" id="dashTotalUsers">7</strong> registered users on the platform. Monitoring engagement and activity levels.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-visual">
+            <div class="visual-icon" style="color: var(--success);"><i class="ph ph-activity"></i></div>
+            <div class="visual-text">Currently Active</div>
+          </div>
+          <h3>Online Status</h3>
+          <p><strong style="color:var(--success)" id="dashOnlineUsers">4</strong> users are currently active. System latency is low and request handling is optimal.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="card-visual">
+            <div class="visual-icon"><i class="ph ph-map-trifold"></i></div>
+            <div class="visual-text">Database Entries</div>
+          </div>
+          <h3>Map Locations</h3>
+          <p>Database connected. Ready to serve location data to client applications upon request.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="page-users" class="page-container">
+      <div class="section-header" style="text-align: left;">
+        <h1>User Management</h1>
+        <p>View and manage all registered users on the Base platform.</p>
+      </div>
+
+      <div class="data-panel">
+        <div class="panel-header">
+          <div class="panel-title">All Users</div>
+          <div class="search-box">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search users...">
+          </div>
+        </div>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>User Details</th>
+                <th>Status</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Users populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-locations" class="page-container">
+      <div class="section-header" style="text-align: left;">
+        <h1>Locations</h1>
+        <p>Manage map markers and points of interest.</p>
+      </div>
+      <div class="data-panel">
+         <div class="empty-state">
+            <i class="ph ph-map-pin-line"></i>
+            <h3>No Locations Loaded</h3>
+            <p>Connect your database to display locations.</p>
+            <button class="btn btn-primary" style="margin-top: 16px;">Add Location</button>
+         </div>
+      </div>
+    </div>
+
+    <div id="page-reports" class="page-container">
+      <div class="section-header" style="text-align: left;">
+        <h1>Reports</h1>
+        <p>User generated reports and feedback.</p>
+      </div>
+      <!-- =========================================================
+     USERS ANALYTICS
+========================================================= -->
+
+<div class="analytics-toolbar">
+
+  <div>
+    <div style="font-size:14px;font-weight:600;">
+      User Analytics
+    </div>
+
+    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+      Monitor user growth and registration activity
+    </div>
+  </div>
+
+  <div class="analytics-period">
+
+    <button
+      class="active"
+      data-period="day"
+      onclick="changeAnalyticsPeriod('day', this)"
+    >
+      Day
+    </button>
+
+    <button
+      data-period="month"
+      onclick="changeAnalyticsPeriod('month', this)"
+    >
+      Month
+    </button>
+
+    <button
+      data-period="year"
+      onclick="changeAnalyticsPeriod('year', this)"
+    >
+      Year
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- STAT CARDS -->
+
+<div class="analytics-grid">
+
+  <!-- TOTAL -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          Total Users
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-users"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsTotalUsers"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsTotalGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+
+  <!-- TODAY -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          New Today
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-user-plus"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsToday"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsTodayGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+
+  <!-- MONTH -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          This Month
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-calendar"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsMonth"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsMonthGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+
+  <!-- YEAR -->
+
+  <div class="analytics-card">
+
+    <div class="analytics-card-header">
+
+      <div>
+        <div class="analytics-label">
+          This Year
+        </div>
+      </div>
+
+      <div class="analytics-icon">
+        <i class="ph ph-chart-line-up"></i>
+      </div>
+
+    </div>
+
+    <div
+      class="analytics-value"
+      id="analyticsYear"
+    >
+      0
+    </div>
+
+    <div
+      class="analytics-growth neutral"
+      id="analyticsYearGrowth"
+    >
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- USER GROWTH GRAPH -->
+
+<div class="analytics-panel">
+
+  <div class="analytics-panel-header">
+
+    <div>
+
+      <div class="analytics-panel-title">
+        User Growth
+      </div>
+
+      <div
+        class="analytics-panel-subtitle"
+        id="analyticsChartSubtitle"
+      >
+        New users registered each day
+      </div>
+
+    </div>
+
+    <button
+      class="btn"
+      onclick="updateUsersAnalytics()"
+    >
+      <i class="ph ph-arrows-clockwise"></i>
+      Refresh
+    </button>
+
+  </div>
+
+
+  <div class="chart-wrapper">
+
+    <canvas
+      id="userGrowthChart"
+      class="user-chart"
+    ></canvas>
+
+  </div>
+
+</div>
+
+
+<!-- SUMMARY -->
+
+<div class="analytics-summary">
+
+  <div class="summary-item">
+
+    <div class="summary-label">
+      Active Users
+    </div>
+
+    <div
+      class="summary-value"
+      id="analyticsActiveUsers"
+    >
+      0
+    </div>
+
+  </div>
+
+
+  <div class="summary-item">
+
+    <div class="summary-label">
+      New Users This Month
+    </div>
+
+    <div
+      class="summary-value"
+      id="analyticsNewMonth"
+    >
+      0
+    </div>
+
+  </div>
+
+
+  <div class="summary-item">
+
+    <div class="summary-label">
+      Percentage
+    </div>
+
+    <div
+      class="summary-value"
+      id="analyticsGrowthPercent"
+    >
+      0%
+    </div>
+
+  </div>
+
+</div>
+       <div class="data-panel">
+         <div class="empty-state">
+            <i class="ph ph-file-text"></i>
+            <h3>No Reports</h3>
+            <p>All clear. No pending reports to review.</p>
+         </div>
+      </div>
+    </div>
+
+    <div id="page-security" class="page-container">
+      <div class="section-header" style="text-align: left;">
+        <h1>Security Logs</h1>
+        <p>System access and security events.</p>
+      </div>
+       <div class="data-panel">
+         <div class="empty-state">
+            <i class="ph ph-shield-check"></i>
+            <h3>System Secure</h3>
+            <p>No anomalous activity detected recently.</p>
+         </div>
+      </div>
+    </div>
+
+    <div id="page-settings" class="page-container">
+      <div class="section-header" style="text-align: left;">
+        <h1>Settings</h1>
+        <p>Platform configuration and preferences.</p>
+      </div>
+       <div class="data-panel" style="padding: 24px;">
+         <p style="color: var(--text-muted)">Configuration options will be available here.</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* =========================================================
+   SMARTMAP ADMIN DASHBOARD
+   Real Firebase data through Backend API
+========================================================= */
+
+let allUsers = [];
+let allLocations = [];
+let allReports = [];
+let allSecurityLogs = [];
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+/* =========================================================
+   USERS ANALYTICS
+========================================================= */
+
+let userGrowthChart = null;
+
+let currentAnalyticsPeriod = "day";
+
+
+function getUserDate(user) {
+
+  if (!user.createdAt) {
+    return null;
+  }
+
+  try {
+
+    // Firebase Timestamp
+    if (user.createdAt.seconds) {
+      return new Date(user.createdAt.seconds * 1000);
+    }
+
+    // ISO string / normal date
+    return new Date(user.createdAt);
+
+  } catch (error) {
+
+    return null;
+
+  }
+
+}
+
+
+function sameDay(date1, date2) {
+
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+
+}
+
+
+function sameMonth(date1, date2) {
+
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth()
+  );
+
+}
+
+
+function sameYear(date1, date2) {
+
+  return date1.getFullYear() === date2.getFullYear();
+
+}
+
+
+function calculateGrowth(current, previous) {
+
+  if (previous === 0) {
+
+    if (current === 0) {
+      return 0;
+    }
+
+    return 100;
+
+  }
+
+  return ((current - previous) / previous) * 100;
+
+}
+
+
+function formatGrowth(value) {
+
+  const rounded = Math.abs(value).toFixed(1);
+
+  if (value > 0) {
+    return `+${rounded}%`;
+  }
+
+  if (value < 0) {
+    return `-${rounded}%`;
+  }
+
+  return "0%";
+
+}
+
+
+function setGrowth(elementId, value) {
+
+  const element = document.getElementById(elementId);
+
+  if (!element) return;
+
+  element.classList.remove(
+    "up",
+    "down",
+    "neutral"
+  );
+
+  if (value > 0) {
+
+    element.classList.add("up");
+
+    element.innerHTML = `
+      <i class="ph ph-trend-up"></i>
+      <span>${formatGrowth(value)}</span>
+    `;
+
+  } else if (value < 0) {
+
+    element.classList.add("down");
+
+    element.innerHTML = `
+      <i class="ph ph-trend-down"></i>
+      <span>${formatGrowth(value)}</span>
+    `;
+
+  } else {
+
+    element.classList.add("neutral");
+
+    element.innerHTML = `
+      <i class="ph ph-minus"></i>
+      <span>0%</span>
+    `;
+
+  }
+
+}
+
+
+function updateUsersAnalytics() {
+
+  /*
+   * IMPORTANT:
+   *
+   * This function expects the users array
+   * to contain createdAt.
+   *
+   * Example:
+   *
+   * {
+   *   username: "Ramit",
+   *   createdAt: Firebase Timestamp
+   * }
+   */
+
+  const users = Array.isArray(allUsers) && allUsers.length
+    ? allUsers
+    : (
+        Array.isArray(window.firebaseUsers)
+          ? window.firebaseUsers
+          : (
+              typeof mockUsers !== "undefined"
+                ? mockUsers
+                : []
+            )
+      );
+
+  window.firebaseUsers = users;
+
+  const now = new Date();
+
+  const totalUsers = users.length;
+
+
+  // ---------------------------------------------
+  // TODAY
+  // ---------------------------------------------
+
+  const todayUsers = users.filter(user => {
+
+    const date = getUserDate(user);
+
+    return date && sameDay(date, now);
+
+  });
+
+
+  // ---------------------------------------------
+  // YESTERDAY
+  // ---------------------------------------------
+
+  const yesterday = new Date();
+
+  yesterday.setDate(
+    yesterday.getDate() - 1
+  );
+
+
+  const yesterdayUsers = users.filter(user => {
+
+    const date = getUserDate(user);
+
+    return date && sameDay(date, yesterday);
+
+  });
+
+
+  // ---------------------------------------------
+  // THIS MONTH
+  // ---------------------------------------------
+
+  const monthUsers = users.filter(user => {
+
+    const date = getUserDate(user);
+
+    return date && sameMonth(date, now);
+
+  });
+
+
+  // ---------------------------------------------
+  // LAST MONTH
+  // ---------------------------------------------
+
+  const lastMonth = new Date();
+
+  lastMonth.setMonth(
+    lastMonth.getMonth() - 1
+  );
+
+
+  const lastMonthUsers = users.filter(user => {
+
+    const date = getUserDate(user);
+
+    return date && sameMonth(date, lastMonth);
+
+  });
+
+
+  // ---------------------------------------------
+  // THIS YEAR
+  // ---------------------------------------------
+
+  const yearUsers = users.filter(user => {
+
+    const date = getUserDate(user);
+
+    return date && sameYear(date, now);
+
+  });
+
+
+  // ---------------------------------------------
+  // LAST YEAR
+  // ---------------------------------------------
+
+  const lastYear = new Date();
+
+  lastYear.setFullYear(
+    lastYear.getFullYear() - 1
+  );
+
+
+  const lastYearUsers = users.filter(user => {
+
+    const date = getUserDate(user);
+
+    return date && sameYear(date, lastYear);
+
+  });
+
+
+  // ---------------------------------------------
+  // UPDATE NUMBERS
+  // ---------------------------------------------
+
+  document.getElementById(
+    "analyticsTotalUsers"
+  ).textContent = totalUsers.toLocaleString();
+
+
+  document.getElementById(
+    "analyticsToday"
+  ).textContent = todayUsers.length.toLocaleString();
+
+
+  document.getElementById(
+    "analyticsMonth"
+  ).textContent = monthUsers.length.toLocaleString();
+
+
+  document.getElementById(
+    "analyticsYear"
+  ).textContent = yearUsers.length.toLocaleString();
+
+
+  // ---------------------------------------------
+  // GROWTH
+  // ---------------------------------------------
+
+  const todayGrowth =
+    calculateGrowth(
+      todayUsers.length,
+      yesterdayUsers.length
+    );
+
+
+  const monthGrowth =
+    calculateGrowth(
+      monthUsers.length,
+      lastMonthUsers.length
+    );
+
+
+  const yearGrowth =
+    calculateGrowth(
+      yearUsers.length,
+      lastYearUsers.length
+    );
+
+
+  setGrowth(
+    "analyticsTodayGrowth",
+    todayGrowth
+  );
+
+
+  setGrowth(
+    "analyticsMonthGrowth",
+    monthGrowth
+  );
+
+
+  setGrowth(
+    "analyticsTotalGrowth",
+    monthGrowth
+  );
+
+
+  // ---------------------------------------------
+  // SUMMARY
+  // ---------------------------------------------
+
+  const activeUsers = users.filter(
+    user => user.status === "online"
+  );
+
+
+  document.getElementById(
+    "analyticsActiveUsers"
+  ).textContent =
+    activeUsers.length.toLocaleString();
+
+
+  document.getElementById(
+    "analyticsNewMonth"
+  ).textContent =
+    monthUsers.length.toLocaleString();
+
+
+  document.getElementById(
+    "analyticsGrowthPercent"
+  ).textContent =
+    formatGrowth(monthGrowth);
+
+
+  // ---------------------------------------------
+  // CHART
+  // ---------------------------------------------
+
+  renderUserGrowthChart(users);
+
+}
+
+
+function renderUserGrowthChart(users) {
+
+  const canvas =
+    document.getElementById(
+      "userGrowthChart"
+    );
+
+  if (!canvas) return;
+
+  if (typeof Chart === "undefined") {
+    console.warn("Chart.js is not loaded; skipping chart render.");
+    return;
+  }
+
+  const now = new Date();
+
+  const labels = [];
+
+  const values = [];
+
+
+  if (currentAnalyticsPeriod === "day") {
+
+    /*
+     * Last 30 days
+     */
+
+    for (let i = 29; i >= 0; i--) {
+
+      const date = new Date();
+
+      date.setDate(
+        now.getDate() - i
+      );
+
+      labels.push(
+        `${date.getDate()}/${date.getMonth() + 1}`
+      );
+
+
+      const count = users.filter(user => {
+
+        const userDate =
+          getUserDate(user);
+
+        return (
+          userDate &&
+          sameDay(userDate, date)
+        );
+
+      }).length;
+
+
+      values.push(count);
+
+    }
+
+  }
+
+
+  else if (currentAnalyticsPeriod === "month") {
+
+    /*
+     * Last 12 months
+     */
+
+    for (let i = 11; i >= 0; i--) {
+
+      const date = new Date();
+
+      date.setMonth(
+        now.getMonth() - i
+      );
+
+      const month =
+        date.toLocaleString(
+          "en-US",
+          { month: "short" }
+        );
+
+      labels.push(month);
+
+
+      const count = users.filter(user => {
+
+        const userDate =
+          getUserDate(user);
+
+        return (
+          userDate &&
+          sameMonth(userDate, date)
+        );
+
+      }).length;
+
+
+      values.push(count);
+
+    }
+
+  }
+
+
+  else if (currentAnalyticsPeriod === "year") {
+
+    /*
+     * Last 5 years
+     */
+
+    for (let i = 4; i >= 0; i--) {
+
+      const year =
+        now.getFullYear() - i;
+
+      labels.push(String(year));
+
+
+      const count = users.filter(user => {
+
+        const userDate =
+          getUserDate(user);
+
+        return (
+          userDate &&
+          userDate.getFullYear() === year
+        );
+
+      }).length;
+
+
+      values.push(count);
+
+    }
+
+  }
+
+
+  if (userGrowthChart) {
+
+    userGrowthChart.destroy();
+
+  }
+
+
+  userGrowthChart =
+    new Chart(canvas, {
+
+      type: "line",
+
+      data: {
+
+        labels,
+
+        datasets: [
+
+          {
+
+            label: "New Users",
+
+            data: values,
+
+            tension: 0.35,
+
+            fill: true,
+
+            borderWidth: 2,
+
+            pointRadius: 3,
+
+            pointHoverRadius: 5
+
+          }
+
+        ]
+
+      },
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        plugins: {
+
+          legend: {
+            display: false
+          }
+
+        },
+
+        scales: {
+
+          x: {
+
+            grid: {
+              display: false
+            },
+
+            ticks: {
+              color: "#888"
+            }
+
+          },
+
+          y: {
+
+            beginAtZero: true,
+
+            ticks: {
+              precision: 0,
+              color: "#888"
+            }
+
+          }
+
+        }
+
+      }
+
+    });
+
+}
+
+
+function changeAnalyticsPeriod(
+  period,
+  button
+) {
+
+  currentAnalyticsPeriod = period;
+
+
+  document
+    .querySelectorAll(
+      ".analytics-period button"
+    )
+    .forEach(btn => {
+
+      btn.classList.remove(
+        "active"
+      );
+
+    });
+
+
+  button.classList.add(
+    "active"
+  );
+
+
+  const subtitle =
+    document.getElementById(
+      "analyticsChartSubtitle"
+    );
+
+
+  if (period === "day") {
+
+    subtitle.textContent =
+      "New users registered each day";
+
+  }
+
+  else if (period === "month") {
+
+    subtitle.textContent =
+      "New users registered each month";
+
+  }
+
+  else {
+
+    subtitle.textContent =
+      "New users registered each year";
+
+  }
+
+
+  updateUsersAnalytics();
+
+}
+function checkPassword() {
+  const input = document.getElementById('passwordInput').value;
+  const errorMsg = document.getElementById('loginError');
+
+  if (input === 'ictmit') {
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'flex';
+
+    // Load real data from backend
+    loadDashboardData();
+
+  } else {
+
+    errorMsg.style.display = 'block';
+
+    const pInput = document.getElementById('passwordInput');
+
+    pInput.style.borderColor = 'var(--danger)';
+
+    setTimeout(() => {
+      pInput.style.borderColor = 'var(--border-color)';
+      errorMsg.style.display = 'none';
+    }, 3000);
+  }
+}
+
+
+function handleLoginKeyPress(event) {
+  if (event.key === 'Enter') {
+    checkPassword();
+  }
+}
+
+
+/* =========================================================
+   API HELPER
+========================================================= */
+
+async function apiFetch(url, options = {}) {
+
+  try {
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `API Error ${response.status}: ${response.statusText}`
+      );
+    }
+
+    return await response.json();
+
+  } catch (error) {
+
+    console.error(`API request failed: ${url}`, error);
+
+    throw error;
+  }
+}
+
+
+/* =========================================================
+   LOAD DASHBOARD DATA
+========================================================= */
+
+async function loadDashboardData() {
+
+  console.log('Loading SmartMap database...');
+
+  try {
+
+    await Promise.all([
+      loadUsers(),
+      loadLocations(),
+      loadReports(),
+      loadSecurityLogs()
+    ]);
+
+    updateDashboard();
+
+    console.log('SmartMap database loaded successfully.');
+
+  } catch (error) {
+
+    console.error('Failed to load dashboard:', error);
+
+  }
+}
+
+
+/* =========================================================
+   USERS
+========================================================= */
+
+async function loadUsers() {
+
+  try {
+
+    const data = await apiFetch('/api/users');
+
+    /*
+      Backend may return:
+
+      [
+        {...},
+        {...}
+      ]
+
+      OR
+
+      {
+        users: [...]
+      }
+    */
+
+    if (Array.isArray(data)) {
+      allUsers = data;
+    } else if (Array.isArray(data.users)) {
+      allUsers = data.users;
+    } else if (Array.isArray(data.data)) {
+      allUsers = data.data;
+    } else {
+      allUsers = [];
+    }
+
+    console.log('Users loaded:', allUsers.length);
+
+    window.firebaseUsers = allUsers;
+    renderUsers(allUsers);
+    updateUsersAnalytics();
+
+  } catch (error) {
+
+    allUsers = [];
+
+    renderUsers([]);
+
+    console.error('Could not load users:', error);
+  }
+}
+
+
+/* =========================================================
+   LOCATIONS
+========================================================= */
+
+async function loadLocations() {
+
+  try {
+
+    /*
+      Backend endpoint for locations.
+
+      If your backend route is different,
+      change this URL only.
+    */
+
+    const data = await apiFetch('/api/admin/locations');
+
+    if (Array.isArray(data)) {
+      allLocations = data;
+    } else if (Array.isArray(data.locations)) {
+      allLocations = data.locations;
+    } else if (Array.isArray(data.data)) {
+      allLocations = data.data;
+    } else {
+      allLocations = [];
+    }
+
+    console.log('Locations loaded:', allLocations.length);
+
+    renderLocations(allLocations);
+
+  } catch (error) {
+
+    console.warn('Locations API is not available yet.');
+
+    allLocations = [];
+
+    renderLocations([]);
+
+  }
+}
+
+
+/* =========================================================
+   REPORTS
+========================================================= */
+
+async function loadReports() {
+
+  try {
+
+    const data = await apiFetch('/api/admin/reports');
+
+    if (Array.isArray(data)) {
+      allReports = data;
+    } else if (Array.isArray(data.reports)) {
+      allReports = data.reports;
+    } else if (Array.isArray(data.data)) {
+      allReports = data.data;
+    } else {
+      allReports = [];
+    }
+
+    console.log('Reports loaded:', allReports.length);
+
+    renderReports(allReports);
+
+  } catch (error) {
+
+    console.warn('Reports API is not available yet.');
+
+    allReports = [];
+
+    renderReports([]);
+
+  }
+}
+
+
+/* =========================================================
+   SECURITY LOGS
+========================================================= */
+
+async function loadSecurityLogs() {
+
+  try {
+
+    const data = await apiFetch('/api/admin/security');
+
+    if (Array.isArray(data)) {
+      allSecurityLogs = data;
+    } else if (Array.isArray(data.logs)) {
+      allSecurityLogs = data.logs;
+    } else if (Array.isArray(data.data)) {
+      allSecurityLogs = data.data;
+    } else {
+      allSecurityLogs = [];
+    }
+
+    console.log(
+      'Security logs loaded:',
+      allSecurityLogs.length
+    );
+
+    renderSecurityLogs(allSecurityLogs);
+
+  } catch (error) {
+
+    console.warn('Security API is not available yet.');
+
+    allSecurityLogs = [];
+
+    renderSecurityLogs([]);
+
+  }
+}
+
+
+/* =========================================================
+   DASHBOARD STATISTICS
+========================================================= */
+
+function updateDashboard() {
+
+  const totalUsers = allUsers.length;
+
+  const onlineUsers = allUsers.filter(user => {
+
+    const status =
+      String(
+        user.status ||
+        user.onlineStatus ||
+        ''
+      ).toLowerCase();
+
+    return (
+      status === 'online' ||
+      status === 'active'
+    );
+
+  }).length;
+
+
+  /* Total Users */
+
+  const totalEl =
+    document.getElementById('dashTotalUsers');
+
+  if (totalEl) {
+    totalEl.innerText = totalUsers;
+  }
+
+
+  /* Online Users */
+
+  const onlineEl =
+    document.getElementById('dashOnlineUsers');
+
+  if (onlineEl) {
+    onlineEl.innerText = onlineUsers;
+  }
+
+
+  /* User Badge */
+
+  const badgeEl =
+    document.getElementById('userCountBadge');
+
+  if (badgeEl) {
+    badgeEl.innerText = totalUsers;
+  }
+
+
+  /* Update location card */
+
+  const locationCards =
+    document.querySelectorAll('.feature-card');
+
+  if (locationCards.length >= 3) {
+
+    const locationText =
+      locationCards[2].querySelector('p');
+
+    if (locationText) {
+
+      locationText.innerHTML = `
+        Firebase database contains
+        <strong style="color:var(--text-main)">
+          ${allLocations.length}
+        </strong>
+        map locations.
+        Data is connected to the SmartMap backend.
+      `;
+    }
+  }
+}
+
+
+/* =========================================================
+   RENDER USERS
+========================================================= */
+
+function renderUsers(usersToRender) {
+
+  const tbody =
+    document.getElementById('usersTableBody');
+
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+
+
+  if (!usersToRender.length) {
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4">
+          <div class="empty-state">
+            <i class="ph ph-users"></i>
+            <h3>No Users Found</h3>
+            <p>
+              No user data was returned from Firebase.
+            </p>
+          </div>
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+
+  usersToRender.forEach((user, index) => {
+
+    const username =
+      user.username ||
+      user.name ||
+      user.displayName ||
+      user.email ||
+      `User ${index + 1}`;
+
+    const id =
+      user.id ||
+      user.uid ||
+      user.userId ||
+      'N/A';
+
+    const email =
+      user.email ||
+      '';
+
+    const status =
+      String(
+        user.status ||
+        user.onlineStatus ||
+        'offline'
+      ).toLowerCase();
+
+    const role =
+      user.role ||
+      'user';
+
+    const isOnline =
+      status === 'online' ||
+      status === 'active';
+
+    const initial =
+      username
+        .charAt(0)
+        .toUpperCase();
+
+
+    const tr =
+      document.createElement('tr');
+
+
+    tr.innerHTML = `
+
+      <td>
+
+        <div class="user-cell">
+
+          <div
+            class="avatar"
+            style="
+              width:36px;
+              height:36px;
+              background:var(--bg-base);
+              border-color:
+                ${isOnline
+                  ? 'var(--success)'
+                  : 'var(--border-color)'};
+            "
+          >
+            ${escapeHtml(initial)}
+          </div>
+
+          <div>
+
+            <div class="user-name">
+              ${escapeHtml(username)}
+            </div>
+
+            <div class="user-id">
+              ${escapeHtml(id)}
+            </div>
+
+            ${
+              email
+                ? `
+                <div
+                  style="
+                    font-size:11px;
+                    color:var(--text-muted);
+                    margin-top:2px;
+                  "
+                >
+                  ${escapeHtml(email)}
+                </div>
+                `
+                : ''
+            }
+
+          </div>
+
+        </div>
+
+      </td>
+
+
+      <td>
+
+        <div
+          class="status-badge
+            ${isOnline ? 'online' : 'offline'}"
+        >
+
+          <i class="ph ph-circle-fill"></i>
+
+          ${isOnline ? 'online' : 'offline'}
+
+        </div>
+
+      </td>
+
+
+      <td>
+
+        <span
+          style="
+            text-transform:capitalize;
+            color:
+              ${role === 'admin'
+                ? 'var(--primary)'
+                : 'var(--text-muted)'};
+          "
+        >
+          ${escapeHtml(role)}
+        </span>
+
+      </td>
+
+
+      <td>
+
+        <button
+          class="btn"
+          onclick="viewUser('${escapeHtml(String(id))}')"
+        >
+          Manage
+        </button>
+
+      </td>
+
+    `;
+
+    tbody.appendChild(tr);
+
+  });
+}
+
+
+/* =========================================================
+   USER SEARCH
+========================================================= */
+
+document
+  .getElementById('searchInput')
+  ?.addEventListener('input', function(event) {
+
+    const term =
+      event.target.value
+        .toLowerCase()
+        .trim();
+
+
+    if (!term) {
+
+      renderUsers(allUsers);
+
+      return;
+    }
+
+
+    const filtered =
+      allUsers.filter(user => {
+
+        const username =
+          String(
+            user.username ||
+            user.name ||
+            user.displayName ||
+            user.email ||
+            ''
+          ).toLowerCase();
+
+        const id =
+          String(
+            user.id ||
+            user.uid ||
+            user.userId ||
+            ''
+          ).toLowerCase();
+
+        const email =
+          String(
+            user.email || ''
+          ).toLowerCase();
+
+
+        return (
+          username.includes(term) ||
+          id.includes(term) ||
+          email.includes(term)
+        );
+
+      });
+
+
+    renderUsers(filtered);
+
+  });
+
+
+/* =========================================================
+   VIEW USER
+========================================================= */
+
+function viewUser(userId) {
+
+  const user =
+    allUsers.find(u =>
+      String(
+        u.id ||
+        u.uid ||
+        u.userId ||
+        ''
+      ) === String(userId)
+    );
+
+
+  if (!user) {
+
+    alert('User not found.');
+
+    return;
+  }
+
+
+  alert(
+    `User Information\n\n` +
+    `ID: ${
+      user.id ||
+      user.uid ||
+      user.userId ||
+      'N/A'
+    }\n` +
+    `Name: ${
+      user.username ||
+      user.name ||
+      user.displayName ||
+      'N/A'
+    }\n` +
+    `Email: ${
+      user.email ||
+      'N/A'
+    }\n` +
+    `Role: ${
+      user.role ||
+      'user'
+    }`
+  );
+}
+
+
+/* =========================================================
+   LOCATIONS RENDER
+========================================================= */
+
+function renderLocations(locations) {
+
+  const page =
+    document.getElementById('page-locations');
+
+  if (!page) return;
+
+
+  const panel =
+    page.querySelector('.data-panel');
+
+  if (!panel) return;
+
+
+  if (!locations.length) {
+
+    panel.innerHTML = `
+      <div class="empty-state">
+
+        <i class="ph ph-map-pin-line"></i>
+
+        <h3>No Locations Loaded</h3>
+
+        <p>
+          No location data was returned from the backend.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  panel.innerHTML = `
+
+    <div class="panel-header">
+
+      <div class="panel-title">
+        Map Locations
+      </div>
+
+      <div
+        style="
+          color:var(--text-muted);
+          font-size:13px;
+        "
+      >
+        ${locations.length} locations
+      </div>
+
+    </div>
+
+
+    <div class="table-container">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Phone</th>
+            <th>Location</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          ${locations.map(location => `
+
+            <tr>
+
+              <td>
+                ${escapeHtml(
+                  location.name ||
+                  location.title ||
+                  'Unnamed'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  location.type ||
+                  location.category ||
+                  'N/A'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  location.phone ||
+                  location.telephone ||
+                  'N/A'
+                )}
+              </td>
+
+              <td>
+                ${
+                  location.latitude !== undefined
+                    ? `${location.latitude},
+                       ${location.longitude ?? ''}`
+                    : 'N/A'
+                }
+              </td>
+
+            </tr>
+
+          `).join('')}
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   REPORTS
+========================================================= */
+
+function renderReports(reports) {
+
+  const page =
+    document.getElementById('page-reports');
+
+  if (!page) return;
+
+
+  const panel =
+    page.querySelector('.data-panel');
+
+  if (!panel) return;
+
+
+  if (!reports.length) {
+
+    panel.innerHTML = `
+      <div class="empty-state">
+
+        <i class="ph ph-file-text"></i>
+
+        <h3>No Reports</h3>
+
+        <p>
+          No reports have been submitted.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  panel.innerHTML = `
+
+    <div class="panel-header">
+
+      <div class="panel-title">
+        Reports
+      </div>
+
+      <div
+        style="
+          color:var(--text-muted);
+          font-size:13px;
+        "
+      >
+        ${reports.length} reports
+      </div>
+
+    </div>
+
+
+    <div class="table-container">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Report</th>
+            <th>User</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          ${reports.map(report => `
+
+            <tr>
+
+              <td>
+                ${escapeHtml(
+                  report.title ||
+                  report.message ||
+                  report.description ||
+                  'Report'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  report.username ||
+                  report.userId ||
+                  'N/A'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  report.status ||
+                  'pending'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatDate(
+                    report.createdAt ||
+                    report.timestamp
+                  )
+                )}
+              </td>
+
+            </tr>
+
+          `).join('')}
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   SECURITY LOGS
+========================================================= */
+
+function renderSecurityLogs(logs) {
+
+  const page =
+    document.getElementById('page-security');
+
+  if (!page) return;
+
+
+  const panel =
+    page.querySelector('.data-panel');
+
+  if (!panel) return;
+
+
+  if (!logs.length) {
+
+    panel.innerHTML = `
+      <div class="empty-state">
+
+        <i class="ph ph-shield-check"></i>
+
+        <h3>System Secure</h3>
+
+        <p>
+          No security events were returned.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+
+  panel.innerHTML = `
+
+    <div class="panel-header">
+
+      <div class="panel-title">
+        Security Logs
+      </div>
+
+      <div
+        style="
+          color:var(--text-muted);
+          font-size:13px;
+        "
+      >
+        ${logs.length} events
+      </div>
+
+    </div>
+
+
+    <div class="table-container">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Event</th>
+            <th>User</th>
+            <th>IP</th>
+            <th>Date</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          ${logs.map(log => `
+
+            <tr>
+
+              <td>
+                ${escapeHtml(
+                  log.event ||
+                  log.action ||
+                  log.type ||
+                  'Security event'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  log.user ||
+                  log.username ||
+                  log.userId ||
+                  'N/A'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  log.ip ||
+                  log.ipAddress ||
+                  'N/A'
+                )}
+              </td>
+
+              <td>
+                ${escapeHtml(
+                  formatDate(
+                    log.timestamp ||
+                    log.createdAt
+                  )
+                )}
+              </td>
+
+            </tr>
+
+          `).join('')}
+
+        </tbody>
+
+      </table>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function navigateTo(pageId) {
+
+  document
+    .querySelectorAll('.page-container')
+    .forEach(el => {
+
+      el.classList.remove('active');
+
+    });
+
+
+  const targetPage =
+    document.getElementById(
+      'page-' + pageId
+    );
+
+
+  if (targetPage) {
+
+    targetPage.classList.add('active');
+
+  }
+
+
+  document
+    .querySelectorAll('.nav-item')
+    .forEach(el => {
+
+      el.classList.remove('active');
+
+      if (el.dataset.page === pageId) {
+        el.classList.add('active');
+      }
+
+    });
+
+
+  const titles = {
+
+    dashboard: 'Overview',
+    users: 'User Management',
+    locations: 'Locations',
+    reports: 'Reports',
+    security: 'Security',
+    settings: 'Settings'
+
+  };
+
+
+  const title =
+    document.getElementById('pageTitle');
+
+  if (title) {
+
+    title.innerText =
+      titles[pageId] || 'Dashboard';
+
+  }
+
+
+  /* Reload data when opening pages */
+
+  if (pageId === 'users') {
+    loadUsers();
+  }
+
+  if (pageId === 'locations') {
+    loadLocations();
+  }
+
+  if (pageId === 'reports') {
+    loadReports();
+  }
+
+  if (pageId === 'security') {
+    loadSecurityLogs();
+  }
+
+
+  if (window.innerWidth <= 768) {
+
+    document
+      .getElementById('sidebar')
+      .classList.remove('open');
+
+    document
+      .getElementById('overlay')
+      .classList.remove('show');
+
+  }
+}
+
+
+/* =========================================================
+   MOBILE SIDEBAR
+========================================================= */
+
+function toggleSidebar() {
+
+  document
+    .getElementById('sidebar')
+    .classList.toggle('open');
+
+  document
+    .getElementById('overlay')
+    .classList.toggle('show');
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function escapeHtml(value) {
+
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+}
+
+
+function formatDate(value) {
+
+  if (!value) {
+    return 'N/A';
+  }
+
+
+  try {
+
+    /*
+      Firebase Timestamp
+    */
+
+    if (
+      typeof value === 'object' &&
+      value.seconds
+    ) {
+
+      return new Date(
+        value.seconds * 1000
+      ).toLocaleString();
+
+    }
+
+
+    return new Date(value)
+      .toLocaleString();
+
+  } catch {
+
+    return String(value);
+
+  }
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  () => {
+
+    console.log(
+      'Civic 5G Admin Dashboard initialized.'
+    );
+
+  }
+);
+
+</script>
+</body>
+</html>
