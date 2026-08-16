@@ -701,6 +701,11 @@ export default function App() {
   const [chats, setChats] = useState(() => {
      try { const c = localStorage.getItem('tp_cache_chats'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
   });          
+  const [chatTargets, setChatTargets] = useState(() => {
+     try { const c = localStorage.getItem('tp_cache_chatTargets'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
+  });
+  const [myContacts, setMyContacts] = useState([]); 
+  const [friendRequests, setFriendRequests] = useState([]);
   const [cyberLogs, setCyberLogs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [favorites, setFavorites] = useState({});
@@ -709,6 +714,7 @@ export default function App() {
   });
   const [appeals, setAppeals] = useState([]);
   const [cosmicTheme, setCosmicTheme] = useState(() => localStorage.getItem('tp_cosmic') === 'true');
+  const [chatFeatureEnabled, setChatFeatureEnabled] = useState(() => localStorage.getItem('tp_chat_enabled') !== 'false');
 
   const [boostModeEnabled, setBoostModeEnabled] = useState(() => localStorage.getItem('tp_boost_enabled') === 'true');
   const [boostFeatureRemoved, setBoostFeatureRemoved] = useState(() => localStorage.getItem('tp_boost_removed') === 'true');
@@ -739,6 +745,7 @@ export default function App() {
   const [gpsCoords, setGpsCoords] = useState(null);
   
   const previousChatCount = useRef(0);
+  const [activeChatUser, setActiveChatUser] = useState(null);
   
   const [isSoundMuted, setIsSoundMuted] = useState(() => localStorage.getItem('tp_sound_muted') === 'true');
   const [appealText, setAppealText] = useState('');
@@ -1906,7 +1913,7 @@ export default function App() {
                 {language === 'en' ? 'Sdao Santepheap High School' : 'វិទ្យាល័យស្តៅសន្តិភាព'}
             </h1>
             <p className={`text-[11px] ${cosmicTheme || gatewayBg ? 'text-[#0F2B5C] bg-white/80' : 'text-[#0F2B5C] bg-white/10'} font-bold uppercase tracking-widest px-3 py-1 rounded-full backdrop-blur-sm mt-1`}>
-                {language === 'en' ? 'VMC Youth Sdao Santepheap 2026' : 'យុវជន vmc វិទ្យាល័យស្តៅសន្តិភាព 2026'}
+                {language === 'en' ? 'VMC Youth Sdao Santepheap 2026' : 'យុវជន vmc វិ.ស្តៅសន្តិភាព 2026'}
             </p>
         </div>
 
@@ -2395,7 +2402,6 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
     { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
     { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
   ];
-  if (chatFeatureEnabled || isAdmin) navItems.push({ id: 'chat', icon: MessageCircle, label: 'សារ' });
   navItems.push({ id: 'account', icon: User, label: 'គណនី' });
   if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'អ្នកគ្រប់គ្រង' });
 
@@ -2410,7 +2416,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2434,7 +2440,6 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
     { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
     { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
   ];
-  if (chatFeatureEnabled || isAdmin) navItems.push({ id: 'chat', icon: MessageCircle, label: 'សារ' });
   navItems.push({ id: 'account', icon: User, label: 'គណនី' });
   if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
@@ -2882,6 +2887,15 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
   const monthlyData = khmerMonths.map((name, index) => {
+    // Set specific value for May (ឧសភា is index 4)
+    if (index === 4) {
+        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
+    }
+    // Set specific value for July (កក្កដា is index 6)
+    if (index === 6) {
+        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
+    }
+    
     const startM = new Date(currentYear, index, 1).getTime();
     const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
     let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
