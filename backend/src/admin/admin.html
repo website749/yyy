@@ -1,2942 +1,1002 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Base Admin Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="./admin.css" />
-    <script src="./admin.js" defer></script>
-  </head>
-  <body>
-    <div id="loginScreen" class="login-screen">
-      <div class="login-box">
-        <div class="login-logo">DB</div>
-        <h2>Welcome to Base</h2>
-        <p>Enter the master password to access the system.</p>
-        <div class="password-input-group">
-          <i class="ph ph-lock-key"></i>
-          <input type="password" id="passwordInput" placeholder="Enter password" />
-        </div>
-        <button class="btn primary" id="loginBtn" style="width: 100%;">Access Dashboard</button>
-        <div id="loginError">Access Denied. Incorrect Password.</div>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>SmartMap Admin</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+
+<body>
+
+<!-- =====================================================
+     LOGIN
+===================================================== -->
+
+<div id="loginScreen">
+
+  <div class="login-box">
+
+    <div class="login-logo">
+      SM
     </div>
 
-    <div id="mainApp" class="app-shell" style="display: none;">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-logo">DB</div>
-          <div class="brand-text">Base</div>
-        </div>
+    <h2>SmartMap Admin</h2>
 
-        <nav class="sidebar-nav">
-          <div>
-            <div class="nav-group-title">Overview</div>
-            <ul class="nav-list">
-              <li><button class="nav-item active" data-page="dashboard"><i class="ph ph-squares-four"></i> Dashboard</button></li>
-            </ul>
-          </div>
+    <p>
+      Enter the administrator password to continue.
+    </p>
 
-          <div>
-            <div class="nav-group-title">Management</div>
-            <ul class="nav-list">
-              <li><button class="nav-item" data-page="users"><i class="ph ph-users"></i> Users <span class="badge" id="userCountBadge">0</span></button></li>
-              <li><button class="nav-item" data-page="locations"><i class="ph ph-map-pin"></i> Locations</button></li>
-              <li><button class="nav-item" data-page="reports"><i class="ph ph-file-text"></i> Reports</button></li>
-            </ul>
-          </div>
+    <div class="password-input-group">
 
-          <div>
-            <div class="nav-group-title">System</div>
-            <ul class="nav-list">
-              <li><button class="nav-item" data-page="security"><i class="ph ph-shield-check"></i> Security</button></li>
-              <li><button class="nav-item" data-page="settings"><i class="ph ph-gear"></i> Settings</button></li>
-            </ul>
-          </div>
-        </nav>
-      </aside>
+      <i class="ph ph-lock-key"></i>
 
-      <main class="main-panel">
-        <header class="header">
-          <div class="page-title" id="pageTitle">Overview</div>
-          <div class="header-actions">
-            <div class="status-pill"><span class="dot"></span> System Online</div>
-            <button class="icon-btn" type="button"><i class="ph ph-bell"></i></button>
-            <div class="avatar">A</div>
-          </div>
-        </header>
-
-        <section id="page-dashboard" class="page active">
-          <div class="section-header">
-            <h1>Dashboard Overview</h1>
-            <p>Monitor your platform's core metrics and quickly access management tools.</p>
-          </div>
-
-          <div class="dashboard-grid">
-            <div class="card feature-card">
-              <div class="visual">
-                <div class="visual-label">Total Registered Users</div>
-                <div class="visual-icon"><i class="ph ph-users"></i></div>
-              </div>
-              <div>
-                <h3>User Base</h3>
-                <p>You currently have <strong id="dashTotalUsers">0</strong> registered users on the platform.</p>
-              </div>
-            </div>
-
-            <div class="card feature-card">
-              <div class="visual">
-                <div class="visual-label">Currently Active</div>
-                <div class="visual-icon"><i class="ph ph-activity"></i></div>
-              </div>
-              <div>
-                <h3>Online Status</h3>
-                <p><strong id="dashOnlineUsers">0</strong> users are currently active.</p>
-              </div>
-            </div>
-
-            <div class="card feature-card">
-              <div class="visual">
-                <div class="visual-label">Database Entries</div>
-                <div class="visual-icon"><i class="ph ph-map-trifold"></i></div>
-              </div>
-              <div>
-                <h3>Map Locations</h3>
-                <p>Firebase database contains <strong id="dashLocations">0</strong> map locations.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="analytics-toolbar" style="margin-top: 24px;">
-            <div>
-              <div style="font-size: 14px; font-weight: 700;">User Analytics</div>
-              <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Monitor user growth and registration activity</div>
-            </div>
-          </div>
-
-          <div class="analytics-grid">
-            <div class="analytics-card">
-              <div class="analytics-card-header">
-                <div class="analytics-label">Total Users</div>
-                <div class="analytics-icon"><i class="ph ph-users"></i></div>
-              </div>
-              <div class="analytics-value" id="analyticsTotalUsers">0</div>
-              <div class="analytics-growth neutral"><i class="ph ph-minus"></i><span>0%</span></div>
-            </div>
-
-            <div class="analytics-card">
-              <div class="analytics-card-header">
-                <div class="analytics-label">Users Today</div>
-                <div class="analytics-icon"><i class="ph ph-user-plus"></i></div>
-              </div>
-              <div class="analytics-value" id="analyticsToday">0</div>
-              <div class="analytics-growth neutral"><i class="ph ph-minus"></i><span>0%</span></div>
-            </div>
-
-            <div class="analytics-card">
-              <div class="analytics-card-header">
-                <div class="analytics-label">This Month</div>
-                <div class="analytics-icon"><i class="ph ph-calendar"></i></div>
-              </div>
-              <div class="analytics-value" id="analyticsMonth">0</div>
-              <div class="analytics-growth neutral"><i class="ph ph-minus"></i><span>0%</span></div>
-            </div>
-
-            <div class="analytics-card">
-              <div class="analytics-card-header">
-                <div class="analytics-label">This Year</div>
-                <div class="analytics-icon"><i class="ph ph-chart-line-up"></i></div>
-              </div>
-              <div class="analytics-value" id="analyticsYear">0</div>
-              <div class="analytics-growth neutral"><i class="ph ph-minus"></i><span>0%</span></div>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-users" class="page">
-          <div class="section-header">
-            <h1>User Management</h1>
-            <p>View, edit, and delete all registered users from Firebase.</p>
-          </div>
-
-          <div class="data-panel">
-            <div class="panel-header">
-              <div class="panel-title">All Users</div>
-              <div class="row-actions">
-                <button class="btn primary" id="addUserBtn" type="button">Add User</button>
-                <div class="search-box"><i class="ph ph-magnifying-glass"></i><input id="userSearch" type="text" placeholder="Search users..." /></div>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Role</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="usersTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-locations" class="page">
-          <div class="section-header">
-            <h1>Locations</h1>
-            <p>Map markers and place data pulled from the web app and Firebase.</p>
-          </div>
-
-          <div class="data-panel">
-            <div class="panel-header">
-              <div class="panel-title">Map Locations</div>
-              <div class="row-actions">
-                <button class="btn primary" id="addLocationBtn" type="button">Add Location</button>
-                <div class="search-box"><i class="ph ph-magnifying-glass"></i><input id="locationSearch" type="text" placeholder="Search locations..." /></div>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Phone</th>
-                    <th>Address</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="locationsTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-reports" class="page">
-          <div class="section-header">
-            <h1>Reports</h1>
-            <p>Download dashboard data in multiple formats for records and auditing.</p>
-          </div>
-
-          <div class="data-panel">
-            <div class="report-actions">
-              <button class="btn primary" id="downloadTxt" type="button">Download .txt</button>
-              <button class="btn primary" id="downloadPdf" type="button">Download .pdf</button>
-              <button class="btn primary" id="downloadExcel" type="button">Download .excel</button>
-            </div>
-
-            <div class="report-metrics">
-              <div class="metric-box">
-                <div class="metric-label">Total Users</div>
-                <div class="metric-value" id="reportTotalUsers">0</div>
-              </div>
-              <div class="metric-box">
-                <div class="metric-label">Online Users</div>
-                <div class="metric-value" id="reportOnlineUsers">0</div>
-              </div>
-              <div class="metric-box">
-                <div class="metric-label">Locations</div>
-                <div class="metric-value" id="reportLocations">0</div>
-              </div>
-              <div class="metric-box">
-                <div class="metric-label">Security Events</div>
-                <div class="metric-value" id="reportSecurityEvents">0</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-security" class="page">
-          <div class="section-header">
-            <h1>Security</h1>
-            <p>Monitoring of admin actions, access events, and web app security activity.</p>
-          </div>
-
-          <div class="data-panel">
-            <div class="panel-header">
-              <div class="panel-title">Security Activity</div>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Action</th>
-                    <th>Result</th>
-                    <th>Details</th>
-                    <th>Time</th>
-                  </tr>
-                </thead>
-                <tbody id="securityTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section id="page-settings" class="page">
-          <div class="section-header">
-            <h1>Settings</h1>
-            <p>Configure dashboard preferences such as language and theme.</p>
-          </div>
-
-          <div class="settings-grid">
-            <div class="setting-card">
-              <h3>Display</h3>
-              <div class="switch-row">
-                <span>Dark Mode</span>
-                <button id="themeToggle" class="toggle on" type="button" aria-label="Toggle theme"></button>
-              </div>
-            </div>
-
-            <div class="setting-card">
-              <h3>Language</h3>
-              <div class="switch-row">
-                <label for="languageSelect">Language</label>
-                <select id="languageSelect">
-                  <option value="en">English</option>
-                  <option value="th">ไทย</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
-  </body>
-</html>
-
-  </div>
-
-
-  <!-- TODAY -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          New Today
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-user-plus"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsToday"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsTodayGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-
-  <!-- MONTH -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          This Month
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-calendar"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsMonth"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsMonthGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-
-  <!-- YEAR -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          This Year
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-chart-line-up"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsYear"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsYearGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- USER GROWTH GRAPH -->
-
-<div class="analytics-panel">
-
-  <div class="analytics-panel-header">
-
-    <div>
-
-      <div class="analytics-panel-title">
-        User Growth
-      </div>
-
-      <div
-        class="analytics-panel-subtitle"
-        id="analyticsChartSubtitle"
+      <input
+        type="password"
+        id="passwordInput"
+        placeholder="Enter password"
       >
-        New users registered each day
-      </div>
 
     </div>
 
     <button
-      class="btn"
-      onclick="updateUsersAnalytics()"
+      class="btn btn-primary"
+      id="loginBtn"
     >
-      <i class="ph ph-arrows-clockwise"></i>
-      Refresh
+      Access Dashboard
     </button>
 
-  </div>
-
-
-  <div class="chart-wrapper">
-
-    <canvas
-      id="userGrowthChart"
-      class="user-chart"
-    ></canvas>
-
-  </div>
-
-</div>
-
-
-<!-- SUMMARY -->
-
-<div class="analytics-summary">
-
-  <div class="summary-item">
-
-    <div class="summary-label">
-      Active Users
-    </div>
-
-    <div
-      class="summary-value"
-      id="analyticsActiveUsers"
-    >
-      0
-    </div>
-
-  </div>
-
-
-  <div class="summary-item">
-
-    <div class="summary-label">
-      New Users This Month
-    </div>
-
-    <div
-      class="summary-value"
-      id="analyticsNewMonth"
-    >
-      0
-    </div>
-
-  </div>
-
-
-  <div class="summary-item">
-
-    <div class="summary-label">
-      Percentage
-    </div>
-
-    <div
-      class="summary-value"
-      id="analyticsGrowthPercent"
-    >
-      0%
+    <div id="loginError">
+      Access denied. Incorrect password.
     </div>
 
   </div>
 
 </div>
-    </div>
-    <div class="password-input-group">
-      <i class="ph ph-lock-key"></i>
-      <input type="password" id="passwordInput" placeholder="Enter password" onkeypress="handleLoginKeyPress(event)">
-    </div>
-    
-    <button class="btn btn-primary" id="loginBtn" onclick="checkPassword()">Access Dashboard</button>
-    <div id="loginError">Access Denied. Incorrect Password.</div>
-  </div>
-</div>
 
-<div class="app-container" id="mainApp" style="display: none;">
-  
-  <aside class="sidebar" id="sidebar">
+
+<!-- =====================================================
+     MAIN APP
+===================================================== -->
+
+<div
+  class="app-container"
+  id="mainApp"
+  style="display:none;"
+>
+
+  <!-- SIDEBAR -->
+
+  <aside
+    class="sidebar"
+    id="sidebar"
+  >
+
     <div class="brand">
-      <div class="brand-logo">DB</div>
-      <div class="brand-text">Base</div>
-    </div>
-    
-    <nav class="sidebar-nav">
-      <div>
-        <div class="nav-group-title">Overview</div>
-        <ul class="nav-list">
-          <li>
-            <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
-              <i class="ph ph-squares-four"></i>
-              Dashboard
-            </button>
-          </li>
-        </ul>
-      </div>
-      
-      <div>
-        <div class="nav-group-title">Management</div>
-        <ul class="nav-list">
-          <li>
-            <button class="nav-item" data-page="users" onclick="navigateTo('users')">
-              <i class="ph ph-users"></i>
-              Users
-              <span class="badge" id="userCountBadge">7</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="locations" onclick="navigateTo('locations')">
-              <i class="ph ph-map-pin"></i>
-              Locations
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="reports" onclick="navigateTo('reports')">
-              <i class="ph ph-file-text"></i>
-              Reports
-            </button>
-          </li>
-        </ul>
+
+      <div class="brand-logo">
+        SM
       </div>
 
-      <div>
-        <div class="nav-group-title">System</div>
-        <ul class="nav-list">
-          <li>
-            <button class="nav-item" data-page="security" onclick="navigateTo('security')">
-              <i class="ph ph-shield-check"></i>
-              Security
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
-              <i class="ph ph-gear"></i>
-              Settings
-            </button>
-          </li>
-        </ul>
+      <div class="brand-text">
+        SmartMap
       </div>
+
+    </div>
+
+
+    <nav class="sidebar-nav">
+
+      <!-- OVERVIEW -->
+
+      <div>
+
+        <div class="nav-group-title">
+          Overview
+        </div>
+
+        <ul class="nav-list">
+
+          <li>
+
+            <button
+              class="nav-item active"
+              data-page="dashboard"
+            >
+
+              <i class="ph ph-squares-four"></i>
+
+              Dashboard
+
+            </button>
+
+          </li>
+
+        </ul>
+
+      </div>
+
+
+      <!-- MANAGEMENT -->
+
+      <div>
+
+        <div class="nav-group-title">
+          Management
+        </div>
+
+        <ul class="nav-list">
+
+          <li>
+
+            <button
+              class="nav-item"
+              data-page="users"
+            >
+
+              <i class="ph ph-users"></i>
+
+              Users
+
+              <span
+                class="badge"
+                id="userCountBadge"
+              >
+                0
+              </span>
+
+            </button>
+
+          </li>
+
+
+          <li>
+
+            <button
+              class="nav-item"
+              data-page="locations"
+            >
+
+              <i class="ph ph-map-pin"></i>
+
+              Locations
+
+              <span
+                class="badge"
+                id="locationCountBadge"
+              >
+                0
+              </span>
+
+            </button>
+
+          </li>
+
+
+          <li>
+
+            <button
+              class="nav-item"
+              data-page="reports"
+            >
+
+              <i class="ph ph-file-text"></i>
+
+              Reports
+
+              <span
+                class="badge"
+                id="reportCountBadge"
+              >
+                0
+              </span>
+
+            </button>
+
+          </li>
+
+        </ul>
+
+      </div>
+
+
+      <!-- SYSTEM -->
+
+      <div>
+
+        <div class="nav-group-title">
+          System
+        </div>
+
+        <ul class="nav-list">
+
+          <li>
+
+            <button
+              class="nav-item"
+              data-page="security"
+            >
+
+              <i class="ph ph-shield-check"></i>
+
+              Security
+
+            </button>
+
+          </li>
+
+
+          <li>
+
+            <button
+              class="nav-item"
+              data-page="settings"
+            >
+
+              <i class="ph ph-gear"></i>
+
+              Settings
+
+            </button>
+
+          </li>
+
+        </ul>
+
+      </div>
+
     </nav>
+
   </aside>
-  
-  <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+
+  <div
+    class="sidebar-overlay"
+    id="overlay"
+  ></div>
+
+
+  <!-- ===================================================
+       MAIN
+  ==================================================== -->
 
   <main class="main-content">
-    
+
+
+    <!-- HEADER -->
+
     <header class="header">
+
       <div class="header-left">
-        <button class="menu-toggle" onclick="toggleSidebar()">
-          <i class="ph ph-list"></i>
-        </button>
-        <div class="page-title" id="pageTitle">Overview</div>
-      </div>
-      
-      <div class="header-right">
-        <div class="status-indicator">
-          <span class="dot"></span> System Online
-        </div>
-        <button class="icon-btn" onclick="alert('Notifications')">
-          <i class="ph ph-bell"></i>
-        </button>
-        <div class="user-profile">
-          <div class="avatar">A</div>
-        </div>
-      </div>
-    </header>
-
-    <div id="page-dashboard" class="page-container active">
-      
-      <div class="section-header">
-        <h1>Dashboard Overview</h1>
-        <p>Monitor your platform's core metrics and quickly access management tools. The system is operating normally.</p>
-      </div>
-
-      <!-- Glowing Tabs resembling the "Industries" section in the image -->
-      <div class="tabs-container">
-        <button class="tab active">
-          <div class="tab-icon-wrap"><i class="ph ph-chart-line-up"></i></div>
-          <span>Metrics</span>
-        </button>
-        <button class="tab" onclick="navigateTo('users')">
-          <div class="tab-icon-wrap"><i class="ph ph-users"></i></div>
-          <span>Users</span>
-        </button>
-        <button class="tab" onclick="navigateTo('locations')">
-          <div class="tab-icon-wrap"><i class="ph ph-map-pin"></i></div>
-          <span>Places</span>
-        </button>
-        <button class="tab" onclick="navigateTo('security')">
-          <div class="tab-icon-wrap"><i class="ph ph-shield"></i></div>
-          <span>Security</span>
-        </button>
-      </div>
-
-      <!-- Features Grid resembling the bottom cards in the image -->
-      <div class="feature-grid">
-        
-        <div class="feature-card">
-          <div class="card-visual">
-            <div class="visual-icon"><i class="ph ph-users"></i></div>
-            <div class="visual-text">Total Registered Users</div>
-          </div>
-          <h3>User Base</h3>
-          <p>You currently have <strong style="color:var(--text-main)" id="dashTotalUsers">7</strong> registered users on the platform. Monitoring engagement and activity levels.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="card-visual">
-            <div class="visual-icon" style="color: var(--success);"><i class="ph ph-activity"></i></div>
-            <div class="visual-text">Currently Active</div>
-          </div>
-          <h3>Online Status</h3>
-          <p><strong style="color:var(--success)" id="dashOnlineUsers">4</strong> users are currently active. System latency is low and request handling is optimal.</p>
-        </div>
-
-        <div class="feature-card">
-          <div class="card-visual">
-            <div class="visual-icon"><i class="ph ph-map-trifold"></i></div>
-            <div class="visual-text">Database Entries</div>
-          </div>
-          <h3>Map Locations</h3>
-          <p>Database connected. Ready to serve location data to client applications upon request.</p>
-        </div>
-
-      </div>
-    </div>
-
-    <div id="page-users" class="page-container">
-      <div class="section-header" style="text-align: left;">
-        <h1>User Management</h1>
-        <p>View and manage all registered users on the Base platform.</p>
-      </div>
-
-      <div class="data-panel">
-        <div class="panel-header">
-          <div class="panel-title">All Users</div>
-          <div class="search-box">
-            <i class="ph ph-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="Search users...">
-          </div>
-        </div>
-        
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>User Details</th>
-                <th>Status</th>
-                <th>Role</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody">
-              <!-- Users populated by JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="page-locations" class="page-container">
-      <div class="section-header" style="text-align: left;">
-        <h1>Locations</h1>
-        <p>Manage map markers and points of interest.</p>
-      </div>
-      <div class="data-panel">
-         <div class="empty-state">
-            <i class="ph ph-map-pin-line"></i>
-            <h3>No Locations Loaded</h3>
-            <p>Connect your database to display locations.</p>
-            <button class="btn btn-primary" style="margin-top: 16px;">Add Location</button>
-         </div>
-      </div>
-    </div>
-
-    <div id="page-reports" class="page-container">
-      <div class="section-header" style="text-align: left;">
-        <h1>Reports</h1>
-        <p>User generated reports and feedback.</p>
-      </div>
-      <!-- =========================================================
-     USERS ANALYTICS
-========================================================= -->
-
-<div class="analytics-toolbar">
-
-  <div>
-    <div style="font-size:14px;font-weight:600;">
-      User Analytics
-    </div>
-
-    <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
-      Monitor user growth and registration activity
-    </div>
-  </div>
-
-  <div class="analytics-period">
-
-    <button
-      class="active"
-      data-period="day"
-      onclick="changeAnalyticsPeriod('day', this)"
-    >
-      Day
-    </button>
-
-    <button
-      data-period="month"
-      onclick="changeAnalyticsPeriod('month', this)"
-    >
-      Month
-    </button>
-
-    <button
-      data-period="year"
-      onclick="changeAnalyticsPeriod('year', this)"
-    >
-      Year
-    </button>
-
-  </div>
-
-</div>
-
-
-<!-- STAT CARDS -->
-
-<div class="analytics-grid">
-
-  <!-- TOTAL -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          Total Users
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-users"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsTotalUsers"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsTotalGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-
-  <!-- TODAY -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          New Today
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-user-plus"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsToday"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsTodayGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-
-  <!-- MONTH -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          This Month
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-calendar"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsMonth"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsMonthGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-
-  <!-- YEAR -->
-
-  <div class="analytics-card">
-
-    <div class="analytics-card-header">
-
-      <div>
-        <div class="analytics-label">
-          This Year
-        </div>
-      </div>
-
-      <div class="analytics-icon">
-        <i class="ph ph-chart-line-up"></i>
-      </div>
-
-    </div>
-
-    <div
-      class="analytics-value"
-      id="analyticsYear"
-    >
-      0
-    </div>
-
-    <div
-      class="analytics-growth neutral"
-      id="analyticsYearGrowth"
-    >
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- USER GROWTH GRAPH -->
-
-<div class="analytics-panel">
-
-  <div class="analytics-panel-header">
-
-    <div>
-
-      <div class="analytics-panel-title">
-        User Growth
-      </div>
-
-      <div
-        class="analytics-panel-subtitle"
-        id="analyticsChartSubtitle"
-      >
-        New users registered each day
-      </div>
-
-    </div>
-
-    <button
-      class="btn"
-      onclick="updateUsersAnalytics()"
-    >
-      <i class="ph ph-arrows-clockwise"></i>
-      Refresh
-    </button>
-
-  </div>
-
-
-  <div class="chart-wrapper">
-
-    <canvas
-      id="userGrowthChart"
-      class="user-chart"
-    ></canvas>
-
-  </div>
-
-</div>
-
-
-<!-- SUMMARY -->
-
-<div class="analytics-summary">
-
-  <div class="summary-item">
-
-    <div class="summary-label">
-      Active Users
-    </div>
-
-    <div
-      class="summary-value"
-      id="analyticsActiveUsers"
-    >
-      0
-    </div>
-
-  </div>
-
-
-  <div class="summary-item">
-
-    <div class="summary-label">
-      New Users This Month
-    </div>
-
-    <div
-      class="summary-value"
-      id="analyticsNewMonth"
-    >
-      0
-    </div>
-
-  </div>
-
-
-  <div class="summary-item">
-
-    <div class="summary-label">
-      Percentage
-    </div>
-
-    <div
-      class="summary-value"
-      id="analyticsGrowthPercent"
-    >
-      0%
-    </div>
-
-  </div>
-
-</div>
-       <div class="data-panel">
-         <div class="empty-state">
-            <i class="ph ph-file-text"></i>
-            <h3>No Reports</h3>
-            <p>All clear. No pending reports to review.</p>
-         </div>
-      </div>
-    </div>
-
-    <div id="page-security" class="page-container">
-      <div class="section-header" style="text-align: left;">
-        <h1>Security Logs</h1>
-        <p>System access and security events.</p>
-      </div>
-       <div class="data-panel">
-         <div class="empty-state">
-            <i class="ph ph-shield-check"></i>
-            <h3>System Secure</h3>
-            <p>No anomalous activity detected recently.</p>
-         </div>
-      </div>
-    </div>
-
-    <div id="page-settings" class="page-container">
-      <div class="section-header" style="text-align: left;">
-        <h1>Settings</h1>
-        <p>Platform configuration and preferences.</p>
-      </div>
-       <div class="data-panel" style="padding: 24px;">
-         <p style="color: var(--text-muted)">Configuration options will be available here.</p>
-      </div>
-    </div>
-
-  </main>
-</div>
-
-<script>
-/* =========================================================
-   SMARTMAP ADMIN DASHBOARD
-   Real Firebase data through Backend API
-========================================================= */
-
-let allUsers = [];
-let allLocations = [];
-let allReports = [];
-let allSecurityLogs = [];
-
-
-/* =========================================================
-   LOGIN
-========================================================= */
-/* =========================================================
-   USERS ANALYTICS
-========================================================= */
-
-let userGrowthChart = null;
-
-let currentAnalyticsPeriod = "day";
-
-
-function getUserDate(user) {
-
-  if (!user.createdAt) {
-    return null;
-  }
-
-  try {
-
-    // Firebase Timestamp
-    if (user.createdAt.seconds) {
-      return new Date(user.createdAt.seconds * 1000);
-    }
-
-    // ISO string / normal date
-    return new Date(user.createdAt);
-
-  } catch (error) {
-
-    return null;
-
-  }
-
-}
-
-
-function sameDay(date1, date2) {
-
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  );
-
-}
-
-
-function sameMonth(date1, date2) {
-
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth()
-  );
-
-}
-
-
-function sameYear(date1, date2) {
-
-  return date1.getFullYear() === date2.getFullYear();
-
-}
-
-
-function calculateGrowth(current, previous) {
-
-  if (previous === 0) {
-
-    if (current === 0) {
-      return 0;
-    }
-
-    return 100;
-
-  }
-
-  return ((current - previous) / previous) * 100;
-
-}
-
-
-function formatGrowth(value) {
-
-  const rounded = Math.abs(value).toFixed(1);
-
-  if (value > 0) {
-    return `+${rounded}%`;
-  }
-
-  if (value < 0) {
-    return `-${rounded}%`;
-  }
-
-  return "0%";
-
-}
-
-
-function setGrowth(elementId, value) {
-
-  const element = document.getElementById(elementId);
-
-  if (!element) return;
-
-  element.classList.remove(
-    "up",
-    "down",
-    "neutral"
-  );
-
-  if (value > 0) {
-
-    element.classList.add("up");
-
-    element.innerHTML = `
-      <i class="ph ph-trend-up"></i>
-      <span>${formatGrowth(value)}</span>
-    `;
-
-  } else if (value < 0) {
-
-    element.classList.add("down");
-
-    element.innerHTML = `
-      <i class="ph ph-trend-down"></i>
-      <span>${formatGrowth(value)}</span>
-    `;
-
-  } else {
-
-    element.classList.add("neutral");
-
-    element.innerHTML = `
-      <i class="ph ph-minus"></i>
-      <span>0%</span>
-    `;
-
-  }
-
-}
-
-
-function updateUsersAnalytics() {
-
-  /*
-   * IMPORTANT:
-   *
-   * This function expects the users array
-   * to contain createdAt.
-   *
-   * Example:
-   *
-   * {
-   *   username: "Ramit",
-   *   createdAt: Firebase Timestamp
-   * }
-   */
-
-  const users = Array.isArray(allUsers) && allUsers.length
-    ? allUsers
-    : (
-        Array.isArray(window.firebaseUsers)
-          ? window.firebaseUsers
-          : (
-              typeof mockUsers !== "undefined"
-                ? mockUsers
-                : []
-            )
-      );
-
-  window.firebaseUsers = users;
-
-  const now = new Date();
-
-  const totalUsers = users.length;
-
-
-  // ---------------------------------------------
-  // TODAY
-  // ---------------------------------------------
-
-  const todayUsers = users.filter(user => {
-
-    const date = getUserDate(user);
-
-    return date && sameDay(date, now);
-
-  });
-
-
-  // ---------------------------------------------
-  // YESTERDAY
-  // ---------------------------------------------
-
-  const yesterday = new Date();
-
-  yesterday.setDate(
-    yesterday.getDate() - 1
-  );
-
-
-  const yesterdayUsers = users.filter(user => {
-
-    const date = getUserDate(user);
-
-    return date && sameDay(date, yesterday);
-
-  });
-
-
-  // ---------------------------------------------
-  // THIS MONTH
-  // ---------------------------------------------
-
-  const monthUsers = users.filter(user => {
-
-    const date = getUserDate(user);
-
-    return date && sameMonth(date, now);
-
-  });
-
-
-  // ---------------------------------------------
-  // LAST MONTH
-  // ---------------------------------------------
-
-  const lastMonth = new Date();
-
-  lastMonth.setMonth(
-    lastMonth.getMonth() - 1
-  );
-
-
-  const lastMonthUsers = users.filter(user => {
-
-    const date = getUserDate(user);
-
-    return date && sameMonth(date, lastMonth);
-
-  });
-
-
-  // ---------------------------------------------
-  // THIS YEAR
-  // ---------------------------------------------
-
-  const yearUsers = users.filter(user => {
-
-    const date = getUserDate(user);
-
-    return date && sameYear(date, now);
-
-  });
-
-
-  // ---------------------------------------------
-  // LAST YEAR
-  // ---------------------------------------------
-
-  const lastYear = new Date();
-
-  lastYear.setFullYear(
-    lastYear.getFullYear() - 1
-  );
-
-
-  const lastYearUsers = users.filter(user => {
-
-    const date = getUserDate(user);
-
-    return date && sameYear(date, lastYear);
-
-  });
-
-
-  // ---------------------------------------------
-  // UPDATE NUMBERS
-  // ---------------------------------------------
-
-  document.getElementById(
-    "analyticsTotalUsers"
-  ).textContent = totalUsers.toLocaleString();
-
-
-  document.getElementById(
-    "analyticsToday"
-  ).textContent = todayUsers.length.toLocaleString();
-
-
-  document.getElementById(
-    "analyticsMonth"
-  ).textContent = monthUsers.length.toLocaleString();
-
-
-  document.getElementById(
-    "analyticsYear"
-  ).textContent = yearUsers.length.toLocaleString();
-
-
-  // ---------------------------------------------
-  // GROWTH
-  // ---------------------------------------------
-
-  const todayGrowth =
-    calculateGrowth(
-      todayUsers.length,
-      yesterdayUsers.length
-    );
-
-
-  const monthGrowth =
-    calculateGrowth(
-      monthUsers.length,
-      lastMonthUsers.length
-    );
-
-
-  const yearGrowth =
-    calculateGrowth(
-      yearUsers.length,
-      lastYearUsers.length
-    );
-
-
-  setGrowth(
-    "analyticsTodayGrowth",
-    todayGrowth
-  );
-
-
-  setGrowth(
-    "analyticsMonthGrowth",
-    monthGrowth
-  );
-
-
-  setGrowth(
-    "analyticsTotalGrowth",
-    monthGrowth
-  );
-
-
-  // ---------------------------------------------
-  // SUMMARY
-  // ---------------------------------------------
-
-  const activeUsers = users.filter(
-    user => user.status === "online"
-  );
-
-
-  document.getElementById(
-    "analyticsActiveUsers"
-  ).textContent =
-    activeUsers.length.toLocaleString();
-
-
-  document.getElementById(
-    "analyticsNewMonth"
-  ).textContent =
-    monthUsers.length.toLocaleString();
-
-
-  document.getElementById(
-    "analyticsGrowthPercent"
-  ).textContent =
-    formatGrowth(monthGrowth);
-
-
-  // ---------------------------------------------
-  // CHART
-  // ---------------------------------------------
-
-  renderUserGrowthChart(users);
-
-}
-
-
-function renderUserGrowthChart(users) {
-
-  const canvas =
-    document.getElementById(
-      "userGrowthChart"
-    );
-
-  if (!canvas) return;
-
-  if (typeof Chart === "undefined") {
-    console.warn("Chart.js is not loaded; skipping chart render.");
-    return;
-  }
-
-  const now = new Date();
-
-  const labels = [];
-
-  const values = [];
-
-
-  if (currentAnalyticsPeriod === "day") {
-
-    /*
-     * Last 30 days
-     */
-
-    for (let i = 29; i >= 0; i--) {
-
-      const date = new Date();
-
-      date.setDate(
-        now.getDate() - i
-      );
-
-      labels.push(
-        `${date.getDate()}/${date.getMonth() + 1}`
-      );
-
-
-      const count = users.filter(user => {
-
-        const userDate =
-          getUserDate(user);
-
-        return (
-          userDate &&
-          sameDay(userDate, date)
-        );
-
-      }).length;
-
-
-      values.push(count);
-
-    }
-
-  }
-
-
-  else if (currentAnalyticsPeriod === "month") {
-
-    /*
-     * Last 12 months
-     */
-
-    for (let i = 11; i >= 0; i--) {
-
-      const date = new Date();
-
-      date.setMonth(
-        now.getMonth() - i
-      );
-
-      const month =
-        date.toLocaleString(
-          "en-US",
-          { month: "short" }
-        );
-
-      labels.push(month);
-
-
-      const count = users.filter(user => {
-
-        const userDate =
-          getUserDate(user);
-
-        return (
-          userDate &&
-          sameMonth(userDate, date)
-        );
-
-      }).length;
-
-
-      values.push(count);
-
-    }
-
-  }
-
-
-  else if (currentAnalyticsPeriod === "year") {
-
-    /*
-     * Last 5 years
-     */
-
-    for (let i = 4; i >= 0; i--) {
-
-      const year =
-        now.getFullYear() - i;
-
-      labels.push(String(year));
-
-
-      const count = users.filter(user => {
-
-        const userDate =
-          getUserDate(user);
-
-        return (
-          userDate &&
-          userDate.getFullYear() === year
-        );
-
-      }).length;
-
-
-      values.push(count);
-
-    }
-
-  }
-
-
-  if (userGrowthChart) {
-
-    userGrowthChart.destroy();
-
-  }
-
-
-  userGrowthChart =
-    new Chart(canvas, {
-
-      type: "line",
-
-      data: {
-
-        labels,
-
-        datasets: [
-
-          {
-
-            label: "New Users",
-
-            data: values,
-
-            tension: 0.35,
-
-            fill: true,
-
-            borderWidth: 2,
-
-            pointRadius: 3,
-
-            pointHoverRadius: 5
-
-          }
-
-        ]
-
-      },
-
-      options: {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        plugins: {
-
-          legend: {
-            display: false
-          }
-
-        },
-
-        scales: {
-
-          x: {
-
-            grid: {
-              display: false
-            },
-
-            ticks: {
-              color: "#888"
-            }
-
-          },
-
-          y: {
-
-            beginAtZero: true,
-
-            ticks: {
-              precision: 0,
-              color: "#888"
-            }
-
-          }
-
-        }
-
-      }
-
-    });
-
-}
-
-
-function changeAnalyticsPeriod(
-  period,
-  button
-) {
-
-  currentAnalyticsPeriod = period;
-
-
-  document
-    .querySelectorAll(
-      ".analytics-period button"
-    )
-    .forEach(btn => {
-
-      btn.classList.remove(
-        "active"
-      );
-
-    });
-
-
-  button.classList.add(
-    "active"
-  );
-
-
-  const subtitle =
-    document.getElementById(
-      "analyticsChartSubtitle"
-    );
-
-
-  if (period === "day") {
-
-    subtitle.textContent =
-      "New users registered each day";
-
-  }
-
-  else if (period === "month") {
-
-    subtitle.textContent =
-      "New users registered each month";
-
-  }
-
-  else {
-
-    subtitle.textContent =
-      "New users registered each year";
-
-  }
-
-
-  updateUsersAnalytics();
-
-}
-function checkPassword() {
-  const input = document.getElementById('passwordInput').value;
-  const errorMsg = document.getElementById('loginError');
-
-  if (input === 'ictmit') {
-
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'flex';
-
-    // Load real data from backend
-    loadDashboardData();
-
-  } else {
-
-    errorMsg.style.display = 'block';
-
-    const pInput = document.getElementById('passwordInput');
-
-    pInput.style.borderColor = 'var(--danger)';
-
-    setTimeout(() => {
-      pInput.style.borderColor = 'var(--border-color)';
-      errorMsg.style.display = 'none';
-    }, 3000);
-  }
-}
-
-
-function handleLoginKeyPress(event) {
-  if (event.key === 'Enter') {
-    checkPassword();
-  }
-}
-
-
-/* =========================================================
-   API HELPER
-========================================================= */
-
-async function apiFetch(url, options = {}) {
-
-  try {
-
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `API Error ${response.status}: ${response.statusText}`
-      );
-    }
-
-    return await response.json();
-
-  } catch (error) {
-
-    console.error(`API request failed: ${url}`, error);
-
-    throw error;
-  }
-}
-
-
-/* =========================================================
-   LOAD DASHBOARD DATA
-========================================================= */
-
-async function loadDashboardData() {
-
-  console.log('Loading SmartMap database...');
-
-  try {
-
-    await Promise.all([
-      loadUsers(),
-      loadLocations(),
-      loadReports(),
-      loadSecurityLogs()
-    ]);
-
-    updateDashboard();
-
-    console.log('SmartMap database loaded successfully.');
-
-  } catch (error) {
-
-    console.error('Failed to load dashboard:', error);
-
-  }
-}
-
-
-/* =========================================================
-   USERS
-========================================================= */
-
-async function loadUsers() {
-
-  try {
-
-    const data = await apiFetch('/api/users');
-
-    /*
-      Backend may return:
-
-      [
-        {...},
-        {...}
-      ]
-
-      OR
-
-      {
-        users: [...]
-      }
-    */
-
-    if (Array.isArray(data)) {
-      allUsers = data;
-    } else if (Array.isArray(data.users)) {
-      allUsers = data.users;
-    } else if (Array.isArray(data.data)) {
-      allUsers = data.data;
-    } else {
-      allUsers = [];
-    }
-
-    console.log('Users loaded:', allUsers.length);
-
-    window.firebaseUsers = allUsers;
-    renderUsers(allUsers);
-    updateUsersAnalytics();
-
-  } catch (error) {
-
-    allUsers = [];
-
-    renderUsers([]);
-
-    console.error('Could not load users:', error);
-  }
-}
-
-
-/* =========================================================
-   LOCATIONS
-========================================================= */
-
-async function loadLocations() {
-
-  try {
-
-    /*
-      Backend endpoint for locations.
-
-      If your backend route is different,
-      change this URL only.
-    */
-
-    const data = await apiFetch('/api/admin/locations');
-
-    if (Array.isArray(data)) {
-      allLocations = data;
-    } else if (Array.isArray(data.locations)) {
-      allLocations = data.locations;
-    } else if (Array.isArray(data.data)) {
-      allLocations = data.data;
-    } else {
-      allLocations = [];
-    }
-
-    console.log('Locations loaded:', allLocations.length);
-
-    renderLocations(allLocations);
-
-  } catch (error) {
-
-    console.warn('Locations API is not available yet.');
-
-    allLocations = [];
-
-    renderLocations([]);
-
-  }
-}
-
-
-/* =========================================================
-   REPORTS
-========================================================= */
-
-async function loadReports() {
-
-  try {
-
-    const data = await apiFetch('/api/admin/reports');
-
-    if (Array.isArray(data)) {
-      allReports = data;
-    } else if (Array.isArray(data.reports)) {
-      allReports = data.reports;
-    } else if (Array.isArray(data.data)) {
-      allReports = data.data;
-    } else {
-      allReports = [];
-    }
-
-    console.log('Reports loaded:', allReports.length);
-
-    renderReports(allReports);
-
-  } catch (error) {
-
-    console.warn('Reports API is not available yet.');
-
-    allReports = [];
-
-    renderReports([]);
-
-  }
-}
-
-
-/* =========================================================
-   SECURITY LOGS
-========================================================= */
-
-async function loadSecurityLogs() {
-
-  try {
-
-    const data = await apiFetch('/api/admin/security');
-
-    if (Array.isArray(data)) {
-      allSecurityLogs = data;
-    } else if (Array.isArray(data.logs)) {
-      allSecurityLogs = data.logs;
-    } else if (Array.isArray(data.data)) {
-      allSecurityLogs = data.data;
-    } else {
-      allSecurityLogs = [];
-    }
-
-    console.log(
-      'Security logs loaded:',
-      allSecurityLogs.length
-    );
-
-    renderSecurityLogs(allSecurityLogs);
-
-  } catch (error) {
-
-    console.warn('Security API is not available yet.');
-
-    allSecurityLogs = [];
-
-    renderSecurityLogs([]);
-
-  }
-}
-
-
-/* =========================================================
-   DASHBOARD STATISTICS
-========================================================= */
-
-function updateDashboard() {
-
-  const totalUsers = allUsers.length;
-
-  const onlineUsers = allUsers.filter(user => {
-
-    const status =
-      String(
-        user.status ||
-        user.onlineStatus ||
-        ''
-      ).toLowerCase();
-
-    return (
-      status === 'online' ||
-      status === 'active'
-    );
-
-  }).length;
-
-
-  /* Total Users */
-
-  const totalEl =
-    document.getElementById('dashTotalUsers');
-
-  if (totalEl) {
-    totalEl.innerText = totalUsers;
-  }
-
-
-  /* Online Users */
-
-  const onlineEl =
-    document.getElementById('dashOnlineUsers');
-
-  if (onlineEl) {
-    onlineEl.innerText = onlineUsers;
-  }
-
-
-  /* User Badge */
-
-  const badgeEl =
-    document.getElementById('userCountBadge');
-
-  if (badgeEl) {
-    badgeEl.innerText = totalUsers;
-  }
-
-
-  /* Update location card */
-
-  const locationCards =
-    document.querySelectorAll('.feature-card');
-
-  if (locationCards.length >= 3) {
-
-    const locationText =
-      locationCards[2].querySelector('p');
-
-    if (locationText) {
-
-      locationText.innerHTML = `
-        Firebase database contains
-        <strong style="color:var(--text-main)">
-          ${allLocations.length}
-        </strong>
-        map locations.
-        Data is connected to the SmartMap backend.
-      `;
-    }
-  }
-}
-
-
-/* =========================================================
-   RENDER USERS
-========================================================= */
-
-function renderUsers(usersToRender) {
-
-  const tbody =
-    document.getElementById('usersTableBody');
-
-  if (!tbody) return;
-
-  tbody.innerHTML = '';
-
-
-  if (!usersToRender.length) {
-
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4">
-          <div class="empty-state">
-            <i class="ph ph-users"></i>
-            <h3>No Users Found</h3>
-            <p>
-              No user data was returned from Firebase.
-            </p>
-          </div>
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
-
-
-  usersToRender.forEach((user, index) => {
-
-    const username =
-      user.username ||
-      user.name ||
-      user.displayName ||
-      user.email ||
-      `User ${index + 1}`;
-
-    const id =
-      user.id ||
-      user.uid ||
-      user.userId ||
-      'N/A';
-
-    const email =
-      user.email ||
-      '';
-
-    const status =
-      String(
-        user.status ||
-        user.onlineStatus ||
-        'offline'
-      ).toLowerCase();
-
-    const role =
-      user.role ||
-      'user';
-
-    const isOnline =
-      status === 'online' ||
-      status === 'active';
-
-    const initial =
-      username
-        .charAt(0)
-        .toUpperCase();
-
-
-    const tr =
-      document.createElement('tr');
-
-
-    tr.innerHTML = `
-
-      <td>
-
-        <div class="user-cell">
-
-          <div
-            class="avatar"
-            style="
-              width:36px;
-              height:36px;
-              background:var(--bg-base);
-              border-color:
-                ${isOnline
-                  ? 'var(--success)'
-                  : 'var(--border-color)'};
-            "
-          >
-            ${escapeHtml(initial)}
-          </div>
-
-          <div>
-
-            <div class="user-name">
-              ${escapeHtml(username)}
-            </div>
-
-            <div class="user-id">
-              ${escapeHtml(id)}
-            </div>
-
-            ${
-              email
-                ? `
-                <div
-                  style="
-                    font-size:11px;
-                    color:var(--text-muted);
-                    margin-top:2px;
-                  "
-                >
-                  ${escapeHtml(email)}
-                </div>
-                `
-                : ''
-            }
-
-          </div>
-
-        </div>
-
-      </td>
-
-
-      <td>
-
-        <div
-          class="status-badge
-            ${isOnline ? 'online' : 'offline'}"
-        >
-
-          <i class="ph ph-circle-fill"></i>
-
-          ${isOnline ? 'online' : 'offline'}
-
-        </div>
-
-      </td>
-
-
-      <td>
-
-        <span
-          style="
-            text-transform:capitalize;
-            color:
-              ${role === 'admin'
-                ? 'var(--primary)'
-                : 'var(--text-muted)'};
-          "
-        >
-          ${escapeHtml(role)}
-        </span>
-
-      </td>
-
-
-      <td>
 
         <button
-          class="btn"
-          onclick="viewUser('${escapeHtml(String(id))}')"
+          class="menu-toggle"
+          id="menuToggle"
         >
-          Manage
+
+          <i class="ph ph-list"></i>
+
         </button>
 
-      </td>
+        <div
+          class="page-title"
+          id="pageTitle"
+        >
+          Overview
+        </div>
 
-    `;
-
-    tbody.appendChild(tr);
-
-  });
-}
-
-
-/* =========================================================
-   USER SEARCH
-========================================================= */
-
-document
-  .getElementById('searchInput')
-  ?.addEventListener('input', function(event) {
-
-    const term =
-      event.target.value
-        .toLowerCase()
-        .trim();
+      </div>
 
 
-    if (!term) {
+      <div class="header-right">
 
-      renderUsers(allUsers);
+        <div class="status-indicator">
 
-      return;
-    }
+          <span class="dot"></span>
 
+          System Online
 
-    const filtered =
-      allUsers.filter(user => {
-
-        const username =
-          String(
-            user.username ||
-            user.name ||
-            user.displayName ||
-            user.email ||
-            ''
-          ).toLowerCase();
-
-        const id =
-          String(
-            user.id ||
-            user.uid ||
-            user.userId ||
-            ''
-          ).toLowerCase();
-
-        const email =
-          String(
-            user.email || ''
-          ).toLowerCase();
+        </div>
 
 
-        return (
-          username.includes(term) ||
-          id.includes(term) ||
-          email.includes(term)
-        );
+        <button
+          class="icon-btn"
+          id="refreshBtn"
+          title="Refresh data"
+        >
 
-      });
+          <i class="ph ph-arrows-clockwise"></i>
 
-
-    renderUsers(filtered);
-
-  });
+        </button>
 
 
-/* =========================================================
-   VIEW USER
-========================================================= */
+        <button
+          class="icon-btn"
+          id="logoutBtn"
+          title="Logout"
+        >
 
-function viewUser(userId) {
+          <i class="ph ph-sign-out"></i>
 
-  const user =
-    allUsers.find(u =>
-      String(
-        u.id ||
-        u.uid ||
-        u.userId ||
-        ''
-      ) === String(userId)
-    );
+        </button>
 
 
-  if (!user) {
+        <div class="user-profile">
 
-    alert('User not found.');
+          <div class="avatar">
+            A
+          </div>
 
-    return;
-  }
+        </div>
 
+      </div>
 
-  alert(
-    `User Information\n\n` +
-    `ID: ${
-      user.id ||
-      user.uid ||
-      user.userId ||
-      'N/A'
-    }\n` +
-    `Name: ${
-      user.username ||
-      user.name ||
-      user.displayName ||
-      'N/A'
-    }\n` +
-    `Email: ${
-      user.email ||
-      'N/A'
-    }\n` +
-    `Role: ${
-      user.role ||
-      'user'
-    }`
-  );
-}
+    </header>
 
 
-/* =========================================================
-   LOCATIONS RENDER
-========================================================= */
+    <!-- =================================================
+         DASHBOARD
+    ================================================== -->
 
-function renderLocations(locations) {
+    <section
+      id="page-dashboard"
+      class="page-container active"
+    >
 
-  const page =
-    document.getElementById('page-locations');
+      <div class="section-header">
 
-  if (!page) return;
-
-
-  const panel =
-    page.querySelector('.data-panel');
-
-  if (!panel) return;
-
-
-  if (!locations.length) {
-
-    panel.innerHTML = `
-      <div class="empty-state">
-
-        <i class="ph ph-map-pin-line"></i>
-
-        <h3>No Locations Loaded</h3>
+        <h1>
+          Dashboard Overview
+        </h1>
 
         <p>
-          No location data was returned from the backend.
+          Monitor SmartMap users, locations,
+          reports and system security.
         </p>
 
       </div>
-    `;
-
-    return;
-  }
 
 
-  panel.innerHTML = `
+      <div class="feature-grid">
 
-    <div class="panel-header">
 
-      <div class="panel-title">
-        Map Locations
+        <!-- USERS -->
+
+        <div class="feature-card">
+
+          <div class="card-visual">
+
+            <div class="visual-icon">
+
+              <i class="ph ph-users"></i>
+
+            </div>
+
+            <div class="visual-text">
+              Total Users
+            </div>
+
+          </div>
+
+          <h3>
+            User Base
+          </h3>
+
+          <p>
+
+            There are
+
+            <strong id="dashTotalUsers">
+              0
+            </strong>
+
+            registered users.
+
+          </p>
+
+        </div>
+
+
+        <!-- ONLINE -->
+
+        <div class="feature-card">
+
+          <div class="card-visual">
+
+            <div class="visual-icon success-icon">
+
+              <i class="ph ph-activity"></i>
+
+            </div>
+
+            <div class="visual-text">
+              Active Users
+            </div>
+
+          </div>
+
+          <h3>
+            Online Status
+          </h3>
+
+          <p>
+
+            <strong
+              id="dashOnlineUsers"
+              class="success-text"
+            >
+              0
+            </strong>
+
+            users are currently active.
+
+          </p>
+
+        </div>
+
+
+        <!-- LOCATIONS -->
+
+        <div class="feature-card">
+
+          <div class="card-visual">
+
+            <div class="visual-icon">
+
+              <i class="ph ph-map-pin"></i>
+
+            </div>
+
+            <div class="visual-text">
+              Map Locations
+            </div>
+
+          </div>
+
+          <h3>
+            Locations
+          </h3>
+
+          <p>
+
+            <strong id="dashTotalLocations">
+              0
+            </strong>
+
+            locations are stored in the database.
+
+          </p>
+
+        </div>
+
+
+        <!-- REPORTS -->
+
+        <div class="feature-card">
+
+          <div class="card-visual">
+
+            <div class="visual-icon">
+
+              <i class="ph ph-file-text"></i>
+
+            </div>
+
+            <div class="visual-text">
+              Reports
+            </div>
+
+          </div>
+
+          <h3>
+            User Reports
+          </h3>
+
+          <p>
+
+            <strong id="dashTotalReports">
+              0
+            </strong>
+
+            reports are available.
+
+          </p>
+
+        </div>
+
+
+        <!-- PENDING -->
+
+        <div class="feature-card">
+
+          <div class="card-visual">
+
+            <div class="visual-icon">
+
+              <i class="ph ph-clock"></i>
+
+            </div>
+
+            <div class="visual-text">
+              Pending Reports
+            </div>
+
+          </div>
+
+          <h3>
+            Pending
+          </h3>
+
+          <p>
+
+            <strong id="dashPendingReports">
+              0
+            </strong>
+
+            reports require attention.
+
+          </p>
+
+        </div>
+
+
+        <!-- SECURITY -->
+
+        <div class="feature-card">
+
+          <div class="card-visual">
+
+            <div class="visual-icon">
+
+              <i class="ph ph-shield-check"></i>
+
+            </div>
+
+            <div class="visual-text">
+              Security Logs
+            </div>
+
+          </div>
+
+          <h3>
+            Security
+          </h3>
+
+          <p>
+
+            <strong id="dashSecurityLogs">
+              0
+            </strong>
+
+            security events recorded.
+
+          </p>
+
+        </div>
+
       </div>
 
-      <div
-        style="
-          color:var(--text-muted);
-          font-size:13px;
-        "
-      >
-        ${locations.length} locations
-      </div>
-
-    </div>
+    </section>
 
 
-    <div class="table-container">
+    <!-- =================================================
+         USERS
+    ================================================== -->
 
-      <table>
+    <section
+      id="page-users"
+      class="page-container"
+    >
 
-        <thead>
+      <div class="section-header left">
 
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Phone</th>
-            <th>Location</th>
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          ${locations.map(location => `
-
-            <tr>
-
-              <td>
-                ${escapeHtml(
-                  location.name ||
-                  location.title ||
-                  'Unnamed'
-                )}
-              </td>
-
-              <td>
-                ${escapeHtml(
-                  location.type ||
-                  location.category ||
-                  'N/A'
-                )}
-              </td>
-
-              <td>
-                ${escapeHtml(
-                  location.phone ||
-                  location.telephone ||
-                  'N/A'
-                )}
-              </td>
-
-              <td>
-                ${
-                  location.latitude !== undefined
-                    ? `${location.latitude},
-                       ${location.longitude ?? ''}`
-                    : 'N/A'
-                }
-              </td>
-
-            </tr>
-
-          `).join('')}
-
-        </tbody>
-
-      </table>
-
-    </div>
-  `;
-}
-
-
-/* =========================================================
-   REPORTS
-========================================================= */
-
-function renderReports(reports) {
-
-  const page =
-    document.getElementById('page-reports');
-
-  if (!page) return;
-
-
-  const panel =
-    page.querySelector('.data-panel');
-
-  if (!panel) return;
-
-
-  if (!reports.length) {
-
-    panel.innerHTML = `
-      <div class="empty-state">
-
-        <i class="ph ph-file-text"></i>
-
-        <h3>No Reports</h3>
+        <h1>
+          User Management
+        </h1>
 
         <p>
-          No reports have been submitted.
+          View and manage registered SmartMap users.
         </p>
 
       </div>
-    `;
-
-    return;
-  }
 
 
-  panel.innerHTML = `
+      <div class="data-panel">
 
-    <div class="panel-header">
+        <div class="panel-header">
 
-      <div class="panel-title">
-        Reports
+          <div class="panel-title">
+            All Users
+          </div>
+
+          <div class="search-box">
+
+            <i class="ph ph-magnifying-glass"></i>
+
+            <input
+              type="text"
+              id="searchUsers"
+              placeholder="Search users..."
+            >
+
+          </div>
+
+        </div>
+
+
+        <div class="table-container">
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  User
+                </th>
+
+                <th>
+                  Phone
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Role
+                </th>
+
+                <th>
+                  Action
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="usersTableBody">
+
+            </tbody>
+
+          </table>
+
+        </div>
+
       </div>
 
-      <div
-        style="
-          color:var(--text-muted);
-          font-size:13px;
-        "
-      >
-        ${reports.length} reports
-      </div>
-
-    </div>
+    </section>
 
 
-    <div class="table-container">
+    <!-- =================================================
+         LOCATIONS
+    ================================================== -->
 
-      <table>
+    <section
+      id="page-locations"
+      class="page-container"
+    >
 
-        <thead>
+      <div class="section-header left">
 
-          <tr>
-            <th>Report</th>
-            <th>User</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-
-        </thead>
-
-        <tbody>
-
-          ${reports.map(report => `
-
-            <tr>
-
-              <td>
-                ${escapeHtml(
-                  report.title ||
-                  report.message ||
-                  report.description ||
-                  'Report'
-                )}
-              </td>
-
-              <td>
-                ${escapeHtml(
-                  report.username ||
-                  report.userId ||
-                  'N/A'
-                )}
-              </td>
-
-              <td>
-                ${escapeHtml(
-                  report.status ||
-                  'pending'
-                )}
-              </td>
-
-              <td>
-                ${escapeHtml(
-                  formatDate(
-                    report.createdAt ||
-                    report.timestamp
-                  )
-                )}
-              </td>
-
-            </tr>
-
-          `).join('')}
-
-        </tbody>
-
-      </table>
-
-    </div>
-  `;
-}
-
-
-/* =========================================================
-   SECURITY LOGS
-========================================================= */
-
-function renderSecurityLogs(logs) {
-
-  const page =
-    document.getElementById('page-security');
-
-  if (!page) return;
-
-
-  const panel =
-    page.querySelector('.data-panel');
-
-  if (!panel) return;
-
-
-  if (!logs.length) {
-
-    panel.innerHTML = `
-      <div class="empty-state">
-
-        <i class="ph ph-shield-check"></i>
-
-        <h3>System Secure</h3>
+        <h1>
+          Locations
+        </h1>
 
         <p>
-          No security events were returned.
+          Manage locations submitted by SmartMap users.
         </p>
 
       </div>
-    `;
-
-    return;
-  }
 
 
-  panel.innerHTML = `
+      <div class="data-panel">
 
-    <div class="panel-header">
+        <div class="panel-header">
 
-      <div class="panel-title">
-        Security Logs
+          <div class="panel-title">
+            All Locations
+          </div>
+
+          <div class="search-box">
+
+            <i class="ph ph-magnifying-glass"></i>
+
+            <input
+              type="text"
+              id="searchLocations"
+              placeholder="Search locations..."
+            >
+
+          </div>
+
+        </div>
+
+
+        <div class="table-container">
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Location
+                </th>
+
+                <th>
+                  Type
+                </th>
+
+                <th>
+                  Phone
+                </th>
+
+                <th>
+                  Coordinates
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Action
+                </th>
+
+              </tr>
+
+            </thead>
+
+            <tbody id="locationsTableBody">
+
+            </tbody>
+
+          </table>
+
+        </div>
+
       </div>
 
-      <div
-        style="
-          color:var(--text-muted);
-          font-size:13px;
-        "
-      >
-        ${logs.length} events
+    </section>
+
+
+    <!-- =================================================
+         REPORTS
+    ================================================== -->
+
+    <section
+      id="page-reports"
+      class="page-container"
+    >
+
+      <div class="section-header left">
+
+        <h1>
+          Reports
+        </h1>
+
+        <p>
+          Review reports submitted by users.
+        </p>
+
       </div>
 
-    </div>
 
+      <div class="data-panel">
 
-    <div class="table-container">
+        <div class="panel-header">
 
-      <table>
+          <div class="panel-title">
+            User Reports
+          </div>
 
-        <thead>
+          <div class="search-box">
 
-          <tr>
-            <th>Event</th>
-            <th>User</th>
-            <th>IP</th>
-            <th>Date</th>
-          </tr>
+            <i class="ph ph-magnifying-glass"></i>
 
-        </thead>
+            <input
+              type="text"
+              id="searchReports"
+              placeholder="Search reports..."
+            >
 
-        <tbody>
+          </div>
 
-          ${logs.map(log => `
+        </div>
 
-            <tr>
 
-              <td>
-                ${escapeHtml(
-                  log.event ||
-                  log.action ||
-                  log.type ||
-                  'Security event'
-                )}
-              </td>
+        <div class="table-container">
 
-              <td>
-                ${escapeHtml(
-                  log.user ||
-                  log.username ||
-                  log.userId ||
-                  'N/A'
-                )}
-              </td>
+          <table>
 
-              <td>
-                ${escapeHtml(
-                  log.ip ||
-                  log.ipAddress ||
-                  'N/A'
-                )}
-              </td>
+            <thead>
 
-              <td>
-                ${escapeHtml(
-                  formatDate(
-                    log.timestamp ||
-                    log.createdAt
-                  )
-                )}
-              </td>
+              <tr>
 
-            </tr>
+                <th>
+                  Report
+                </th>
 
-          `).join('')}
+                <th>
+                  User
+                </th>
 
-        </tbody>
+                <th>
+                  Status
+                </th>
 
-      </table>
+                <th>
+                  Created
+                </th>
 
-    </div>
-  `;
-}
+                <th>
+                  Action
+                </th>
 
+              </tr>
 
-/* =========================================================
-   NAVIGATION
-========================================================= */
+            </thead>
 
-function navigateTo(pageId) {
+            <tbody id="reportsTableBody">
 
-  document
-    .querySelectorAll('.page-container')
-    .forEach(el => {
+            </tbody>
 
-      el.classList.remove('active');
+          </table>
 
-    });
+        </div>
 
+      </div>
 
-  const targetPage =
-    document.getElementById(
-      'page-' + pageId
-    );
+    </section>
 
 
-  if (targetPage) {
+    <!-- =================================================
+         SECURITY
+    ================================================== -->
 
-    targetPage.classList.add('active');
+    <section
+      id="page-security"
+      class="page-container"
+    >
 
-  }
+      <div class="section-header left">
 
+        <h1>
+          Security Logs
+        </h1>
 
-  document
-    .querySelectorAll('.nav-item')
-    .forEach(el => {
+        <p>
+          Monitor administrator and system security events.
+        </p>
 
-      el.classList.remove('active');
+      </div>
 
-      if (el.dataset.page === pageId) {
-        el.classList.add('active');
-      }
 
-    });
+      <div class="data-panel">
 
+        <div class="panel-header">
 
-  const titles = {
+          <div class="panel-title">
+            Security Events
+          </div>
 
-    dashboard: 'Overview',
-    users: 'User Management',
-    locations: 'Locations',
-    reports: 'Reports',
-    security: 'Security',
-    settings: 'Settings'
+        </div>
 
-  };
 
+        <div class="table-container">
 
-  const title =
-    document.getElementById('pageTitle');
+          <table>
 
-  if (title) {
+            <thead>
 
-    title.innerText =
-      titles[pageId] || 'Dashboard';
+              <tr>
 
-  }
+                <th>
+                  Action
+                </th>
 
+                <th>
+                  Admin
+                </th>
 
-  /* Reload data when opening pages */
+                <th>
+                  IP
+                </th>
 
-  if (pageId === 'users') {
-    loadUsers();
-  }
+                <th>
+                  Device
+                </th>
 
-  if (pageId === 'locations') {
-    loadLocations();
-  }
+                <th>
+                  Result
+                </th>
 
-  if (pageId === 'reports') {
-    loadReports();
-  }
+                <th>
+                  Time
+                </th>
 
-  if (pageId === 'security') {
-    loadSecurityLogs();
-  }
+              </tr>
 
+            </thead>
 
-  if (window.innerWidth <= 768) {
+            <tbody id="securityTableBody">
 
-    document
-      .getElementById('sidebar')
-      .classList.remove('open');
+            </tbody>
 
-    document
-      .getElementById('overlay')
-      .classList.remove('show');
+          </table>
 
-  }
-}
+        </div>
 
+      </div>
 
-/* =========================================================
-   MOBILE SIDEBAR
-========================================================= */
+    </section>
 
-function toggleSidebar() {
 
-  document
-    .getElementById('sidebar')
-    .classList.toggle('open');
+    <!-- =================================================
+         SETTINGS
+    ================================================== -->
 
-  document
-    .getElementById('overlay')
-    .classList.toggle('show');
-}
+    <section
+      id="page-settings"
+      class="page-container"
+    >
 
+      <div class="section-header left">
 
-/* =========================================================
-   HELPERS
-========================================================= */
+        <h1>
+          Settings
+        </h1>
 
-function escapeHtml(value) {
+        <p>
+          SmartMap administrator settings.
+        </p>
 
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+      </div>
 
-}
 
+      <div class="data-panel settings-panel">
 
-function formatDate(value) {
+        <h3>
+          Backend API
+        </h3>
 
-  if (!value) {
-    return 'N/A';
-  }
+        <p>
+          Connected to:
+        </p>
 
+        <code id="apiStatus">
+          Checking...
+        </code>
 
-  try {
+      </div>
 
-    /*
-      Firebase Timestamp
-    */
+    </section>
 
-    if (
-      typeof value === 'object' &&
-      value.seconds
-    ) {
+  </main>
 
-      return new Date(
-        value.seconds * 1000
-      ).toLocaleString();
+</div>
 
-    }
 
+<script src="/admin/admin.js"></script>
 
-    return new Date(value)
-      .toLocaleString();
-
-  } catch {
-
-    return String(value);
-
-  }
-}
-
-
-/* =========================================================
-   INITIALIZE
-========================================================= */
-
-document.addEventListener(
-  'DOMContentLoaded',
-  () => {
-
-    console.log(
-      'Civic 5G Admin Dashboard initialized.'
-    );
-
-  }
-);
-
-</script>
 </body>
 </html>

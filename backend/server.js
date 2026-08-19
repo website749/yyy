@@ -26,6 +26,16 @@ app.use(express.json());
 // ========================================
 // HEALTH CHECK
 // ========================================
+// ========================================
+// ADMIN STATIC FILES
+// ========================================
+
+app.use(
+  "/admin",
+  express.static(
+    path.join(__dirname, "src/admin")
+  )
+);
 
 app.get("/", (req, res) => {
   res.json({
