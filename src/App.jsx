@@ -742,7 +742,6 @@ export default function App() {
   const [appStats, setAppStats] = useState({ visitorCount: 0, fakeUsers: 0 });
 
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
   
   const handleOpenLocation = async (loc) => {
     setSelectedLocation(loc);
@@ -981,7 +980,6 @@ export default function App() {
 
     // Listen to location items
     const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_admin_data'), snap => {
-      setIsLoadingData(false);
       const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       if (firstTick.locs && data.length === 0) {
@@ -2025,14 +2023,14 @@ export default function App() {
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative w-full max-w-7xl mx-auto overflow-hidden">
-           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} isLoadingData={isLoadingData} /></div>}
+           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} /></div>}
            {currentView === 'info' && (
              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2">
                <InfoView 
                  locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} 
                  onOpenLocation={handleOpenLocation} user={user} profile={profile} isAdmin={isAdmin} showToast={showToast} 
                  db={db} appId={appId} setCurrentView={setCurrentView} dbRegions={dbRegions} gpsCoords={gpsCoords} 
-                 captureGps={handleGPS} setSearchQuery={setSearchQuery} isLoadingData={isLoadingData}
+                 captureGps={handleGPS} setSearchQuery={setSearchQuery}
                  onOpenAddModal={() => {
                    setAddForm({ 
                      title: '', 
@@ -2460,123 +2458,138 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
   );
 };
 
-const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
-  return (
-    <header className="flex md:hidden items-center justify-between px-3.5 py-3.5 bg-white border-b border-slate-200 shrink-0 z-30 shadow-[0_2px_10px_rgba(0,0,0,0.02)] pt-safe">
-       <div className="flex items-center gap-2.5 min-w-0">
-           <div className="w-9 h-9 bg-slate-50 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-slate-200">
-              {appLogo ? (
-                 <img src={appLogo} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                 <GraduationCap className="w-6 h-6 text-[#0F2B5C]" />
-              )}
-           </div>
-           <div className="min-w-0 pr-2">
-               <h1 className="font-khmer-muol text-[13.5px] text-[#0F2B5C] leading-tight tracking-wide truncate mt-0.5">
-                   វិទ្យាល័យស្តៅសន្តិភាព
-               </h1>
-               <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mt-0.5 truncate">
-                   យុវជន vmc វិ.ស្តៅសន្តិភាព 2026
-               </p>
-           </div>
-       </div>
-
-       <div className="flex items-center gap-2 shrink-0 relative">
-          {(currentView === 'home' || currentView === 'info') && (
-            <div className="relative group mr-1">
-                <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" />
-                <input 
-                   type="text"
-                   value={searchQuery}
-                   onChange={e => setSearchQuery(e.target.value)}
-                   className="bg-slate-50 border border-slate-200 pl-8 pr-3 py-2 rounded-xl text-[12px] font-bold outline-none w-[110px] focus:w-[150px] transition-all duration-300 focus:border-[#38BDF8] focus:bg-white focus:shadow-sm"
-                   placeholder="ស្វែងរក..."
-                />
-            </div>
-          )}
-          
-          <button onClick={() => setNotificationsOpen(!notificationsOpen)} className="relative p-2 text-slate-500 hover:text-slate-800 bg-slate-50 border border-slate-200 rounded-full transition-transform active:scale-95 shadow-sm">
-             <Bell className="w-4.5 h-4.5" />
-             {notifications?.filter(n => !n.read).length > 0 && (
-                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border border-white animate-pulse"></span>
-             )}
-          </button>
-       </div>
-
-       {notificationsOpen && (
-          <div className="absolute top-full right-4 mt-2 w-72 max-w-[calc(100vw-32px)] bg-white rounded-xl shadow-2xl border border-slate-200 z-[100] animate-in slide-in-from-top-2 font-khmer">
-             <div className="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                 <h3 className="font-black text-[13px] text-[#0F2B5C] flex items-center gap-1.5"><Bell className="w-4 h-4 text-[#38BDF8]"/> ការជូនដំណឹងថ្មីៗ</h3>
-                 {notifications?.length > 0 && (
-                    <button 
-                       onClick={async () => {
-                           if (db && user) {
-                              for(const n of notifications) {
-                                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_notifications', n.id), { read: true }).catch(()=>{});
-                              }
-                           }
-                       }}
-                       className="text-[10px] font-bold text-[#38BDF8] hover:text-sky-600 px-2 py-1 bg-white rounded-md border border-slate-200"
-                    >សម្គាល់ថាបានអាន</button>
-                 )}
-             </div>
-             <div className="max-h-64 overflow-y-auto hide-scrollbar p-2 space-y-1.5">
-                 {!notifications || notifications.length === 0 ? (
-                    <div className="text-center py-6 text-slate-400 font-bold text-[11px]">គ្មានការជូនដំណឹងថ្មីទេ</div>
-                 ) : (
-                    notifications.map(n => (
-                       <div key={n.id} className={`p-2.5 rounded-lg border text-left ${n.read ? 'bg-slate-50 border-slate-100 opacity-70' : 'bg-sky-50/50 border-sky-100 shadow-sm'}`}>
-                          <div className="flex justify-between items-start mb-1">
-                             <h4 className="font-black text-[12px] text-slate-800 leading-tight">{safeStr(n.title)}</h4>
-                             <span className="text-[9px] text-slate-400 font-bold ml-2 shrink-0">{new Date(n.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                          </div>
-                          <p className="text-[11px] text-slate-600 font-medium leading-relaxed">{safeStr(n.msg)}</p>
-                       </div>
-                    ))
-                 )}
-             </div>
-          </div>
-       )}
-    </header>
-  );
-};
-
-const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
+const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'ទំព័រដើម' },
     { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
     { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
-    { id: 'account', icon: User, label: 'គណនី' }
   ];
-  
-  if (isAdmin) {
-      navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
-  }
+  navItems.push({ id: 'account', icon: User, label: 'គណនី' });
+  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-    <nav className="flex md:hidden items-center justify-around bg-white/95 backdrop-blur-md border-t border-slate-200 px-1 pt-2 pb-safe shrink-0 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] w-full">
+    <div 
+      className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe"
+    >
+      <div className="flex justify-around items-center pt-2 pb-2 px-1">
       {navItems.map(item => {
-        const isActive = currentView === item.id;
-        return (
-          <button 
+         const isActive = currentView === item.id;
+         return (
+           <button 
              key={item.id} 
              onClick={() => setCurrentView(item.id)} 
-             className="flex flex-col items-center justify-center w-full py-1.5 transition-transform duration-200 active:scale-90"
-          >
-            <div className={`relative flex items-center justify-center w-10 h-8 rounded-full mb-1 transition-all duration-300 ${isActive ? 'bg-[#0F2B5C]' : 'bg-transparent'}`}>
-               <item.icon className={`w-5 h-5 transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-            </div>
-            <span className={`text-[10px] font-bold transition-all duration-300 ${isActive ? 'text-[#0F2B5C] scale-105' : 'text-slate-400'}`}>
-               {item.label}
-            </span>
-          </button>
-        );
+             className="relative flex-1 flex flex-col items-center justify-center transition-all active:scale-90"
+           >
+             <div className={`flex flex-col items-center justify-center transition-all ${isActive ? 'text-[#0F2B5C]' : 'text-[#94A3B8]'}`}>
+                <div className={`p-1.5 rounded-xl ${isActive ? 'bg-[#0F2B5C]/10' : ''}`}>
+                   <item.icon className="w-[22px] h-[22px]" />
+                </div>
+                <span className={`text-[10px] mt-0.5 font-bold`}>{item.label}</span>
+             </div>
+           </button>
+         )
       })}
-    </nav>
+      </div>
+    </div>
   );
 };
 
-const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isLoadingData }) => {
+const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    useEffect(() => {
+      const updateStatus = () => setIsOnline(navigator.onLine);
+      window.addEventListener('online', updateStatus);
+      window.addEventListener('offline', updateStatus);
+      return () => {
+        window.removeEventListener('online', updateStatus);
+        window.removeEventListener('offline', updateStatus);
+      };
+    }, []);
+
+    return (
+        <div className="bg-white border-b border-slate-200 pt-[calc(env(safe-area-inset-top,16px)+16px)] px-4 pb-4 shadow-sm relative z-40 shrink-0 w-full">
+           <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-2">
+                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden p-0.5 border border-slate-100">
+                    {appLogo ? (
+                       <img src={appLogo} className="w-full h-full object-cover rounded-full" alt="Logo" />
+                    ) : (
+                       <GraduationCap className="w-5 h-5 text-[#0F2B5C]" />
+                    )}
+                 </div>
+                 <div>
+                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិ.ស្តៅសន្តិភាព</h1>
+                    {!isOnline && <span className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5 inline-block"> Offline Mode ⚠️</span>}
+                 </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                 <button 
+                   onClick={() => {
+                      sessionStorage.removeItem('tp_is_guest');
+                      setCurrentPage('gateway');
+                   }} 
+                   className="flex items-center justify-center p-1.5 text-[#0F2B5C] bg-slate-50 border border-slate-200 rounded-lg"
+                 >
+                    <ArrowLeft className="w-4 h-4 text-[#0F2B5C]" />
+                 </button>
+
+                 <div className="relative">
+                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                        <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
+                        {notifications && notifications.length > 0 && <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full animate-bounce"></span>}
+                     </button>
+                     {notificationsOpen && (
+                        <div className="absolute right-0 mt-2 w-[280px] bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden z-[450] text-slate-800 animate-in fade-in zoom-in-95 pointer-events-auto">
+                          <div className="p-3 border-b border-slate-100 font-bold flex justify-between text-[11px] bg-slate-50 items-center text-[#0F2B5C]">
+                            <span>ការជូនដំណឹង</span>
+                            <button onClick={() => setNotificationsOpen(false)} className="p-1 hover:bg-slate-200 rounded-full"><X className="w-3.5 h-3.5 text-slate-500" /></button>
+                          </div>
+                          <div className="max-h-[50vh] overflow-y-auto">
+                            {!notifications || notifications.length === 0 ? <p className="p-5 text-center text-[11px] text-slate-400 font-bold">គ្មានសារថ្មីទេ</p> : 
+                              notifications.map(n => (
+                                <div key={n.id} className="p-3 border-b border-slate-50 flex justify-between items-start gap-2 hover:bg-slate-50">
+                                  <div className="flex-1">
+                                    <p className={`text-[12px] font-black flex items-center gap-1 ${n.type === 'error' ? 'text-rose-500' : 'text-[#0F2B5C]'}`}>
+                                        <Bell className="w-3.5 h-3.5"/> {safeStr(n.title)}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500 mt-1 font-medium leading-relaxed">{safeStr(n.msg)}</p>
+                                  </div>
+                                  <button onClick={async () => { if(db) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_notifications', n.id)).catch(()=>{}); } }} className="text-slate-400 hover:text-rose-500 shrink-0 p-1 rounded-full"><X className="w-3 h-3"/></button>
+                                </div>
+                              ))
+                            }
+                          </div>
+                        </div>
+                      )}
+                 </div>
+              </div>
+           </div>
+           
+           <div className="flex flex-col w-full">
+              {(currentView === 'home' || currentView === 'info') && (
+                  <form onSubmit={(e) => {
+                     e.preventDefault();
+                     document.activeElement?.blur(); 
+                  }} className="relative w-full">
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                       <Search className="w-4.5 h-4.5" />
+                    </div>
+                    <input 
+                      type="search" 
+                      placeholder="ស្វែងរកទីតាំង ឬសេវាកម្ម..." 
+                      className="w-full bg-slate-50 text-slate-800 placeholder-slate-400 rounded-xl py-2.5 pl-10 pr-4 outline-none text-[14px] font-bold border border-slate-200 focus:border-[#38BDF8] focus:bg-white transition-all shadow-inner" 
+                      value={searchQuery} 
+                      onChange={(e) => setSearchQuery(e.target.value)} 
+                    />
+                  </form>
+              )}
+           </div>
+        </div>
+    );
+};
+
+const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon }) => {
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
   const filtered = (locations || []).filter(l => {
@@ -2673,11 +2686,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
           <h2 className="text-[13px] font-black text-slate-800 leading-none">ទិន្នន័យដែលបានបញ្ចូល</h2>
           <button onClick={() => setCurrentView('info')} className="text-[11px] font-bold text-slate-600 flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">មើលទាំងអស់ <ArrowRight className="w-3.5 h-3.5"/></button>
         </div>
-        {isLoadingData && sortedFiltered.length === 0 ? (
-           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-             {[1, 2, 3, 4].map(i => <LocationSkeleton key={i} />)}
-           </div>
-        ) : sortedFiltered.length === 0 ? (
+        {sortedFiltered.length === 0 ? (
            <div className="text-center py-8 bg-white rounded-xl border border-dashed border-slate-200 font-bold text-[12px] text-slate-400 shadow-sm flex flex-col items-center">
              <MapPin className="w-8 h-8 mb-2 text-slate-300"/>
              គ្មានទិន្នន័យ
@@ -2693,7 +2702,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isLoadingData }) => {
+const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
@@ -2855,9 +2864,7 @@ const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
       </div>
       
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-        {isLoadingData && sortedFiltered.length === 0 ? (
-          [1, 2, 3, 4].map(i => <LocationSkeleton key={i} />)
-        ) : sortedFiltered.length === 0 ? (
+        {sortedFiltered.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-10 bg-white rounded-xl border border-dashed border-slate-200 shadow-sm">
              <MapPin className="w-8 h-8 text-slate-300 mb-2" />
              <p className="font-bold text-[12px] text-slate-500">គ្មានទិន្នន័យ</p>
@@ -3022,30 +3029,6 @@ const getCategoryTheme = (category) => {
        emoji: '📍'
    };
 };
-
-const LocationSkeleton = () => (
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col group relative animate-pulse h-full">
-     <div className="w-full aspect-[16/10] bg-slate-200 shrink-0"></div>
-     <div className="p-3 flex flex-col justify-between flex-1 bg-white space-y-3">
-        <div>
-           <div className="flex items-center gap-1.5 mb-2">
-               <div className="h-4 w-16 bg-slate-200 rounded"></div>
-               <div className="h-4 w-12 bg-slate-200 rounded"></div>
-           </div>
-           <div className="h-5 bg-slate-200 rounded w-3/4 mb-2"></div>
-           <div className="space-y-1 mb-2">
-              <div className="h-3 bg-slate-200 rounded w-5/6"></div>
-           </div>
-           <div className="h-3 bg-slate-200 rounded w-full mt-2"></div>
-           <div className="h-3 bg-slate-200 rounded w-2/3"></div>
-        </div>
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-auto">
-           <div className="h-4 w-12 bg-slate-200 rounded"></div>
-           <div className="h-4 w-10 bg-slate-200 rounded"></div>
-        </div>
-     </div>
-  </div>
-);
 
 const base64ToBlobUrl = (base64Data, mimeType = 'audio/webm') => {
   try {
