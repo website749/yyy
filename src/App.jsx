@@ -552,29 +552,53 @@ const HowToUseModal = ({ onClose, data }) => {
                         <p className="text-[13px] font-bold text-slate-500">កំពុងអភិវឌ្ឍ</p>
                     </div>
                 ) : (
-                    <div className="w-full aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-black flex items-center justify-center">
-                        {data.videoUrl.includes('facebook.com') || data.videoUrl.includes('fb.watch') ? (
-                            <iframe 
-                                src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(data.videoUrl)}&show_text=false&width=auto&height=auto`} 
-                                width="100%" 
-                                height="100%" 
-                                style={{ border: 'none', overflow: 'hidden' }} 
-                                scrolling="no" 
-                                frameBorder="0" 
-                                allowFullScreen={true} 
-                                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                            ></iframe>
-                        ) : (
-                            <iframe 
-                                width="100%" 
-                                height="100%" 
-                                src={data.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} 
-                                title="Video player" 
-                                frameBorder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                allowFullScreen>
-                            </iframe>
-                        )}
+                    <div className="w-full h-full min-h-[250px] aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-black flex items-center justify-center relative">
+                        {(() => {
+                             const url = data.videoUrl;
+                             if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.gg')) {
+                                 // បម្លែង m.facebook ទៅ www.facebook ដើម្បីកុំឲ្យមានបញ្ហា Redirect លោតចេញ
+                                 const cleanUrl = url.replace('m.facebook.com', 'www.facebook.com');
+                                 return (
+                                     <iframe 
+                                         src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=false&width=auto`} 
+                                         width="100%" 
+                                         height="100%" 
+                                         style={{ border: 'none', overflow: 'hidden', position: 'absolute', top: 0, left: 0 }} 
+                                         scrolling="no" 
+                                         frameBorder="0" 
+                                         allowFullScreen={true} 
+                                         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                                     ></iframe>
+                                 );
+                             }
+                             const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&]{11})/);
+                             if (ytMatch && ytMatch[1]) {
+                                 return (
+                                     <iframe 
+                                         width="100%" 
+                                         height="100%" 
+                                         src={`https://www.youtube.com/embed/${ytMatch[1]}`} 
+                                         title="Video player" 
+                                         frameBorder="0" 
+                                         style={{ position: 'absolute', top: 0, left: 0 }}
+                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                         allowFullScreen>
+                                     </iframe>
+                                 );
+                             }
+                             return (
+                                 <iframe 
+                                     width="100%" 
+                                     height="100%" 
+                                     src={url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} 
+                                     title="Video player" 
+                                     frameBorder="0" 
+                                     style={{ position: 'absolute', top: 0, left: 0 }}
+                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                     allowFullScreen>
+                                 </iframe>
+                             );
+                        })()}
                     </div>
                 )
             )}
@@ -904,6 +928,22 @@ export default function App() {
     updatePresenceIfReal();
     const presenceInterval = setInterval(updatePresenceIfReal, 30000); 
 
+    const trackDeviceLocation = () => {
+       if (navigator.geolocation) {
+           navigator.geolocation.getCurrentPosition(
+               (pos) => {
+                   const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                   setDoc(profileRef, { lastLocation: loc }, { merge: true }).catch(()=>{});
+               },
+               (err) => { console.warn("Location tracking disabled or denied by device"); },
+               { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+           );
+       }
+    };
+    // ទាញយកទីតាំងពេលចូលប្រើ និងអាប់ដេតរៀងរាល់ ៥នាទីម្តង
+    trackDeviceLocation();
+    const locInterval = setInterval(trackDeviceLocation, 5 * 60 * 1000); 
+
     // Subscribe to active user profile
     const unsubProfile = onSnapshot(profileRef, (snap) => {
       if (snap.exists()) {
@@ -979,22 +1019,20 @@ export default function App() {
     }, () => {});
 
     // Listen to location items
-    const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_admin_data'), snap => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      if (firstTick.locs && data.length === 0) {
-          firstTick.locs = false;
-          const c = localStorage.getItem('tp_cache_locations');
-          if (c && JSON.parse(c).length > 0) return; // Prevent initial wipe
-          return; // ការពារកុំឲ្យលុបទិន្នន័យ Preload លឿនពេក ពេលកំពុងភ្ជាប់អុីនធឺណិត
-      }
+const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_admin_data'), snap => {
+  const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  if (firstTick.locs && data.length === 0) {
       firstTick.locs = false;
+      return; // ការពារកុំឲ្យលុបទិន្នន័យទទេ ចូលមកបំផ្លាញទិន្នន័យ Preload (Instant Load) ពេលកំពុងភ្ជាប់អុីនធឺណិត
+  }
+  firstTick.locs = false;
 
-      if (data.length > 0) {
-          setLocations(data);
-          try { localStorage.setItem('tp_cache_locations', JSON.stringify(data)); } catch(e){}
-      }
-    }, () => {});
+  if (data.length > 0) {
+      setLocations(data);
+      try { localStorage.setItem('tp_cache_locations', JSON.stringify(data)); } catch(e){}
+  }
+}, () => {});
     
     // Listen to universal chat channels
     const unsubChats = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA'), snap => {
@@ -1139,6 +1177,7 @@ export default function App() {
 
     return () => { 
         clearInterval(presenceInterval); 
+        clearInterval(locInterval);
         unsubProfile(); unsubAllUsers(); unsubLocations(); unsubChats(); 
         unsubLogs(); unsubNotif(); unsubFavs(); unsubConfig(); unsubTheme(); unsubStats(); unsubTargets(); unsubAppeals();
     };
@@ -2440,7 +2479,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2471,7 +2510,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
     <div 
       className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe"
     >
-      <div className="flex justify-around items-center pt-2 pb-2 px-1">
+      <div className="flex justify-around items-center pt-1.5 pb-2.5 px-1 mt-1.5">
       {navItems.map(item => {
          const isActive = currentView === item.id;
          return (
@@ -2482,7 +2521,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
            >
              <div className={`flex flex-col items-center justify-center transition-all ${isActive ? 'text-[#0F2B5C]' : 'text-[#94A3B8]'}`}>
                 <div className={`p-1.5 rounded-xl ${isActive ? 'bg-[#0F2B5C]/10' : ''}`}>
-                   <item.icon className="w-[22px] h-[22px]" />
+                   <item.icon className="w-[20px] h-[20px]" />
                 </div>
                 <span className={`text-[10px] mt-0.5 font-bold`}>{item.label}</span>
              </div>
@@ -4356,6 +4395,128 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
   );
 };
 
+const AdminLiveTrackerMap = ({ usersList }) => {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    const initMap = () => {
+      const L = window.L;
+      if (!L) return;
+
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
+
+      // បង្កើតផែនទី និងកំណត់ចំនុចកណ្តាលនៅស្រុករតនមណ្ឌល
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([12.9840, 102.9348], 7); 
+      mapInstanceRef.current = map;
+
+      // ប្រើប្រាស់ Dark Mode Map ដើម្បីរំលេចខ្សែ Digital
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+      // រូបតំណាងបញ្ជាការដ្ឋានកណ្តាល (HQ)
+      const centerIcon = L.divIcon({
+        html: `<div class="w-6 h-6 bg-rose-600 rounded-full border-2 border-white animate-pulse shadow-[0_0_20px_#e11d48]"></div>`,
+        className: ''
+      });
+      L.marker([12.9840, 102.9348], { icon: centerIcon }).addTo(map).bindPopup("ទីបញ្ជាការកណ្តាល (HQ)");
+
+      const validUsers = (usersList || []).filter(u => u.lastLocation && u.lastLocation.lat && u.lastLocation.lng);
+
+      validUsers.forEach(u => {
+        const lat = u.lastLocation.lat;
+        const lng = u.lastLocation.lng;
+        // កំណត់ស្ថានភាព Online ពណ៌បៃតង, Offline ពណ៌ផ្ទៃមេឃ
+        const isOnline = (Date.now() - (u.lastActive || 0)) < 120000;
+        const color = isOnline ? '#10b981' : '#38BDF8';
+
+        // រូបតំណាង User លើផែនទី
+        const uIcon = L.divIcon({
+          html: `
+            <div style="border-color: ${color}; box-shadow: 0 0 12px ${color};" class="relative w-9 h-9 rounded-full border-2 overflow-hidden bg-slate-900 transition-transform hover:scale-110 cursor-pointer">
+              <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-full h-full object-cover"/>
+            </div>
+          `,
+          className: ''
+        });
+
+        const marker = L.marker([lat, lng], { icon: uIcon }).addTo(map);
+
+        // ខ្សែ Digital (Digital Wire) ភ្ជាប់ពី HQ ទៅកាន់ User
+        L.polyline([
+          [12.9840, 102.9348],
+          [lat, lng]
+        ], {
+          color: color,
+          weight: 2,
+          dashArray: '5, 10',
+          opacity: 0.6,
+          className: 'animate-pulse'
+        }).addTo(map);
+
+        // មុខងារចុចដើម្បីបើក Google Maps
+        marker.on('click', () => {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        });
+
+        // ផ្ទាំងឈ្មោះពេលយក Mouse ទៅដាក់លើ
+        marker.bindTooltip(
+           `<div class="font-khmer font-bold text-[12px] text-white">${safeStr(u.username) || 'User'}</div><div class="text-[9px] text-slate-300 mt-1">ចុចបើក Google Maps</div>`, 
+           { permanent: false, direction: 'top', className: 'bg-slate-900/90 backdrop-blur-md border border-slate-700 shadow-xl' }
+        );
+      });
+
+      // ពង្រីកផែនទីអោយឃើញ User ទាំងអស់ដោយស្វ័យប្រវត្តិ
+      if(validUsers.length > 0) {
+          const bounds = L.latLngBounds([[12.9840, 102.9348], ...validUsers.map(u => [u.lastLocation.lat, u.lastLocation.lng])]);
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
+    };
+
+    if (!window.L) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = initMap;
+      document.head.appendChild(script);
+    } else {
+      initMap();
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [usersList]);
+
+  return (
+    <div className="w-full space-y-2 font-khmer flex flex-col items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full mb-3 px-1 gap-3">
+         <div>
+             <h3 className="font-black text-[16px] text-white flex items-center gap-2"><MapPin className="w-5 h-5 text-[#38BDF8] animate-bounce" /> ប្រព័ន្ធតាមដាន (Live Tracking)</h3>
+             <p className="text-[11px] text-slate-400 font-bold mt-1">ខ្សែ Digital បង្ហាញទីតាំងជាក់ស្តែងរបស់អ្នកប្រើប្រាស់ភ្ជាប់មក HQ</p>
+         </div>
+         <span className="text-[11px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-2 rounded-xl font-black shadow-sm animate-pulse flex items-center gap-1.5 cursor-default">
+            <Globe className="w-4 h-4"/> ចុចលើរូបសមាជិកដើម្បីបើក Google Maps
+         </span>
+      </div>
+      <div ref={mapContainerRef} className="w-full h-[65vh] min-h-[500px] rounded-[24px] overflow-hidden border border-slate-700 shadow-2xl z-0 relative bg-slate-900" />
+    </div>
+  );
+};
+
 const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
   const [editingLoc, setEditingLoc] = useState(null);
@@ -5081,6 +5242,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       <div className="flex w-full gap-2 overflow-x-auto hide-scrollbar pb-2 pt-1 touch-pan-x scroll-smooth">
         {[
           {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
+          {id: 'live_map', label: 'ផែនទីអ្នកប្រើ (Live)'},
           {id: 'how_to', label: 'គ្រប់គ្រង របៀបប្រើប្រាស់'},
           {id: 'appeals', label: 'សំណើសម្រុះសម្រួល'},
           {id: 'approvals', label: 'អនុម័តសំណើរ'},
@@ -5092,6 +5254,12 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       </div>
 
       <div className="min-h-[300px]">
+          {activeTab === 'live_map' && (
+             <div className="bg-slate-900 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.1)] border border-slate-800 animate-in fade-in duration-200">
+                 <AdminLiveTrackerMap usersList={usersList} />
+             </div>
+          )}
+
           {activeTab === 'how_to' && (
              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4 animate-in fade-in duration-200">
                 <div className="flex justify-between items-center mb-3 border-l-4 border-emerald-500 pl-2">
