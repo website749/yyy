@@ -2397,7 +2397,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2475,7 +2475,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                     )}
                  </div>
                  <div>
-                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិ.ស្តៅសន្តិភាព</h1>
+                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
                     {!isOnline && <span className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5 inline-block"> Offline Mode ⚠️</span>}
                  </div>
               </div>
