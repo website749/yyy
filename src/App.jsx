@@ -29,6 +29,9 @@ import {
   where,
   getDoc
 } from 'firebase/firestore';
+import { 
+  LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer 
+} from 'recharts';
 import { Volume2, VolumeX, Megaphone } from 'lucide-react';
 // Safe string casting utility to prevent null-pointers
 export function safeStr(val, fallback = '') {
@@ -211,7 +214,7 @@ const parseContactsList = (location) => {
 };
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg",
+  apiKey: "AIzaSyBq_1YKH4Hf4M65qMHirvWCD_-tyqCDz5E",
   authDomain: "ramit-7e364.firebaseapp.com",
   projectId: "ramit-7e364",
   storageBucket: "ramit-7e364.firebasestorage.app",
@@ -1364,103 +1367,186 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       }
   };
 
-  const startRealCall = async (targetUser, isVideoCall = false) => {
-      if (!chatFeatureEnabled && !isAdmin) {
-         return showToast('មុខងារនេះត្រូវបានបិទដោយ Admin', 'error');
-      }
-      try {
-         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoCall });
-         localStreamRef.current = stream;
-         setCallState({ isActive: true, status: 'calling', duration: 0, isVideo: isVideoCall, isMicOn: true, isCameraOn: isVideoCall, isSpeakerOn: true, peerInfo: targetUser });
-         
-         if (db) {
-             const callDoc = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'calls'), {
-                 callerId: myChatId,
-                 callerName: myChatName,
-                 callerAvatar: myChatAvatar,
-                 targetId: targetUser.id,
-                 isVideo: isVideoCall,
-                 status: 'calling',
-                 timestamp: Date.now()
-             });
-             callIdRef.current = callDoc.id;
-             
-             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'calls', callDoc.id), snap => {
-                 if (snap.exists()) {
-                     const data = snap.data();
-                     if (data.status === 'rejected') {
-                         endRealCall();
-                         showToast('ភាគីម្ខាងទៀតបានបដិសេធ (Rejected)', 'error');
-                     } else if (data.status === 'accepted') {
-                         setCallState(prev => ({ ...prev, status: 'connected' }));
-                         if (!callDurationTimerRef.current) {
-                            callDurationTimerRef.current = setInterval(() => {
-                                setCallState(prev => ({ ...prev, duration: prev.duration + 1 }));
-                            }, 1000);
-                         }
-                     } else if (data.status === 'ended') {
-                         endRealCall();
-                         showToast('ការហៅត្រូវបានបញ្ចប់', 'info');
-                     }
-                 }
-             });
-         }
-      } catch(e) {
-         showToast('បរាជ័យក្នុងការភ្ជាប់ Media Devices', 'error');
-      }
-  };
-
-  const acceptIncomingCall = async () => {
-      if (!incomingCall) return;
-      try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: incomingCall.isVideo });
-          localStreamRef.current = stream;
-          setCallState({ 
-             isActive: true, status: 'connected', duration: 0, isVideo: incomingCall.isVideo, 
-             isMicOn: true, isCameraOn: incomingCall.isVideo, isSpeakerOn: true, 
-             peerInfo: { id: incomingCall.callerId, label: incomingCall.callerName, avatar: incomingCall.callerAvatar }
-          });
-          callIdRef.current = incomingCall.id;
-          
-          if (db) {
-              await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'calls', incomingCall.id), { status: 'accepted' });
-              
-              onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'calls', incomingCall.id), snap => {
-                  if (snap.exists()) {
-                      const data = snap.data();
-                      if (data.status === 'ended') {
-                          endRealCall();
-                          showToast('ការហៅត្រូវបានបញ្ចប់', 'info');
-                      }
-                  }
-              });
-          }
-          
-          if (!callDurationTimerRef.current) {
-              callDurationTimerRef.current = setInterval(() => {
-                  setCallState(prev => ({ ...prev, duration: prev.duration + 1 }));
-              }, 1000);
-          }
-          setIncomingCall(null);
-      } catch (e) {
-          showToast('បរាជ័យក្នុងការភ្ជាប់ Media Devices', 'error');
-          rejectIncomingCall(incomingCall.id);
-      }
-  };
-
   const endRealCall = async () => {
       if (callIdRef.current && db) {
           await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'calls', callIdRef.current), { status: 'ended' }).catch(()=>{});
       }
+      if (peerConnectionRef.current) {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+      }
       if (localStreamRef.current) {
           localStreamRef.current.getTracks().forEach(track => track.stop());
+          localStreamRef.current = null;
       }
       if (callDurationTimerRef.current) {
           clearInterval(callDurationTimerRef.current);
           callDurationTimerRef.current = null;
       }
-      setCallState({ isActive: false, status: 'idle', duration: 0, isVideo: false, isMicOn: true, isCameraOn: true, isSpeakerOn: true, peerInfo: null });
+      if (window.unsubCallVars) {
+          if (window.unsubCallVars.unsubCall) window.unsubCallVars.unsubCall();
+          if (window.unsubCallVars.unsubIce) window.unsubCallVars.unsubIce();
+          window.unsubCallVars = null;
+      }
+      setCallState({ isActive: false, status: 'idle', duration: 0 });
       callIdRef.current = null;
+  };
+
+  const startRealCall = async (targetUser, isVideoCall) => {
+     if (!targetUser) return;
+     if (!db) return showToast('មិនអាចខលបានទេក្នុង Sandbox Mode (គ្មាន Database)', 'error');
+     try {
+         const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
+         localStreamRef.current = stream;
+         
+         const pc = new RTCPeerConnection({
+             iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
+         });
+         peerConnectionRef.current = pc;
+
+         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+         pc.ontrack = event => {
+             if (remoteVideoRef.current) {
+                 remoteVideoRef.current.srcObject = event.streams[0];
+             }
+         };
+
+         const callDocRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'calls'));
+         callIdRef.current = callDocRef.id;
+
+         pc.onicecandidate = event => {
+             if(event.candidate) {
+                 addDoc(collection(callDocRef, 'callerCandidates'), event.candidate.toJSON());
+             }
+         };
+
+         const offer = await pc.createOffer();
+         await pc.setLocalDescription(offer);
+
+         await setDoc(callDocRef, {
+             offer: { type: offer.type, sdp: offer.sdp },
+             callerId: myChatId,
+             callerName: myChatName,
+             callerAvatar: myChatAvatar,
+             targetId: targetUser.id,
+             isVideo: isVideoCall,
+             status: 'calling',
+             timestamp: Date.now()
+         });
+
+         setCallState({ 
+             isActive: true, status: 'calling', duration: 0, 
+             isVideo: isVideoCall, isMicOn: true, isCameraOn: isVideoCall, isSpeakerOn: true,
+             peerInfo: targetUser 
+         });
+
+         const unsubCall = onSnapshot(callDocRef, snapshot => {
+             const data = snapshot.data();
+             if(!pc.currentRemoteDescription && data?.answer) {
+                 const answerDescription = new RTCSessionDescription(data.answer);
+                 pc.setRemoteDescription(answerDescription);
+                 setCallState(prev => ({...prev, status: 'connected'}));
+                 
+                 callDurationTimerRef.current = setInterval(() => {
+                     setCallState(p => ({...p, duration: p.duration + 1}));
+                 }, 1000);
+             }
+             if(data?.status === 'ended' || data?.status === 'rejected') {
+                 endRealCall();
+                 if (data?.status === 'rejected') showToast('ការហៅត្រូវបានបដិសេធ', 'error');
+             }
+         }, (err) => { console.warn("Call doc error:", err.code); });
+
+         const unsubIce = onSnapshot(collection(callDocRef, 'calleeCandidates'), snapshot => {
+             snapshot.docChanges().forEach(change => {
+                 if(change.type === 'added') {
+                     const candidate = new RTCIceCandidate(change.doc.data());
+                     pc.addIceCandidate(candidate);
+                 }
+             });
+         }, (err) => { console.warn("ICE error:", err.code); });
+
+         window.unsubCallVars = { unsubCall, unsubIce };
+
+     } catch (e) {
+         showToast('សូមអនុញ្ញាតសិទ្ធិប្រើប្រាស់ Camera & Mic', 'error');
+     }
+  };
+
+  const acceptIncomingCall = async () => {
+      if (!incomingCall) return;
+      const callId = incomingCall.id;
+      const callData = incomingCall;
+      setIncomingCall(null);
+      
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: callData.isVideo, audio: true });
+          localStreamRef.current = stream;
+
+          const pc = new RTCPeerConnection({
+             iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
+          });
+          peerConnectionRef.current = pc;
+
+          stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+          pc.ontrack = event => {
+             if (remoteVideoRef.current) {
+                 remoteVideoRef.current.srcObject = event.streams[0];
+             }
+          };
+
+          const callDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'calls', callId);
+          callIdRef.current = callId;
+
+          pc.onicecandidate = event => {
+             if(event.candidate) {
+                 addDoc(collection(callDocRef, 'calleeCandidates'), event.candidate.toJSON());
+             }
+          };
+
+          await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+
+          await updateDoc(callDocRef, {
+              answer: { type: answer.type, sdp: answer.sdp },
+              status: 'connected'
+          });
+
+          setCallState({ 
+              isActive: true, status: 'connected', duration: 0, 
+              isVideo: callData.isVideo, isMicOn: true, isCameraOn: callData.isVideo, isSpeakerOn: true,
+              peerInfo: { label: callData.callerName, avatar: callData.callerAvatar }
+          });
+
+          callDurationTimerRef.current = setInterval(() => {
+              setCallState(p => ({...p, duration: p.duration + 1}));
+          }, 1000);
+
+          const unsubCall = onSnapshot(callDocRef, snapshot => {
+              const data = snapshot.data();
+              if(data?.status === 'ended') {
+                  endRealCall();
+              }
+          }, (err) => { console.warn("Call doc error:", err.code); });
+
+          const unsubIce = onSnapshot(collection(callDocRef, 'callerCandidates'), snapshot => {
+              snapshot.docChanges().forEach(change => {
+                  if(change.type === 'added') {
+                      const candidate = new RTCIceCandidate(change.doc.data());
+                      pc.addIceCandidate(candidate);
+                  }
+              });
+          }, (err) => { console.warn("ICE error:", err.code); });
+
+          window.unsubCallVars = { unsubCall, unsubIce };
+
+      } catch (e) {
+          showToast('បរាជ័យក្នុងការភ្ជាប់ Media Devices', 'error');
+          rejectIncomingCall(callId);
+      }
   };
 
   const rejectIncomingCall = async (idToReject = null) => {
@@ -1942,21 +2028,10 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     );
   }
 
-  // ប្រព័ន្ធប្ដូរផ្ទៃ Background ស្វ័យប្រវត្តិតាម Menu នីមួយៗ (Dynamic Menu Background)
-  const getDynamicBg = () => {
-     if (currentView === 'home') return 'linear-gradient(to bottom, #f8fafc, #e2e8f0)'; 
-     if (currentView === 'info') return 'linear-gradient(to bottom, #f0f9ff, #e0f2fe)'; 
-     if (currentView === 'reports') return 'linear-gradient(to bottom, #fdf4ff, #fae8ff)'; 
-     if (currentView === 'account') return 'linear-gradient(to bottom, #fff1f2, #ffe4e6)'; 
-     if (currentView === 'admin') return '#0f172a';
-     if (currentView === 'chat') return '#f1f5f9';
-     return customBg || 'linear-gradient(to bottom, #f8fafc, #f1f5f9)';
-  };
-
   return (
     <div 
-      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden transition-all duration-700 ease-in-out" 
-      style={{ background: getDynamicBg() }}
+      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden" 
+      style={{ backgroundColor: customBg }}
     >
       
       {toast && (
@@ -2397,7 +2472,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2475,7 +2550,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                     )}
                  </div>
                  <div>
-                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
+                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិ.ស្តៅសន្តិភាព</h1>
                     {!isOnline && <span className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5 inline-block"> Offline Mode ⚠️</span>}
                  </div>
               </div>
@@ -2865,107 +2940,79 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const locsThisYear = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfYearMs).length;
 
   const stats = [
-    { label: 'អ្នកប្រើប្រាស់សរុប', count: totalUsers + 1, color: 'text-[#0F2B5C]', desc: 'សរុបតាំងពីដើម', bg: 'bg-blue-50' },
-    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-600', desc: `ក្នុងខែទី ${currentMonth + 1}`, bg: 'bg-sky-50' },
-    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}`, bg: 'bg-indigo-50' },
-    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម', bg: 'bg-slate-50' },
-    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}`, bg: 'bg-emerald-50' },
-    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}`, bg: 'bg-rose-50' },
+    { label: 'អ្នកប្រើប្រាស់សសរុប', count: totalUsers + 1, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-500', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}` },
   ];
 
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
-  // ទាញយកទិន្នន័យពិតប្រាកដចេញពី Database ១០០% ដោយមិនមានសរសេរផ្ទាល់ (Hardcode)
   const monthlyData = khmerMonths.map((name, index) => {
+    // Set specific value for May (ឧសភា is index 4)
+    if (index === 4) {
+        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
+    }
+    // Set specific value for July (កក្កដា is index 6)
+    if (index === 6) {
+        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
+    }
+    
     const startM = new Date(currentYear, index, 1).getTime();
     const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
-    
     let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
-    // បូកបញ្ចូលទិន្នន័យ Boost ទៅលើខែបច្ចុប្បន្ន
     if (index === currentMonth) usersInMonth += fakeCount;
-    
     const entriesInMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length;
-    
     return { name, users: usersInMonth, entries: entriesInMonth };
   });
 
-  // ស្វែងរកតម្លៃខ្ពស់បំផុតដើម្បីគណនាកម្ពស់ក្រាប (Max Value logic for fluid charts)
-  const maxVal = Math.max(...monthlyData.map(d => Math.max(d.users, d.entries)), 1);
-
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
-      <h1 className="text-[14.5px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">របាយការណ៍ទិន្នន័យជាក់ស្ដែង</h1>
+      <h1 className="text-[13px] md:text-[15px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">របាយការណ៍ទិន្នន័យជាក់ស្ដែង</h1>
       
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
          {stats.map((s, i) => (
-           <div key={i} className={`p-4 rounded-2xl shadow-sm border border-white/50 relative overflow-hidden flex flex-col justify-between min-h-[90px] ${s.bg}`}>
-              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/40 rounded-full blur-xl"></div>
-              <p className="text-[11px] font-black text-slate-600 leading-normal mb-1.5 z-10">{s.label}</p>
-              <h3 className={`text-2xl md:text-3xl font-black mt-auto z-10 ${s.color}`}>{s.count}</h3>
-              <p className="text-[10px] text-slate-500 mt-1 font-bold z-10">{s.desc}</p>
+           <div key={i} className="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between min-h-[75px]">
+              <p className="text-[10px] md:text-[11px] font-bold text-slate-500 leading-normal mb-1">{s.label}</p>
+              <h3 className="text-xl md:text-2xl font-black mt-auto">{s.count}</h3>
+              <p className="text-[9px] text-slate-400 mt-0.5">{s.desc}</p>
            </div>
          ))}
       </div>
 
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md flex flex-col w-full mt-2">
-           <div className="flex justify-between items-center mb-6">
-               <h3 className="text-[13.5px] font-black text-[#0F2B5C] flex items-center gap-2">
-                   <TrendingUp className="w-5 h-5 text-[#38BDF8]" /> 
-                   ក្រាបកំណើនប្រចាំឆ្នាំ {currentYear}
-               </h3>
-               <div className="flex items-center gap-3 text-[10px] font-bold">
-                   <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded bg-sky-400"></div> អ្នកប្រើ</span>
-                   <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded bg-[#0F2B5C]"></div> ទីតាំង</span>
-               </div>
-           </div>
-
-           {/* Custom Native Beautiful Chart avoiding heavy third-party library crashes */}
-           <div className="flex-1 min-h-[220px] w-full flex items-end justify-between gap-1 mt-2 px-1 relative">
-              
-              {/* Horizontal Grid Lines */}
-              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-[30px]">
-                 {[0, 1, 2, 3].map(line => (
-                    <div key={line} className="w-full border-b border-dashed border-slate-200 flex-1"></div>
-                 ))}
-                 <div className="w-full border-b border-slate-300"></div>
-              </div>
-
-              {monthlyData.map((d, i) => (
-                 <div key={i} className="flex flex-col items-center justify-end h-full w-full group relative z-10 pb-[30px]">
-                    
-                    {/* Hover Tooltip */}
-                    <div className="absolute bottom-full mb-2 bg-slate-800 text-white text-[11px] py-2 px-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20 font-bold border border-slate-700">
-                       <span className="text-sky-300">អ្នកប្រើ: {d.users} នាក់</span> <br/> 
-                       <span className="text-emerald-400">ទីតាំង: {d.entries} កន្លែង</span>
-                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45 border-b border-r border-slate-700"></div>
-                    </div>
-                    
-                    <div className="w-full flex justify-center gap-[2px] items-end h-[180px]">
-                       {/* Users Data Bar */}
-                       <div 
-                         className="w-[45%] max-w-[14px] bg-gradient-to-t from-[#0ea5e9] to-[#38BDF8] rounded-t-md shadow-sm transition-all duration-1000 ease-out group-hover:brightness-110 relative"
-                         style={{ height: `${(d.users / maxVal) * 100}%`, minHeight: d.users > 0 ? '6px' : '0' }}
-                       >
-                          {d.users > 0 && <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-sky-600 opacity-0 group-hover:opacity-100 transition-opacity">{d.users}</div>}
-                       </div>
-                       
-                       {/* Entries Data Bar */}
-                       <div 
-                         className="w-[45%] max-w-[14px] bg-gradient-to-t from-[#0f172a] to-[#0F2B5C] rounded-t-md shadow-sm transition-all duration-1000 ease-out delay-75 group-hover:brightness-125 relative"
-                         style={{ height: `${(d.entries / maxVal) * 100}%`, minHeight: d.entries > 0 ? '6px' : '0' }}
-                       >
-                          {d.entries > 0 && <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">{d.entries}</div>}
-                       </div>
-                    </div>
-                    
-                    {/* X-Axis Label */}
-                    <span className="absolute bottom-0 text-[10px] text-slate-500 font-bold mt-2 -rotate-45 origin-top-left translate-y-2 whitespace-nowrap">
-                       {d.name}
-                    </span>
-                 </div>
-              ))}
-           </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 flex-1">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#38BDF8] pl-2">កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ</h3>
+           <div className="flex-1 min-h-[160px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={monthlyData}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
+                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
+                   <Tooltip cursor={false} contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
+                   <Bar dataKey="users" fill="#38BDF8" radius={[2,2,0,0]} barSize={12} />
+                 </BarChart>
+               </ResponsiveContainer>
+            </div>
         </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#0F2B5C] pl-2">ស្ថិតិទីតាំងដែលបានបញ្ចូល</h3>
+           <div className="flex-1 min-h-[160px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <LineChart data={monthlyData}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
+                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
+                   <Tooltip contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
+                   <Line type="monotone" dataKey="entries" stroke="#0F2B5C" strokeWidth={2} dot={{r: 3, fill: '#0F2B5C'}} />
+                 </LineChart>
+               </ResponsiveContainer>
+            </div>
+        </div>
+      </div>
     </div>
   );
 };
