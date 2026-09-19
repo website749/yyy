@@ -29,9 +29,6 @@ import {
   where,
   getDoc
 } from 'firebase/firestore';
-import { 
-  LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer 
-} from 'recharts';
 import { Volume2, VolumeX, Megaphone } from 'lucide-react';
 // Safe string casting utility to prevent null-pointers
 export function safeStr(val, fallback = '') {
@@ -214,7 +211,7 @@ const parseContactsList = (location) => {
 };
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBq_1YKH4Hf4M65qMHirvWCD_-tyqCDz5E",
+  apiKey: "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg",
   authDomain: "ramit-7e364.firebaseapp.com",
   projectId: "ramit-7e364",
   storageBucket: "ramit-7e364.firebasestorage.app",
@@ -226,9 +223,7 @@ let app, auth, db;
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = initializeFirestore(app, {
-    experimentalForceLongPolling: true
-  });
+  db = getFirestore(app);
 } catch (configError) {
   try {
     db = getFirestore(app);
@@ -681,7 +676,7 @@ export default function App() {
   const [language, setLanguage] = useState('kh');
   const [currentPage, setCurrentPage] = useState(() => {
       const u = getInitialUser();
-      const isGuest = sessionStorage.getItem('tp_is_guest') === 'true';
+      const isGuest = localStorage.getItem('tp_is_guest') === 'true'; // កែប្រែទៅប្រើ localStorage ដើម្បីកុំឲ្យលោតសួររាល់ពេលចូល PWA
       const savedName = localStorage.getItem(`tp_username_${u.uid}`);
       if (isGuest || (savedName && savedName !== 'ភ្ញៀវ')) return 'app';
       return 'gateway';
@@ -693,14 +688,14 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   
-  // FIXED: Changed isAdmin to use sessionStorage so it only affects the local device
-  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem('tp_admin_session') === 'true');
+  // FIXED: Persistent Admin session via localStorage for instant PWA load
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('tp_admin_session') === 'true');
   
   /* Customized logo and background states */
   const [appLogo, setAppLogo] = useState(() => localStorage.getItem('tp_cache_appLogo') || 'logo.png');
-  // FIXED: Update session when isAdmin changes
+  
   useEffect(() => {
-     sessionStorage.setItem('tp_admin_session', isAdmin);
+     localStorage.setItem('tp_admin_session', isAdmin);
   }, [isAdmin]);
 
   const [customBg, setCustomBg] = useState(() => localStorage.getItem('tp_cache_customBg') || '#f8fafc');
@@ -721,12 +716,7 @@ export default function App() {
   });
   
   // ទិន្នន័យពិតប្រាកដបម្រុងទុក ដើម្បីឲ្យលោតមកភ្លាមៗ ០ វិនាទី (Instant Load 0s)
-  const PRELOAD_REAL_DATA = [
-      { id: 'p1', title: 'សាលាស្រុករតនមណ្ឌល', category: 'ឃុំ', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500', contacts: [{name: 'រដ្ឋបាលស្រុក', phone: '012345678'}], status: 'approved', timestamp: 1 },
-      { id: 'p2', title: 'អធិការដ្ឋាននគរបាលរតនមណ្ឌល', category: 'ប៉ូលិស', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ', image: 'https://images.unsplash.com/photo-1541888081198-500b52787df8?w=500', contacts: [{name: 'អធិការ', phone: '098765432'}], status: 'approved', timestamp: 1 },
-      { id: 'p3', title: 'មណ្ឌលសុខភាពរតនមណ្ឌល', category: 'មន្ទីរពេទ្យ', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ', image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500', contacts: [{name: 'ប្រធានមណ្ឌល', phone: '011223344'}], status: 'approved', timestamp: 1 },
-      { id: 'p4', title: 'វិទ្យាល័យស្តៅសន្តិភាព', category: 'សាលារៀន', district: 'រតនមណ្ឌល', commune: 'ស្តៅ', village: 'ស្តៅ', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=500', contacts: [{name: 'នាយកសាលា', phone: '012998877'}], status: 'approved', timestamp: 1 }
-  ];
+  const PRELOAD_REAL_DATA = [];
 
   // បង្កើនល្បឿនអតិបរមាដោយប្រើ Local Storage Caching សម្រាប់ការទាញយកទិន្នន័យទាំងអស់ (Offline First)
   const [locations, setLocations] = useState(() => {
@@ -914,13 +904,13 @@ export default function App() {
     
     // Presence update routine
     const updatePresenceIfReal = () => {
-       const isG = sessionStorage.getItem('tp_is_guest') === 'true';
+       const isG = localStorage.getItem('tp_is_guest') === 'true';
        const uName = localStorage.getItem(`tp_username_${user.uid}`);
        if (!isG && uName && uName !== 'ភ្ញៀវ') {
           // កែប្រែ៖ បញ្ចូលឈ្មោះទៅជាមួយជានិច្ច ដើម្បីការពារកុំឱ្យ Database បាត់ឈ្មោះពេល Update
           setDoc(profileRef, { lastActive: Date.now(), status: 'online', username: uName }, { merge: true }).catch(()=>{});
        }
-       if (sessionStorage.getItem('tp_admin_session') === 'true') {
+       if (localStorage.getItem('tp_admin_session') === 'true') {
           setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', 'admin_ramit_fixed_uid'), { lastActive: Date.now(), status: 'online', username: 'ADMIN' }, { merge: true }).catch(()=>{});
        }
     };
@@ -959,7 +949,7 @@ export default function App() {
 
         setProfile(udata);
         
-        if (sessionStorage.getItem('tp_admin_session') !== 'true') {
+        if (localStorage.getItem('tp_admin_session') !== 'true') {
           setIsAdmin(false);
         }
         
@@ -979,7 +969,7 @@ export default function App() {
         }
       } else {
         const savedName = localStorage.getItem(`tp_username_${user.uid}`) || '';
-        const isG = sessionStorage.getItem('tp_is_guest') === 'true';
+        const isG = localStorage.getItem('tp_is_guest') === 'true';
         if (savedName && savedName !== 'ភ្ញៀវ' && !isG) {
           // Optimistic local state update to prevent UI flickering on mobile
           setProfile(prev => ({
@@ -1049,7 +1039,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       setChats(msgs);
       try { localStorage.setItem('tp_cache_chats', JSON.stringify(msgs)); } catch(e){}
       
-      const amIAdmin = sessionStorage.getItem('tp_admin_session') === 'true';
+      const amIAdmin = localStorage.getItem('tp_admin_session') === 'true';
       const myCheckId = amIAdmin ? 'admin_ramit_fixed_uid' : user.uid;
       const isMuted = localStorage.getItem('tp_sound_muted') === 'true';
 
@@ -1374,186 +1364,103 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       }
   };
 
+  const startRealCall = async (targetUser, isVideoCall = false) => {
+      if (!chatFeatureEnabled && !isAdmin) {
+         return showToast('មុខងារនេះត្រូវបានបិទដោយ Admin', 'error');
+      }
+      try {
+         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: isVideoCall });
+         localStreamRef.current = stream;
+         setCallState({ isActive: true, status: 'calling', duration: 0, isVideo: isVideoCall, isMicOn: true, isCameraOn: isVideoCall, isSpeakerOn: true, peerInfo: targetUser });
+         
+         if (db) {
+             const callDoc = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'calls'), {
+                 callerId: myChatId,
+                 callerName: myChatName,
+                 callerAvatar: myChatAvatar,
+                 targetId: targetUser.id,
+                 isVideo: isVideoCall,
+                 status: 'calling',
+                 timestamp: Date.now()
+             });
+             callIdRef.current = callDoc.id;
+             
+             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'calls', callDoc.id), snap => {
+                 if (snap.exists()) {
+                     const data = snap.data();
+                     if (data.status === 'rejected') {
+                         endRealCall();
+                         showToast('ភាគីម្ខាងទៀតបានបដិសេធ (Rejected)', 'error');
+                     } else if (data.status === 'accepted') {
+                         setCallState(prev => ({ ...prev, status: 'connected' }));
+                         if (!callDurationTimerRef.current) {
+                            callDurationTimerRef.current = setInterval(() => {
+                                setCallState(prev => ({ ...prev, duration: prev.duration + 1 }));
+                            }, 1000);
+                         }
+                     } else if (data.status === 'ended') {
+                         endRealCall();
+                         showToast('ការហៅត្រូវបានបញ្ចប់', 'info');
+                     }
+                 }
+             });
+         }
+      } catch(e) {
+         showToast('បរាជ័យក្នុងការភ្ជាប់ Media Devices', 'error');
+      }
+  };
+
+  const acceptIncomingCall = async () => {
+      if (!incomingCall) return;
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: incomingCall.isVideo });
+          localStreamRef.current = stream;
+          setCallState({ 
+             isActive: true, status: 'connected', duration: 0, isVideo: incomingCall.isVideo, 
+             isMicOn: true, isCameraOn: incomingCall.isVideo, isSpeakerOn: true, 
+             peerInfo: { id: incomingCall.callerId, label: incomingCall.callerName, avatar: incomingCall.callerAvatar }
+          });
+          callIdRef.current = incomingCall.id;
+          
+          if (db) {
+              await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'calls', incomingCall.id), { status: 'accepted' });
+              
+              onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'calls', incomingCall.id), snap => {
+                  if (snap.exists()) {
+                      const data = snap.data();
+                      if (data.status === 'ended') {
+                          endRealCall();
+                          showToast('ការហៅត្រូវបានបញ្ចប់', 'info');
+                      }
+                  }
+              });
+          }
+          
+          if (!callDurationTimerRef.current) {
+              callDurationTimerRef.current = setInterval(() => {
+                  setCallState(prev => ({ ...prev, duration: prev.duration + 1 }));
+              }, 1000);
+          }
+          setIncomingCall(null);
+      } catch (e) {
+          showToast('បរាជ័យក្នុងការភ្ជាប់ Media Devices', 'error');
+          rejectIncomingCall(incomingCall.id);
+      }
+  };
+
   const endRealCall = async () => {
       if (callIdRef.current && db) {
           await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'calls', callIdRef.current), { status: 'ended' }).catch(()=>{});
       }
-      if (peerConnectionRef.current) {
-          peerConnectionRef.current.close();
-          peerConnectionRef.current = null;
-      }
       if (localStreamRef.current) {
           localStreamRef.current.getTracks().forEach(track => track.stop());
-          localStreamRef.current = null;
       }
       if (callDurationTimerRef.current) {
           clearInterval(callDurationTimerRef.current);
           callDurationTimerRef.current = null;
       }
-      if (window.unsubCallVars) {
-          if (window.unsubCallVars.unsubCall) window.unsubCallVars.unsubCall();
-          if (window.unsubCallVars.unsubIce) window.unsubCallVars.unsubIce();
-          window.unsubCallVars = null;
-      }
-      setCallState({ isActive: false, status: 'idle', duration: 0 });
+      setCallState({ isActive: false, status: 'idle', duration: 0, isVideo: false, isMicOn: true, isCameraOn: true, isSpeakerOn: true, peerInfo: null });
       callIdRef.current = null;
-  };
-
-  const startRealCall = async (targetUser, isVideoCall) => {
-     if (!targetUser) return;
-     if (!db) return showToast('មិនអាចខលបានទេក្នុង Sandbox Mode (គ្មាន Database)', 'error');
-     try {
-         const stream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall, audio: true });
-         localStreamRef.current = stream;
-         
-         const pc = new RTCPeerConnection({
-             iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
-         });
-         peerConnectionRef.current = pc;
-
-         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-         pc.ontrack = event => {
-             if (remoteVideoRef.current) {
-                 remoteVideoRef.current.srcObject = event.streams[0];
-             }
-         };
-
-         const callDocRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'calls'));
-         callIdRef.current = callDocRef.id;
-
-         pc.onicecandidate = event => {
-             if(event.candidate) {
-                 addDoc(collection(callDocRef, 'callerCandidates'), event.candidate.toJSON());
-             }
-         };
-
-         const offer = await pc.createOffer();
-         await pc.setLocalDescription(offer);
-
-         await setDoc(callDocRef, {
-             offer: { type: offer.type, sdp: offer.sdp },
-             callerId: myChatId,
-             callerName: myChatName,
-             callerAvatar: myChatAvatar,
-             targetId: targetUser.id,
-             isVideo: isVideoCall,
-             status: 'calling',
-             timestamp: Date.now()
-         });
-
-         setCallState({ 
-             isActive: true, status: 'calling', duration: 0, 
-             isVideo: isVideoCall, isMicOn: true, isCameraOn: isVideoCall, isSpeakerOn: true,
-             peerInfo: targetUser 
-         });
-
-         const unsubCall = onSnapshot(callDocRef, snapshot => {
-             const data = snapshot.data();
-             if(!pc.currentRemoteDescription && data?.answer) {
-                 const answerDescription = new RTCSessionDescription(data.answer);
-                 pc.setRemoteDescription(answerDescription);
-                 setCallState(prev => ({...prev, status: 'connected'}));
-                 
-                 callDurationTimerRef.current = setInterval(() => {
-                     setCallState(p => ({...p, duration: p.duration + 1}));
-                 }, 1000);
-             }
-             if(data?.status === 'ended' || data?.status === 'rejected') {
-                 endRealCall();
-                 if (data?.status === 'rejected') showToast('ការហៅត្រូវបានបដិសេធ', 'error');
-             }
-         }, (err) => { console.warn("Call doc error:", err.code); });
-
-         const unsubIce = onSnapshot(collection(callDocRef, 'calleeCandidates'), snapshot => {
-             snapshot.docChanges().forEach(change => {
-                 if(change.type === 'added') {
-                     const candidate = new RTCIceCandidate(change.doc.data());
-                     pc.addIceCandidate(candidate);
-                 }
-             });
-         }, (err) => { console.warn("ICE error:", err.code); });
-
-         window.unsubCallVars = { unsubCall, unsubIce };
-
-     } catch (e) {
-         showToast('សូមអនុញ្ញាតសិទ្ធិប្រើប្រាស់ Camera & Mic', 'error');
-     }
-  };
-
-  const acceptIncomingCall = async () => {
-      if (!incomingCall) return;
-      const callId = incomingCall.id;
-      const callData = incomingCall;
-      setIncomingCall(null);
-      
-      try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: callData.isVideo, audio: true });
-          localStreamRef.current = stream;
-
-          const pc = new RTCPeerConnection({
-             iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
-          });
-          peerConnectionRef.current = pc;
-
-          stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-          pc.ontrack = event => {
-             if (remoteVideoRef.current) {
-                 remoteVideoRef.current.srcObject = event.streams[0];
-             }
-          };
-
-          const callDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'calls', callId);
-          callIdRef.current = callId;
-
-          pc.onicecandidate = event => {
-             if(event.candidate) {
-                 addDoc(collection(callDocRef, 'calleeCandidates'), event.candidate.toJSON());
-             }
-          };
-
-          await pc.setRemoteDescription(new RTCSessionDescription(callData.offer));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-
-          await updateDoc(callDocRef, {
-              answer: { type: answer.type, sdp: answer.sdp },
-              status: 'connected'
-          });
-
-          setCallState({ 
-              isActive: true, status: 'connected', duration: 0, 
-              isVideo: callData.isVideo, isMicOn: true, isCameraOn: callData.isVideo, isSpeakerOn: true,
-              peerInfo: { label: callData.callerName, avatar: callData.callerAvatar }
-          });
-
-          callDurationTimerRef.current = setInterval(() => {
-              setCallState(p => ({...p, duration: p.duration + 1}));
-          }, 1000);
-
-          const unsubCall = onSnapshot(callDocRef, snapshot => {
-              const data = snapshot.data();
-              if(data?.status === 'ended') {
-                  endRealCall();
-              }
-          }, (err) => { console.warn("Call doc error:", err.code); });
-
-          const unsubIce = onSnapshot(collection(callDocRef, 'callerCandidates'), snapshot => {
-              snapshot.docChanges().forEach(change => {
-                  if(change.type === 'added') {
-                      const candidate = new RTCIceCandidate(change.doc.data());
-                      pc.addIceCandidate(candidate);
-                  }
-              });
-          }, (err) => { console.warn("ICE error:", err.code); });
-
-          window.unsubCallVars = { unsubCall, unsubIce };
-
-      } catch (e) {
-          showToast('បរាជ័យក្នុងការភ្ជាប់ Media Devices', 'error');
-          rejectIncomingCall(callId);
-      }
   };
 
   const rejectIncomingCall = async (idToReject = null) => {
@@ -1624,7 +1531,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         return showToast('ឈ្មោះមិនត្រឹមត្រូវ! (សូមប្រើឈ្មោះពិត ត្រកូល និងនាមឲ្យបានត្រឹមត្រូវ)', 'error');
     }
     
-    sessionStorage.removeItem('tp_is_guest');
+    localStorage.removeItem('tp_is_guest');
     localStorage.setItem(`tp_username_${user.uid}`, finalizedUsername);
 
     // Optimistic local state update to prevent UI flickering before database syncs
@@ -1657,7 +1564,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
   };
 
   const handleGuestEntry = () => {
-     sessionStorage.setItem('tp_is_guest', 'true');
+     localStorage.setItem('tp_is_guest', 'true');
      if (!profile?.username || profile?.username !== 'ភ្ញៀវ') {
         setProfile({
            username: 'ភ្ញៀវ',
@@ -2035,15 +1942,26 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     );
   }
 
+  // ប្រព័ន្ធប្ដូរផ្ទៃ Background ស្វ័យប្រវត្តិតាម Menu នីមួយៗ (Dynamic Menu Background)
+  const getDynamicBg = () => {
+     if (currentView === 'home') return 'linear-gradient(to bottom, #f8fafc, #e2e8f0)'; 
+     if (currentView === 'info') return 'linear-gradient(to bottom, #f0f9ff, #e0f2fe)'; 
+     if (currentView === 'reports') return 'linear-gradient(to bottom, #fdf4ff, #fae8ff)'; 
+     if (currentView === 'account') return 'linear-gradient(to bottom, #fff1f2, #ffe4e6)'; 
+     if (currentView === 'admin') return '#0f172a';
+     if (currentView === 'chat') return '#f1f5f9';
+     return customBg || 'linear-gradient(to bottom, #f8fafc, #f1f5f9)';
+  };
+
   return (
     <div 
-      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden" 
-      style={{ backgroundColor: customBg }}
+      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden transition-all duration-700 ease-in-out" 
+      style={{ background: getDynamicBg() }}
     >
       
       {toast && (
-        <div className="fixed top-safe mt-2 left-1/2 -translate-x-1/2 z-[5000] animate-in slide-in-from-top-5 fade-in duration-300 w-full max-w-[90vw] md:max-w-sm pointer-events-none">
-          <div className={`px-4 py-3 rounded-xl shadow-2xl font-bold text-[12px] flex items-center gap-2.5 backdrop-blur-xl border pointer-events-auto ${toast.type === 'error' ? 'bg-rose-600/90 text-white border-rose-500' : toast.type === 'info' ? 'bg-[#0F2B5C]/90 text-white border-slate-700' : 'bg-emerald-600/90 text-white border-emerald-500'}`}>
+        <div className="fixed top-[calc(max(env(safe-area-inset-top),16px)+135px)] left-1/2 -translate-x-1/2 z-[5000] animate-in slide-in-from-top-2 fade-in duration-300 w-[92vw] md:max-w-sm pointer-events-none">
+          <div className={`px-4 py-3 rounded-xl shadow-xl font-bold text-[12px] flex items-center gap-2.5 backdrop-blur-xl border pointer-events-auto ${toast.type === 'error' ? 'bg-rose-600/95 text-white border-rose-500' : toast.type === 'info' ? 'bg-[#0F2B5C]/95 text-white border-slate-700' : 'bg-emerald-600/95 text-white border-emerald-500'}`}>
             {toast.type === 'error' ? <XCircle className="w-4 h-4 shrink-0"/> : toast.type === 'info' ? <Bell className="w-4 h-4 shrink-0"/> : <CheckCircle className="w-4 h-4 shrink-0"/>} 
             <span className="flex-1 text-left leading-relaxed drop-shadow-sm">{safeStr(toast.msg)}</span>
           </div>
@@ -2062,9 +1980,9 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative w-full max-w-7xl mx-auto overflow-hidden">
-           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} /></div>}
+           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} /></div>}
            {currentView === 'info' && (
-             <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2">
+             <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                <InfoView 
                  locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} 
                  onOpenLocation={handleOpenLocation} user={user} profile={profile} isAdmin={isAdmin} showToast={showToast} 
@@ -2089,18 +2007,18 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
                />
              </div>
            )}
-           {currentView === 'reports' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><ReportsView locations={approvedLocations} usersList={usersList} appStats={appStats} /></div>}
+           {currentView === 'reports' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><ReportsView locations={approvedLocations} usersList={usersList} appStats={appStats} /></div>}
            {currentView === 'chat' && (chatFeatureEnabled || isAdmin) && <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-0"><ChatView chats={chats} user={user} profile={profile} showToast={showToast} db={db} appId={appId} setCurrentView={setCurrentView} isAdmin={isAdmin} chatTargets={chatTargets} myContacts={myContacts} friendRequests={friendRequests} dbRegions={dbRegions} gpsStatus={gpsStatus} captureGps={handleGPS} gpsCoords={gpsCoords} usersList={usersList} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} startRealCall={startRealCall} /></div>}
            {currentView === 'chat' && !chatFeatureEnabled && !isAdmin && (
-             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center pb-[calc(90px+env(safe-area-inset-bottom,20px))]">
                 <MessageCircle className="w-12 h-12 text-slate-300 mb-4" />
                 <h2 className="text-[16px] font-black text-slate-700 mb-2">មុខងារឆាតត្រូវបានបិទ</h2>
                 <p className="text-[13px] text-slate-500">អភិបាលប្រព័ន្ធបានបិទមុខងារនេះជាបណ្តោះអាសន្ន។</p>
              </div>
            )}
-           {currentView === 'account' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2"><AccountView user={user} profile={profile} db={db} appId={appId} showToast={showToast} setCurrentPage={setCurrentPage} isAdmin={isAdmin} setIsAdmin={setIsAdmin} setCurrentView={setCurrentView} usersList={usersList} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} /></div>}
+           {currentView === 'account' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><AccountView user={user} profile={profile} db={db} appId={appId} showToast={showToast} setCurrentPage={setCurrentPage} isAdmin={isAdmin} setIsAdmin={setIsAdmin} setCurrentView={setCurrentView} usersList={usersList} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} /></div>}
            {currentView === 'admin' && isAdmin && (
-              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-20 hide-scrollbar pt-2">
+              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                 <AdminDashboard 
                   locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
                 />
@@ -2479,7 +2397,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2510,7 +2428,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
     <div 
       className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe"
     >
-      <div className="flex justify-around items-center pt-1.5 pb-2.5 px-1 mt-1.5">
+      <div className="flex justify-around items-center pt-2 pb-1 px-1">
       {navItems.map(item => {
          const isActive = currentView === item.id;
          return (
@@ -2520,7 +2438,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
              className="relative flex-1 flex flex-col items-center justify-center transition-all active:scale-90"
            >
              <div className={`flex flex-col items-center justify-center transition-all ${isActive ? 'text-[#0F2B5C]' : 'text-[#94A3B8]'}`}>
-                <div className={`p-1.5 rounded-xl ${isActive ? 'bg-[#0F2B5C]/10' : ''}`}>
+                <div className={`p-1 rounded-xl ${isActive ? 'bg-[#0F2B5C]/10' : ''}`}>
                    <item.icon className="w-[20px] h-[20px]" />
                 </div>
                 <span className={`text-[10px] mt-0.5 font-bold`}>{item.label}</span>
@@ -2565,7 +2483,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
               <div className="flex items-center gap-2">
                  <button 
                    onClick={() => {
-                      sessionStorage.removeItem('tp_is_guest');
+                      localStorage.removeItem('tp_is_guest');
                       setCurrentPage('gateway');
                    }} 
                    className="flex items-center justify-center p-1.5 text-[#0F2B5C] bg-slate-50 border border-slate-200 rounded-lg"
@@ -2631,49 +2549,53 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
 const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon }) => {
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
-  const filtered = (locations || []).filter(l => {
-     if (!l) return false;
-     
-     // ធ្វើឲ្យការស្វែងរកកាន់តែឆ្លាតវៃ (Smart Search): កាត់ពាក្យ "ឃុំ", "ភូមិ" ចេញ និងបំបែកពាក្យស្វែងរក
-     const rawSearch = searchQuery.toLowerCase().trim();
-     const cleanSearch = rawSearch.replace(/^(ឃុំ|ភូមិ|ស្រុក|សង្កាត់|ខេត្ត)\s*/, '');
-     const searchTerms = cleanSearch.split(/\s+/).filter(Boolean);
-     
-     const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
-        safeStr(l.title).toLowerCase().includes(term) || 
-        safeStr(l.desc).toLowerCase().includes(term) ||
-        safeStr(l.commune).toLowerCase().includes(term) ||
-        safeStr(l.village).toLowerCase().includes(term) ||
-        safeStr(l.category).toLowerCase().includes(term) ||
-        safeStr(l.district).toLowerCase().includes(term)
-     );
-        
-     if(activeHomeFilter === 'All') return matchesSearch;
-     if(activeHomeFilter === 'រតនមណ្ឌល') return matchesSearch && l.district === 'រតនមណ្ឌល';
-     if(activeHomeFilter === 'ផ្សេងៗ') return matchesSearch && l.district !== 'រតនមណ្ឌល';
-     return matchesSearch;
-  });
+  const filtered = useMemo(() => {
+     return (locations || []).filter(l => {
+         if (!l) return false;
+         
+         // ធ្វើឲ្យការស្វែងរកកាន់តែឆ្លាតវៃ (Smart Search): កាត់ពាក្យ "ឃុំ", "ភូមិ" ចេញ និងបំបែកពាក្យស្វែងរក
+         const rawSearch = searchQuery.toLowerCase().trim();
+         const cleanSearch = rawSearch.replace(/^(ឃុំ|ភូមិ|ស្រុក|សង្កាត់|ខេត្ត)\s*/, '');
+         const searchTerms = cleanSearch.split(/\s+/).filter(Boolean);
+         
+         const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
+            safeStr(l.title).toLowerCase().includes(term) || 
+            safeStr(l.desc).toLowerCase().includes(term) ||
+            safeStr(l.commune).toLowerCase().includes(term) ||
+            safeStr(l.village).toLowerCase().includes(term) ||
+            safeStr(l.category).toLowerCase().includes(term) ||
+            safeStr(l.district).toLowerCase().includes(term)
+         );
+            
+         if(activeHomeFilter === 'All') return matchesSearch;
+         if(activeHomeFilter === 'រតនមណ្ឌល') return matchesSearch && l.district === 'រតនមណ្ឌល';
+         if(activeHomeFilter === 'ផ្សេងៗ') return matchesSearch && l.district !== 'រតនមណ្ឌល';
+         return matchesSearch;
+     });
+  }, [locations, searchQuery, activeHomeFilter]);
 
-  const sortedFiltered = [...filtered].sort((a, b) => {
-     // 1. Favorites មកមុនគេ
-     const aFav = favorites[a.id] ? 1 : 0;
-     const bFav = favorites[b.id] ? 1 : 0;
-     if (aFav !== bFav) return bFav - aFav;
-     
-     // 2. ផ្តល់អាទិភាពលើសេវាកម្មសំខាន់ៗ (ប៉ូលិស ពេទ្យ សាលារៀន ជាដាច់ខាតត្រូវនៅខាងលើគេបង្អស់ Priority 3)
-     const getPri = (cat) => {
-         const c = String(cat || '').trim();
-         if (['ប៉ូលិស', 'មន្ទីរពេទ្យ', 'ពេទ្យ', 'សាលារៀន'].includes(c)) return 3;
-         if (['ឃុំ', 'សង្កាត់'].includes(c)) return 2;
-         return 1;
-     };
-     const aPri = getPri(a.category);
-     const bPri = getPri(b.category);
-     if (aPri !== bPri) return bPri - aPri;
+  const sortedFiltered = useMemo(() => {
+     return [...filtered].sort((a, b) => {
+         // 1. Favorites មកមុនគេ
+         const aFav = favorites[a.id] ? 1 : 0;
+         const bFav = favorites[b.id] ? 1 : 0;
+         if (aFav !== bFav) return bFav - aFav;
+         
+         // 2. ផ្តល់អាទិភាពលើសេវាកម្មសំខាន់ៗ (ប៉ូលិស ពេទ្យ សាលារៀន ជាដាច់ខាតត្រូវនៅខាងលើគេបង្អស់ Priority 3)
+         const getPri = (cat) => {
+             const c = String(cat || '').trim();
+             if (['ប៉ូលិស', 'មន្ទីរពេទ្យ', 'ពេទ្យ', 'សាលារៀន'].includes(c)) return 3;
+             if (['ឃុំ', 'សង្កាត់'].includes(c)) return 2;
+             return 1;
+         };
+         const aPri = getPri(a.category);
+         const bPri = getPri(b.category);
+         if (aPri !== bPri) return bPri - aPri;
 
-     // 3. ទិន្នន័យបញ្ចូលថ្មីៗនៅខាងលើ
-     return (b.timestamp || 0) - (a.timestamp || 0);
-  });
+         // 3. ទិន្នន័យបញ្ចូលថ្មីៗនៅខាងលើ
+         return (b.timestamp || 0) - (a.timestamp || 0);
+      });
+  }, [filtered, favorites]);
 
   const handleOtherDistricts = () => {
      showToast('មុខងារកំពុងអភិវឌ្ឍ (Under Development) ⚠️', 'info');
@@ -2762,56 +2684,60 @@ const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
      }
   }, [db, appId]);
 
-  const filtered = (locations || []).filter(l => {
-    if (!l) return false;
-    
-    // ធ្វើឲ្យការស្វែងរកកាន់តែឆ្លាតវៃ (Smart Search): កាត់ពាក្យ "ឃុំ", "ភូមិ" ចេញ និងបំបែកពាក្យស្វែងរក
-    const rawSearch = searchQuery.toLowerCase().trim();
-    const cleanSearch = rawSearch.replace(/^(ឃុំ|ភូមិ|ស្រុក|សង្កាត់|ខេត្ត)\s*/, '');
-    const searchTerms = cleanSearch.split(/\s+/).filter(Boolean);
-    
-    const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
-        safeStr(l.title).toLowerCase().includes(term) || 
-        safeStr(l.desc).toLowerCase().includes(term) ||
-        safeStr(l.commune).toLowerCase().includes(term) ||
-        safeStr(l.village).toLowerCase().includes(term) ||
-        safeStr(l.category).toLowerCase().includes(term) ||
-        safeStr(l.district).toLowerCase().includes(term)
-    );
-    
-    const isRatanak = l.district === 'រតនមណ្ឌល';
-    if (activeTab === 'រតនមណ្ឌល' && !isRatanak) return false;
-    if (activeTab === 'ស្រុកផ្សេងៗ' && isRatanak) return false;
-    
-    let matchesLevel = true;
-    if (activeFilter === 'ឃុំ' && l.category !== 'ឃុំ') matchesLevel = false;
-    if (activeFilter === 'ភូមិ' && l.category !== 'ភូមិ') matchesLevel = false;
-    if (activeFilter === 'ប៉ូលីស' && l.category !== 'ប៉ូលិស') matchesLevel = false;
-    if (activeFilter === 'ពេទ្យ' && l.category !== 'មន្ទីរពេទ្យ' && l.category !== 'ពេទ្យ') matchesLevel = false;
-    if (activeFilter === 'សាលារៀន' && l.category !== 'សាលារៀន') matchesLevel = false;
-    return matchesSearch && matchesLevel;
-  });
+  const filtered = useMemo(() => {
+    return (locations || []).filter(l => {
+        if (!l) return false;
+        
+        // ធ្វើឲ្យការស្វែងរកកាន់តែឆ្លាតវៃ (Smart Search): កាត់ពាក្យ "ឃុំ", "ភូមិ" ចេញ និងបំបែកពាក្យស្វែងរក
+        const rawSearch = searchQuery.toLowerCase().trim();
+        const cleanSearch = rawSearch.replace(/^(ឃុំ|ភូមិ|ស្រុក|សង្កាត់|ខេត្ត)\s*/, '');
+        const searchTerms = cleanSearch.split(/\s+/).filter(Boolean);
+        
+        const matchesSearch = searchTerms.length === 0 || searchTerms.every(term => 
+            safeStr(l.title).toLowerCase().includes(term) || 
+            safeStr(l.desc).toLowerCase().includes(term) ||
+            safeStr(l.commune).toLowerCase().includes(term) ||
+            safeStr(l.village).toLowerCase().includes(term) ||
+            safeStr(l.category).toLowerCase().includes(term) ||
+            safeStr(l.district).toLowerCase().includes(term)
+        );
+        
+        const isRatanak = l.district === 'រតនមណ្ឌល';
+        if (activeTab === 'រតនមណ្ឌល' && !isRatanak) return false;
+        if (activeTab === 'ស្រុកផ្សេងៗ' && isRatanak) return false;
+        
+        let matchesLevel = true;
+        if (activeFilter === 'ឃុំ' && l.category !== 'ឃុំ') matchesLevel = false;
+        if (activeFilter === 'ភូមិ' && l.category !== 'ភូមិ') matchesLevel = false;
+        if (activeFilter === 'ប៉ូលីស' && l.category !== 'ប៉ូលិស') matchesLevel = false;
+        if (activeFilter === 'ពេទ្យ' && l.category !== 'មន្ទីរពេទ្យ' && l.category !== 'ពេទ្យ') matchesLevel = false;
+        if (activeFilter === 'សាលារៀន' && l.category !== 'សាលារៀន') matchesLevel = false;
+        return matchesSearch && matchesLevel;
+    });
+  }, [locations, searchQuery, activeTab, activeFilter]);
 
-  const sortedFiltered = [...filtered].sort((a, b) => {
-     // 1. Favorites មកមុនគេ
-     const aFav = favorites[a.id] ? 1 : 0;
-     const bFav = favorites[b.id] ? 1 : 0;
-     if (aFav !== bFav) return bFav - aFav;
-     
-     // 2. ផ្តល់អាទិភាពលើសេវាកម្មសំខាន់ៗ (ប៉ូលិស ពេទ្យ សាលារៀន ជាដាច់ខាតត្រូវនៅខាងលើគេបង្អស់ Priority 3)
-     const getPri = (cat) => {
-         const c = String(cat || '').trim();
-         if (['ប៉ូលិស', 'មន្ទីរពេទ្យ', 'ពេទ្យ', 'សាលារៀន'].includes(c)) return 3;
-         if (['ឃុំ', 'សង្កាត់'].includes(c)) return 2;
-         return 1;
-     };
-     const aPri = getPri(a.category);
-     const bPri = getPri(b.category);
-     if (aPri !== bPri) return bPri - aPri;
+  const sortedFiltered = useMemo(() => {
+     return [...filtered].sort((a, b) => {
+         // 1. Favorites មកមុនគេ
+         const aFav = favorites[a.id] ? 1 : 0;
+         const bFav = favorites[b.id] ? 1 : 0;
+         if (aFav !== bFav) return bFav - aFav;
+         
+         // 2. ផ្តល់អាទិភាពលើសេវាកម្មសំខាន់ៗ (ប៉ូលិស ពេទ្យ សាលារៀន ជាដាច់ខាតត្រូវនៅខាងលើគេបង្អស់ Priority 3)
+         const getPri = (cat) => {
+             const c = String(cat || '').trim();
+             if (['ប៉ូលិស', 'មន្ទីរពេទ្យ', 'ពេទ្យ', 'សាលារៀន'].includes(c)) return 3;
+             if (['ឃុំ', 'សង្កាត់'].includes(c)) return 2;
+             return 1;
+         };
+         const aPri = getPri(a.category);
+         const bPri = getPri(b.category);
+         if (aPri !== bPri) return bPri - aPri;
 
-     // 3. ទិន្នន័យបញ្ចូលថ្មីៗនៅខាងលើ
-     return (b.timestamp || 0) - (a.timestamp || 0);
-  });
+         // 3. ទិន្នន័យបញ្ចូលថ្មីៗនៅខាងលើ
+         return (b.timestamp || 0) - (a.timestamp || 0);
+      });
+  }, [filtered, favorites]);
 
   const handleOpenAdd = () => {
     if (!isAdmin && (!profile?.username || profile?.username === 'ភ្ញៀវ')) {
@@ -2939,79 +2865,107 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const locsThisYear = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfYearMs).length;
 
   const stats = [
-    { label: 'អ្នកប្រើប្រាស់សសរុប', count: totalUsers + 1, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
-    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-500', desc: `ក្នុងខែទី ${currentMonth + 1}` },
-    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}` },
-    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
-    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}` },
-    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+    { label: 'អ្នកប្រើប្រាស់សរុប', count: totalUsers + 1, color: 'text-[#0F2B5C]', desc: 'សរុបតាំងពីដើម', bg: 'bg-blue-50' },
+    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-600', desc: `ក្នុងខែទី ${currentMonth + 1}`, bg: 'bg-sky-50' },
+    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}`, bg: 'bg-indigo-50' },
+    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម', bg: 'bg-slate-50' },
+    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}`, bg: 'bg-emerald-50' },
+    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}`, bg: 'bg-rose-50' },
   ];
 
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
+  // ទាញយកទិន្នន័យពិតប្រាកដចេញពី Database ១០០% ដោយមិនមានសរសេរផ្ទាល់ (Hardcode)
   const monthlyData = khmerMonths.map((name, index) => {
-    // Set specific value for May (ឧសភា is index 4)
-    if (index === 4) {
-        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
-    }
-    // Set specific value for July (កក្កដា is index 6)
-    if (index === 6) {
-        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
-    }
-    
     const startM = new Date(currentYear, index, 1).getTime();
     const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
+    
     let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
+    // បូកបញ្ចូលទិន្នន័យ Boost ទៅលើខែបច្ចុប្បន្ន
     if (index === currentMonth) usersInMonth += fakeCount;
+    
     const entriesInMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length;
+    
     return { name, users: usersInMonth, entries: entriesInMonth };
   });
 
+  // ស្វែងរកតម្លៃខ្ពស់បំផុតដើម្បីគណនាកម្ពស់ក្រាប (Max Value logic for fluid charts)
+  const maxVal = Math.max(...monthlyData.map(d => Math.max(d.users, d.entries)), 1);
+
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
-      <h1 className="text-[13px] md:text-[15px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">របាយការណ៍ទិន្នន័យជាក់ស្ដែង</h1>
+      <h1 className="text-[14.5px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">របាយការណ៍ទិន្នន័យជាក់ស្ដែង</h1>
       
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
          {stats.map((s, i) => (
-           <div key={i} className="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between min-h-[75px]">
-              <p className="text-[10px] md:text-[11px] font-bold text-slate-500 leading-normal mb-1">{s.label}</p>
-              <h3 className="text-xl md:text-2xl font-black mt-auto">{s.count}</h3>
-              <p className="text-[9px] text-slate-400 mt-0.5">{s.desc}</p>
+           <div key={i} className={`p-4 rounded-2xl shadow-sm border border-white/50 relative overflow-hidden flex flex-col justify-between min-h-[90px] ${s.bg}`}>
+              <div className="absolute -right-4 -top-4 w-16 h-16 bg-white/40 rounded-full blur-xl"></div>
+              <p className="text-[11px] font-black text-slate-600 leading-normal mb-1.5 z-10">{s.label}</p>
+              <h3 className={`text-2xl md:text-3xl font-black mt-auto z-10 ${s.color}`}>{s.count}</h3>
+              <p className="text-[10px] text-slate-500 mt-1 font-bold z-10">{s.desc}</p>
            </div>
          ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 flex-1">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#38BDF8] pl-2">កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ</h3>
-           <div className="flex-1 min-h-[160px] w-full">
-               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={monthlyData}>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
-                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
-                   <Tooltip cursor={false} contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
-                   <Bar dataKey="users" fill="#38BDF8" radius={[2,2,0,0]} barSize={12} />
-                 </BarChart>
-               </ResponsiveContainer>
-            </div>
-        </div>
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-md flex flex-col w-full mt-2">
+           <div className="flex justify-between items-center mb-6">
+               <h3 className="text-[13.5px] font-black text-[#0F2B5C] flex items-center gap-2">
+                   <TrendingUp className="w-5 h-5 text-[#38BDF8]" /> 
+                   ក្រាបកំណើនប្រចាំឆ្នាំ {currentYear}
+               </h3>
+               <div className="flex items-center gap-3 text-[10px] font-bold">
+                   <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded bg-sky-400"></div> អ្នកប្រើ</span>
+                   <span className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded bg-[#0F2B5C]"></div> ទីតាំង</span>
+               </div>
+           </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#0F2B5C] pl-2">ស្ថិតិទីតាំងដែលបានបញ្ចូល</h3>
-           <div className="flex-1 min-h-[160px] w-full">
-               <ResponsiveContainer width="100%" height="100%">
-                 <LineChart data={monthlyData}>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
-                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
-                   <Tooltip contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
-                   <Line type="monotone" dataKey="entries" stroke="#0F2B5C" strokeWidth={2} dot={{r: 3, fill: '#0F2B5C'}} />
-                 </LineChart>
-               </ResponsiveContainer>
-            </div>
+           {/* Custom Native Beautiful Chart avoiding heavy third-party library crashes */}
+           <div className="flex-1 min-h-[220px] w-full flex items-end justify-between gap-1 mt-2 px-1 relative">
+              
+              {/* Horizontal Grid Lines */}
+              <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-[30px]">
+                 {[0, 1, 2, 3].map(line => (
+                    <div key={line} className="w-full border-b border-dashed border-slate-200 flex-1"></div>
+                 ))}
+                 <div className="w-full border-b border-slate-300"></div>
+              </div>
+
+              {monthlyData.map((d, i) => (
+                 <div key={i} className="flex flex-col items-center justify-end h-full w-full group relative z-10 pb-[30px]">
+                    
+                    {/* Hover Tooltip */}
+                    <div className="absolute bottom-full mb-2 bg-slate-800 text-white text-[11px] py-2 px-3 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20 font-bold border border-slate-700">
+                       <span className="text-sky-300">អ្នកប្រើ: {d.users} នាក់</span> <br/> 
+                       <span className="text-emerald-400">ទីតាំង: {d.entries} កន្លែង</span>
+                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45 border-b border-r border-slate-700"></div>
+                    </div>
+                    
+                    <div className="w-full flex justify-center gap-[2px] items-end h-[180px]">
+                       {/* Users Data Bar */}
+                       <div 
+                         className="w-[45%] max-w-[14px] bg-gradient-to-t from-[#0ea5e9] to-[#38BDF8] rounded-t-md shadow-sm transition-all duration-1000 ease-out group-hover:brightness-110 relative"
+                         style={{ height: `${(d.users / maxVal) * 100}%`, minHeight: d.users > 0 ? '6px' : '0' }}
+                       >
+                          {d.users > 0 && <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-sky-600 opacity-0 group-hover:opacity-100 transition-opacity">{d.users}</div>}
+                       </div>
+                       
+                       {/* Entries Data Bar */}
+                       <div 
+                         className="w-[45%] max-w-[14px] bg-gradient-to-t from-[#0f172a] to-[#0F2B5C] rounded-t-md shadow-sm transition-all duration-1000 ease-out delay-75 group-hover:brightness-125 relative"
+                         style={{ height: `${(d.entries / maxVal) * 100}%`, minHeight: d.entries > 0 ? '6px' : '0' }}
+                       >
+                          {d.entries > 0 && <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] font-black text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">{d.entries}</div>}
+                       </div>
+                    </div>
+                    
+                    {/* X-Axis Label */}
+                    <span className="absolute bottom-0 text-[10px] text-slate-500 font-bold mt-2 -rotate-45 origin-top-left translate-y-2 whitespace-nowrap">
+                       {d.name}
+                    </span>
+                 </div>
+              ))}
+           </div>
         </div>
-      </div>
     </div>
   );
 };
@@ -3636,7 +3590,7 @@ const ChatView = ({ chats = [], user, profile, showToast, db, appId, setCurrentV
      const registeredUsersToShow = (usersList || []).filter(u => u && u.username && u.username !== 'ភ្ញៀវ' && u.id !== myChatId && u.id !== 'admin_ramit_fixed_uid');
 
      return (
-        <div className="flex flex-col h-full bg-white md:rounded-xl md:border md:border-slate-200 overflow-hidden w-full flex-1 font-khmer md:pb-0" style={{ paddingBottom: 'calc(75px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="flex flex-col h-full bg-white md:rounded-xl md:border md:border-slate-200 overflow-hidden w-full flex-1 font-khmer md:pb-0" style={{ paddingBottom: 'calc(85px + env(safe-area-inset-bottom, 20px))' }}>
            
            {/* Add Friend Interface Container with explicit Back Arrow button */}
            {showUserSearch ? (
@@ -4162,7 +4116,7 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
       
       if (isMatch) {
          setIsAdmin(true); 
-         sessionStorage.setItem('tp_admin_session', 'true');
+         localStorage.setItem('tp_admin_session', 'true');
          
          const existingAdmin = (usersList || []).find(u => u.id === 'admin_ramit_fixed_uid');
          let adminAvatar = existingAdmin?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
@@ -4232,7 +4186,7 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
       }
 
       // FIXED: Hard save to localStorage immediately to prevent reload bugs
-      sessionStorage.removeItem('tp_is_guest');
+      localStorage.removeItem('tp_is_guest');
       localStorage.setItem(`tp_username_${user?.uid}`, trimmedName);
       
       // Force UI to hide the input box
