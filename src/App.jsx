@@ -27,7 +27,8 @@ import {
   increment,
   query,
   where,
-  getDoc
+  getDoc,
+  enableIndexedDbPersistence
 } from 'firebase/firestore';
 import { 
   LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer 
@@ -226,7 +227,15 @@ let app, auth, db;
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
+  
   db = getFirestore(app);
+  
+  // PERFORMANCE FIX: បើកមុខងារ Native Offline Cache របស់ Firebase ដោយប្រើ API ស្តង់ដារ (Support គ្រប់ Version)
+  // អនុញ្ញាតឲ្យ App Load ទិន្នន័យពីទូរស័ព្ទបានភ្លាមៗ (Instant Load) ទោះបីអ៊ីនធឺណិតយឺតក៏ដោយ
+  try {
+    enableIndexedDbPersistence(db).catch(() => {});
+  } catch (persistenceErr) {}
+
 } catch (configError) {
   try {
     db = getFirestore(app);
@@ -730,17 +739,37 @@ export default function App() {
              if (parsed && parsed.length > 0) return parsed;
          }
      } catch(e) {}
-     // ប្រើទិន្នន័យបម្រុងទុកពិតប្រាកដ ដើម្បីបង្ហាញភ្លាមៗ ០វិនាទី
-     return PRELOAD_REAL_DATA;
+     return [];
   });  
   const [usersList, setUsersList] = useState(() => {
-     try { const c = localStorage.getItem('tp_cache_users'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
+     try { 
+         const c = localStorage.getItem('tp_cache_users'); 
+         if (c) {
+             const parsed = JSON.parse(c);
+             if (parsed && parsed.length > 0) return parsed;
+         }
+     } catch(e) {}
+     return [];
   });  
   const [chats, setChats] = useState(() => {
-     try { const c = localStorage.getItem('tp_cache_chats'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
+     try { 
+         const c = localStorage.getItem('tp_cache_chats'); 
+         if (c) {
+             const parsed = JSON.parse(c);
+             if (parsed && parsed.length > 0) return parsed;
+         }
+     } catch(e) {}
+     return [];
   });          
   const [chatTargets, setChatTargets] = useState(() => {
-     try { const c = localStorage.getItem('tp_cache_chatTargets'); return c ? JSON.parse(c) : []; } catch(e) { return []; }
+     try { 
+         const c = localStorage.getItem('tp_cache_chatTargets'); 
+         if (c) {
+             const parsed = JSON.parse(c);
+             if (parsed && parsed.length > 0) return parsed;
+         }
+     } catch(e) {}
+     return [];
   });
   const [myContacts, setMyContacts] = useState([]); 
   const [friendRequests, setFriendRequests] = useState([]);
@@ -1000,31 +1029,40 @@ export default function App() {
     const unsubAllUsers = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_data'), snap => {
        const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
        
-       if (firstTick.users && data.length === 0) {
+       if (firstTick.users) {
            firstTick.users = false;
-           const c = localStorage.getItem('tp_cache_users');
-           if (c && JSON.parse(c).length > 0) return; // Prevent initial wipe
+           // ការពារការលោតបាត់ទិន្នន័យមួយភ្លែត (Anti-Flicker Protection 100%)
+           if (data.length === 0) {
+               const c = localStorage.getItem('tp_cache_users');
+               if (c && JSON.parse(c).length > 0) return;
+           }
        }
-       firstTick.users = false;
 
        setUsersList(data);
-       try { localStorage.setItem('tp_cache_users', JSON.stringify(data)); } catch(e){}
+       // PERFORMANCE FIX: ប្រើ setTimeout ដើម្បីកុំឲ្យ JSON.stringify ធ្វើឲ្យ UI គាំង (Freeze) ពេល Load ដំបូង
+       setTimeout(() => {
+           try { localStorage.setItem('tp_cache_users', JSON.stringify(data)); } catch(e){}
+       }, 500);
     }, () => {});
 
     // Listen to location items
 const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_admin_data'), snap => {
   const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   
-  if (firstTick.locs && data.length === 0) {
+  if (firstTick.locs) {
       firstTick.locs = false;
-      return; // ការពារកុំឲ្យលុបទិន្នន័យទទេ ចូលមកបំផ្លាញទិន្នន័យ Preload (Instant Load) ពេលកំពុងភ្ជាប់អុីនធឺណិត
+      // ការពារការលោតបាត់ទិន្នន័យមួយភ្លែត (Anti-Flicker Protection 100%)
+      if (data.length === 0) {
+          const c = localStorage.getItem('tp_cache_locations');
+          if (c && JSON.parse(c).length > 0) return;
+      }
   }
-  firstTick.locs = false;
 
-  if (data.length > 0) {
-      setLocations(data);
+  setLocations(data);
+  // PERFORMANCE FIX: Defer heavy operations to background thread
+  setTimeout(() => {
       try { localStorage.setItem('tp_cache_locations', JSON.stringify(data)); } catch(e){}
-  }
+  }, 600);
 }, () => {});
     
     // Listen to universal chat channels
@@ -1032,15 +1070,20 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       const msgs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       msgs.sort((a, b) => a.timestamp - b.timestamp); 
       
-      if (firstTick.chats && msgs.length === 0) {
+      if (firstTick.chats) {
          firstTick.chats = false;
-         const c = localStorage.getItem('tp_cache_chats');
-         if (c && JSON.parse(c).length > 0) return; // Prevent initial wipe
+         // ការពារការលោតបាត់ទិន្នន័យមួយភ្លែត (Anti-Flicker Protection 100%)
+         if (msgs.length === 0) {
+             const c = localStorage.getItem('tp_cache_chats');
+             if (c && JSON.parse(c).length > 0) return;
+         }
       }
-      firstTick.chats = false;
 
       setChats(msgs);
-      try { localStorage.setItem('tp_cache_chats', JSON.stringify(msgs)); } catch(e){}
+      // PERFORMANCE FIX: Defer background cache saving
+      setTimeout(() => {
+          try { localStorage.setItem('tp_cache_chats', JSON.stringify(msgs)); } catch(e){}
+      }, 700);
       
       const amIAdmin = localStorage.getItem('tp_admin_session') === 'true';
       const myCheckId = amIAdmin ? 'admin_ramit_fixed_uid' : user.uid;
@@ -1091,7 +1134,9 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         if(snap.exists() && snap.data().data) {
            const d = snap.data().data;
            setDbRegions(d);
-           try { localStorage.setItem('tp_cache_regions', JSON.stringify(d)); } catch(e){}
+           setTimeout(() => {
+               try { localStorage.setItem('tp_cache_regions', JSON.stringify(d)); } catch(e){}
+           }, 800);
         }
         else {
            try { setDoc(configRef, { data: DEFAULT_REGIONS }, { merge: true }); } catch(e){}
@@ -1156,15 +1201,19 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         const trg = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         trg.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-        if (firstTick.targets && trg.length === 0) {
+        if (firstTick.targets) {
            firstTick.targets = false;
-           const c = localStorage.getItem('tp_cache_chatTargets');
-           if (c && JSON.parse(c).length > 0) return; // Prevent initial wipe
+           // ការពារការលោតបាត់ទិន្នន័យមួយភ្លែត (Anti-Flicker Protection 100%)
+           if (trg.length === 0) {
+               const c = localStorage.getItem('tp_cache_chatTargets');
+               if (c && JSON.parse(c).length > 0) return;
+           }
         }
-        firstTick.targets = false;
 
         setChatTargets(trg);
-        try { localStorage.setItem('tp_cache_chatTargets', JSON.stringify(trg)); } catch(e){}
+        setTimeout(() => {
+            try { localStorage.setItem('tp_cache_chatTargets', JSON.stringify(trg)); } catch(e){}
+        }, 900);
       }
     }, () => {});
 
@@ -5244,6 +5293,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
         {[
           {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
           {id: 'live_map', label: 'ផែនទីអ្នកប្រើ (Live)'},
+          {id: 'users', label: 'គ្រប់គ្រងសមាជិក'},
           {id: 'how_to', label: 'គ្រប់គ្រង របៀបប្រើប្រាស់'},
           {id: 'appeals', label: 'សំណើសម្រុះសម្រួល'},
           {id: 'approvals', label: 'អនុម័តសំណើរ'},
@@ -5255,6 +5305,156 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       </div>
 
       <div className="min-h-[300px]">
+          {activeTab === 'users' && (
+             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4 animate-in fade-in duration-200">
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                     <div>
+                        <h3 className="font-black text-[13px] text-[#0F2B5C] flex items-center gap-1.5"><User className="w-4.5 h-4.5 text-[#38BDF8]"/> ការគ្រប់គ្រងគណនី និងអ្នកប្រើប្រាស់</h3>
+                        <p className="text-[10px] text-slate-500 font-bold mt-1">រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក</p>
+                     </div>
+                     <div className="flex gap-2 w-full sm:w-auto">
+                        <button onClick={handleWipeAllUsers} className="flex-1 sm:flex-none text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-2 rounded-lg font-black flex justify-center items-center gap-1 shadow-sm transition-colors">
+                           <Trash2 className="w-3.5 h-3.5"/> លុប User ទាំងអស់ចោល
+                        </button>
+                        {selectedUsersForDelete.length > 0 && (
+                           <button onClick={handleBulkDeleteUsers} className="flex-1 sm:flex-none text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-600 border border-amber-200 px-3 py-2 rounded-lg font-black flex justify-center items-center gap-1 shadow-sm transition-colors">
+                              <Trash2 className="w-3.5 h-3.5"/> លុបអ្នករើស ({selectedUsersForDelete.length})
+                           </button>
+                        )}
+                     </div>
+                 </div>
+
+                 <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input 
+                       type="text" 
+                       placeholder="ស្វែងរកតាមឈ្មោះ ឬ UID..." 
+                       value={userSearchQuery}
+                       onChange={e => setUserSearchQuery(e.target.value)}
+                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 outline-none text-[12.5px] font-bold"
+                    />
+                 </div>
+
+                 <div className="overflow-x-auto border border-slate-200 rounded-xl hidden md:block">
+                     <table className="w-full text-left text-[12px]">
+                         <thead className="bg-[#0F2B5C] text-white">
+                             <tr>
+                                 <th className="p-3 w-10 text-center">
+                                    <input 
+                                       type="checkbox" 
+                                       onChange={(e) => {
+                                          if (e.target.checked) setSelectedUsersForDelete(searchedUsersList.map(u => u.id));
+                                          else setSelectedUsersForDelete([]);
+                                       }}
+                                       checked={searchedUsersList.length > 0 && selectedUsersForDelete.length === searchedUsersList.length}
+                                       className="rounded text-[#38BDF8] focus:ring-[#38BDF8] cursor-pointer"
+                                    />
+                                 </th>
+                                 <th className="p-3 font-bold uppercase tracking-wider">សមាជិក</th>
+                                 <th className="p-3 font-bold uppercase tracking-wider">Online / Active</th>
+                                 <th className="p-3 font-bold uppercase tracking-wider text-center">ស្ថានភាព</th>
+                                 <th className="p-3 font-bold uppercase tracking-wider text-right">សកម្មភាព (Actions)</th>
+                             </tr>
+                         </thead>
+                         <tbody className="divide-y divide-slate-100 bg-white">
+                             {searchedUsersList.length === 0 ? (
+                                 <tr><td colSpan="5" className="text-center p-8 text-slate-400 font-bold">គ្មានទិន្នន័យ</td></tr>
+                             ) : searchedUsersList.map(u => {
+                                 const isOnline = (Date.now() - (u.lastActive || 0)) < 120000;
+                                 return (
+                                 <tr key={u.id} className="hover:bg-slate-50 transition-colors group">
+                                     <td className="p-3 text-center">
+                                        <input 
+                                           type="checkbox" 
+                                           checked={selectedUsersForDelete.includes(u.id)}
+                                           onChange={(e) => {
+                                              if (e.target.checked) setSelectedUsersForDelete([...selectedUsersForDelete, u.id]);
+                                              else setSelectedUsersForDelete(selectedUsersForDelete.filter(id => id !== u.id));
+                                           }}
+                                           className="rounded border-slate-300 text-[#38BDF8] focus:ring-[#38BDF8] cursor-pointer"
+                                        />
+                                     </td>
+                                     <td className="p-3 flex items-center gap-3">
+                                         <img src={u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} className="w-10 h-10 rounded-full border border-slate-200 object-cover bg-white" alt="avatar"/>
+                                         <div>
+                                             <div className="font-black text-[#0F2B5C] text-[13px]">{safeStr(u.username)}</div>
+                                             <div className="text-[9.5px] text-slate-400 font-mono mt-0.5">UID: {u.id.substring(0, 15)}...</div>
+                                         </div>
+                                     </td>
+                                     <td className="p-3">
+                                         <div className="flex items-center gap-1.5">
+                                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                                            <span className="text-slate-600 font-bold text-[11px]">{isOnline ? 'Online' : 'Offline'}</span>
+                                         </div>
+                                     </td>
+                                     <td className="p-3 text-center">
+                                         <span className={`px-2 py-1 rounded-md text-[10px] font-black ${u.isBanned ? 'bg-rose-100 text-rose-600 border border-rose-200' : (u.warnings > 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 'bg-emerald-100 text-emerald-600 border border-emerald-200')}`}>
+                                             {u.isBanned ? 'Blocked 🚫' : (u.warnings > 0 ? `ព្រមាន (${u.warnings}) ⚠️` : 'ធម្មតា ✅')}
+                                         </span>
+                                     </td>
+                                     <td className="p-3 text-right">
+                                         <div className="flex justify-end gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                                             <button onClick={() => handleWarnUser(u)} title="ព្រមាន (Warn)" className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 hover:bg-amber-100 border border-amber-200 flex items-center justify-center transition-colors"><AlertOctagon className="w-4 h-4"/></button>
+                                             <button onClick={() => handleBanUser(u)} title="Block (Device Ban)" className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-rose-500 border border-slate-300 flex items-center justify-center transition-colors"><ShieldAlert className="w-4 h-4"/></button>
+                                             <button onClick={() => handleForceLogoutUser(u)} title="បណ្តេញចេញ (Force Logout)" className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 border border-indigo-200 flex items-center justify-center transition-colors"><LogOut className="w-4 h-4"/></button>
+                                             <button onClick={() => handleDeleteTrollUser(u)} title="លុបគណនី (Delete User)" className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 border border-rose-200 flex items-center justify-center transition-colors"><Trash2 className="w-4 h-4"/></button>
+                                         </div>
+                                     </td>
+                                 </tr>
+                             )})}
+                         </tbody>
+                     </table>
+                 </div>
+
+                 {/* Mobile View for Users List */}
+                 <div className="md:hidden space-y-3 max-h-[500px] overflow-y-auto hide-scrollbar">
+                     {searchedUsersList.length === 0 ? (
+                         <div className="text-center p-8 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-[11px]">គ្មានទិន្នន័យ</div>
+                     ) : searchedUsersList.map(u => {
+                         const isOnline = (Date.now() - (u.lastActive || 0)) < 120000;
+                         return (
+                         <div key={u.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3 relative">
+                             <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                                 <span className={`px-2 py-0.5 rounded text-[9px] font-black ${u.isBanned ? 'bg-rose-100 text-rose-600 border border-rose-200' : (u.warnings > 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 'bg-emerald-100 text-emerald-600 border border-emerald-200')}`}>
+                                     {u.isBanned ? 'Blocked 🚫' : (u.warnings > 0 ? `ព្រមាន (${u.warnings}) ⚠️` : 'ធម្មតា ✅')}
+                                 </span>
+                                 <input 
+                                    type="checkbox" 
+                                    checked={selectedUsersForDelete.includes(u.id)}
+                                    onChange={(e) => {
+                                       if (e.target.checked) setSelectedUsersForDelete([...selectedUsersForDelete, u.id]);
+                                       else setSelectedUsersForDelete(selectedUsersForDelete.filter(id => id !== u.id));
+                                    }}
+                                    className="rounded border-slate-300 text-[#38BDF8] focus:ring-[#38BDF8]"
+                                 />
+                             </div>
+                             
+                             <div className="flex items-start gap-3 w-[80%]">
+                                 <div className="relative">
+                                    <img src={u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} className="w-12 h-12 rounded-full border border-slate-200 object-cover bg-white" alt="avatar"/>
+                                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${isOnline ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                 </div>
+                                 <div>
+                                     <div className="font-black text-[#0F2B5C] text-[13px]">{safeStr(u.username)}</div>
+                                     <div className="text-[10px] text-slate-500 font-medium mt-0.5">UID: {u.id.substring(0, 10)}...</div>
+                                 </div>
+                             </div>
+
+                             <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                 <span className="text-[10px] font-bold text-slate-600">សកម្មភាព:</span>
+                                 <div className="flex justify-end gap-2">
+                                     <button onClick={() => handleWarnUser(u)} className="p-1.5 rounded bg-amber-50 text-amber-500 border border-amber-200"><AlertOctagon className="w-3.5 h-3.5"/></button>
+                                     <button onClick={() => handleBanUser(u)} className="p-1.5 rounded bg-slate-100 text-slate-600 border border-slate-300"><ShieldAlert className="w-3.5 h-3.5"/></button>
+                                     <button onClick={() => handleForceLogoutUser(u)} className="p-1.5 rounded bg-indigo-50 text-indigo-500 border border-indigo-200"><LogOut className="w-3.5 h-3.5"/></button>
+                                     <button onClick={() => handleDeleteTrollUser(u)} className="p-1.5 rounded bg-rose-50 text-rose-500 border border-rose-200"><Trash2 className="w-3.5 h-3.5"/></button>
+                                 </div>
+                             </div>
+                         </div>
+                     )})}
+                 </div>
+             </div>
+          )}
+
           {activeTab === 'live_map' && (
              <div className="bg-slate-900 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.1)] border border-slate-800 animate-in fade-in duration-200">
                  <AdminLiveTrackerMap usersList={usersList} />
