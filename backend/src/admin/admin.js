@@ -22,8 +22,6 @@ let securityLogs = [];
 |--------------------------------------------------------------------------
 */
 
-const ADMIN_PASSWORD = "ictmit";
-
 function checkPassword() {
 
   const input =

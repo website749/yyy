@@ -33,7 +33,7 @@ import {
 import { 
   LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer 
 } from 'recharts';
-import { Volume2, VolumeX, Megaphone } from 'lucide-react';
+import { Volume2, VolumeX, Megaphone, Download, Save } from 'lucide-react';
 // Safe string casting utility to prevent null-pointers
 export function safeStr(val, fallback = '') {
   if (val === null || val === undefined) return fallback;
@@ -291,7 +291,7 @@ const injectStyles = () => {
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
-    .pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
     .btn-gradient {
@@ -2081,7 +2081,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
   return (
     <div 
-      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden" 
+      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden min-h-[100dvh]" 
       style={{ backgroundColor: customBg }}
     >
       
@@ -2552,7 +2552,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
 
   return (
     <div 
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe w-full"
     >
       <div className="flex justify-around items-center pt-2 pb-1 px-1">
       {navItems.map(item => {
@@ -4086,7 +4086,7 @@ const ChatView = ({ chats = [], user, profile, showToast, db, appId, setCurrentV
         )}
       </div>
 
-      <div className="px-3 pt-3 bg-white border-t border-slate-200 shrink-0 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] m-0 relative w-full" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }} onClick={e=>e.stopPropagation()}>
+      <div className="px-3 pt-3 bg-white border-t border-slate-200 shrink-0 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] m-0 relative w-full pb-safe" onClick={e=>e.stopPropagation()}>
         
         {editingMsg && (
            <div className="absolute bottom-[100%] left-0 right-0 z-40 bg-white p-3 border-t border-slate-200 shadow-md rounded-t-2xl animate-in slide-in-from-bottom-2">
@@ -4843,6 +4843,62 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       );
   };
 
+  const generateCSV = (users) => {
+      if (!users || users.length === 0) return '';
+      const headers = ['UID', 'Username', 'Role', 'Status', 'Last Active', 'Warnings'];
+      const rows = users.map(u => [
+          u.id,
+          u.username || 'N/A',
+          u.role || 'user',
+          u.isBanned ? 'Banned' : 'Active',
+          new Date(u.lastActive || Date.now()).toLocaleString(),
+          u.warnings || 0
+      ].map(field => `"${String(field).replace(/"/g, '""')}"`).join(','));
+      // Add UTF-8 BOM (\ufeff) to make sure Khmer characters show correctly in Excel
+      return ["\ufeff" + headers.join(','), ...rows].join('\n');
+  };
+
+  const handleDownloadData = () => {
+      const csvContent = generateCSV(usersList);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Users_Data_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('ទាញយកទិន្នន័យជោគជ័យ ✅', 'success');
+  };
+
+  const handleSaveToUSB = async () => {
+      const csvContent = generateCSV(usersList);
+      try {
+          if (!window.showSaveFilePicker) {
+              showToast('កម្មវិធីរុករករបស់អ្នកមិនគាំទ្រ File System Access API ទេ, កំពុងប្រើប្រាស់របៀបធម្មតា', 'info');
+              return handleDownloadData(); 
+          }
+          
+          const fileHandle = await window.showSaveFilePicker({
+              suggestedName: `Users_Data_${new Date().toISOString().slice(0,10)}.csv`,
+              types: [{
+                  description: 'CSV File',
+                  accept: { 'text/csv': ['.csv'] },
+              }],
+          });
+          
+          const writable = await fileHandle.createWritable();
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          await writable.write(blob);
+          await writable.close();
+          
+          showToast('បានរក្សាទុកទិន្នន័យទៅទីតាំងដែលបានជ្រើសរើសជោគជ័យ ✅', 'success');
+      } catch (error) {
+          if (error.name !== 'AbortError') {
+              showToast('មានបញ្ហាក្នុងការរក្សាទុកឯកសារ', 'error');
+          }
+      }
+  };
+
   const handleWarnUser = (userObj) => {
       openConfirm("បញ្ជូនការព្រមាន", `តើអ្នកចង់បញ្ជូនសារព្រមានជាផ្លូវការទៅកាន់ ${userObj.username} ដែរឬទេ?`, async () => {
          if (db) {
@@ -5346,7 +5402,13 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                         <h3 className="font-black text-[13px] text-[#0F2B5C] flex items-center gap-1.5"><User className="w-4.5 h-4.5 text-[#38BDF8]"/> ការគ្រប់គ្រងគណនី និងអ្នកប្រើប្រាស់</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក</p>
                      </div>
-                     <div className="flex gap-2 w-full sm:w-auto">
+                     <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+                        <button onClick={handleDownloadData} className="flex-1 sm:flex-none text-[10px] bg-[#0F2B5C] hover:bg-[#1e3a8a] text-white border border-[#0F2B5C] px-3 py-2 rounded-lg font-black flex justify-center items-center gap-1 shadow-sm transition-colors">
+                           <Download className="w-3.5 h-3.5"/> Download ទិន្នន័យ
+                        </button>
+                        <button onClick={handleSaveToUSB} className="flex-1 sm:flex-none text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 px-3 py-2 rounded-lg font-black flex justify-center items-center gap-1 shadow-sm transition-colors">
+                           <Save className="w-3.5 h-3.5"/> បញ្ចូលទៅ Flash USB
+                        </button>
                         <button onClick={handleWipeAllUsers} className="flex-1 sm:flex-none text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-2 rounded-lg font-black flex justify-center items-center gap-1 shadow-sm transition-colors">
                            <Trash2 className="w-3.5 h-3.5"/> លុប User ទាំងអស់ចោល
                         </button>
