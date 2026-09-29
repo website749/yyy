@@ -788,6 +788,7 @@ export default function App() {
   const [appStats, setAppStats] = useState({ visitorCount: 0, fakeUsers: 0 });
 
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isFetchingData, setIsFetchingData] = useState(true);
   
   const handleOpenLocation = async (loc) => {
     setSelectedLocation(loc);
@@ -1059,6 +1060,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
   }
 
   setLocations(data);
+  setIsFetchingData(false); // SWR Background validation complete
   // PERFORMANCE FIX: Defer heavy operations to background thread
   setTimeout(() => {
       try { localStorage.setItem('tp_cache_locations', JSON.stringify(data)); } catch(e){}
@@ -2104,14 +2106,14 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative w-full max-w-7xl mx-auto overflow-hidden">
-           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} /></div>}
+           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} isFetchingData={isFetchingData} /></div>}
            {currentView === 'info' && (
              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                <InfoView 
                  locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} 
                  onOpenLocation={handleOpenLocation} user={user} profile={profile} isAdmin={isAdmin} showToast={showToast} 
                  db={db} appId={appId} setCurrentView={setCurrentView} dbRegions={dbRegions} gpsCoords={gpsCoords} 
-                 captureGps={handleGPS} setSearchQuery={setSearchQuery}
+                 captureGps={handleGPS} setSearchQuery={setSearchQuery} isFetchingData={isFetchingData}
                  onOpenAddModal={() => {
                    setAddForm({ 
                      title: '', 
@@ -2670,7 +2672,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
     );
 };
 
-const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon }) => {
+const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData }) => {
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
   const filtered = useMemo(() => {
@@ -2772,10 +2774,26 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
           <button onClick={() => setCurrentView('info')} className="text-[11px] font-bold text-slate-600 flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">មើលទាំងអស់ <ArrowRight className="w-3.5 h-3.5"/></button>
         </div>
         {sortedFiltered.length === 0 ? (
-           <div className="text-center py-8 bg-white rounded-xl border border-dashed border-slate-200 font-bold text-[12px] text-slate-400 shadow-sm flex flex-col items-center">
-             <MapPin className="w-8 h-8 mb-2 text-slate-300"/>
-             គ្មានទិន្នន័យ
-           </div>
+           isFetchingData ? (
+               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 w-full">
+                   {[1,2,3,4].map(i => (
+                       <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[220px] animate-pulse">
+                           <div className="w-full aspect-[16/10] bg-slate-200 shrink-0"></div>
+                           <div className="p-3 flex flex-col gap-2 flex-1">
+                               <div className="h-3 bg-slate-200 rounded-md w-1/3"></div>
+                               <div className="h-4 bg-slate-200 rounded-md w-3/4 mt-1"></div>
+                               <div className="h-2.5 bg-slate-200 rounded-md w-1/2 mt-2"></div>
+                               <div className="h-2.5 bg-slate-200 rounded-md w-full mt-1"></div>
+                           </div>
+                       </div>
+                   ))}
+               </div>
+           ) : (
+               <div className="text-center py-8 bg-white rounded-xl border border-dashed border-slate-200 font-bold text-[12px] text-slate-400 shadow-sm flex flex-col items-center">
+                 <MapPin className="w-8 h-8 mb-2 text-slate-300"/>
+                 គ្មានទិន្នន័យ
+               </div>
+           )
         ) : (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
             {sortedFiltered.map(loc => loc && (
@@ -2787,7 +2805,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery }) => {
+const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
@@ -2954,10 +2972,26 @@ const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
       
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {sortedFiltered.length === 0 ? (
-          <div className="col-span-full flex flex-col items-center justify-center py-10 bg-white rounded-xl border border-dashed border-slate-200 shadow-sm">
-             <MapPin className="w-8 h-8 text-slate-300 mb-2" />
-             <p className="font-bold text-[12px] text-slate-500">គ្មានទិន្នន័យ</p>
-          </div>
+          isFetchingData ? (
+              <div className="col-span-full grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 w-full">
+                  {[1,2,3,4,5,6].map(i => (
+                      <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[220px] animate-pulse">
+                          <div className="w-full aspect-[16/10] bg-slate-200 shrink-0"></div>
+                          <div className="p-3 flex flex-col gap-2 flex-1">
+                              <div className="h-3 bg-slate-200 rounded-md w-1/3"></div>
+                              <div className="h-4 bg-slate-200 rounded-md w-3/4 mt-1"></div>
+                              <div className="h-2.5 bg-slate-200 rounded-md w-1/2 mt-2"></div>
+                              <div className="h-2.5 bg-slate-200 rounded-md w-full mt-1"></div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          ) : (
+              <div className="col-span-full flex flex-col items-center justify-center py-10 bg-white rounded-xl border border-dashed border-slate-200 shadow-sm">
+                 <MapPin className="w-8 h-8 text-slate-300 mb-2" />
+                 <p className="font-bold text-[12px] text-slate-500">គ្មានទិន្នន័យ</p>
+              </div>
+          )
         ) : (
           sortedFiltered.map(loc => loc && (
             <LocationCard key={loc.id} location={loc} isFavorite={!!favorites[loc.id]} onToggleFavorite={() => toggleFavorite(loc.id)} onClick={() => onOpenLocation(loc)} />
