@@ -257,58 +257,67 @@ const injectStyles = () => {
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Moul&display=swap');
     
-    :root { 
-      --font-khmer: 'Noto Sans Khmer', sans-serif; 
-      --theme-dark-blue: #0F2B5C; 
-      --theme-blue: #0ea5e9; 
-    }
-    * { 
-      -webkit-tap-highlight-color: transparent; 
-      box-sizing: border-box; 
-    }
-    html, body { 
-      overscroll-behavior-y: none; 
-      background-color: #f8fafc; 
-      color: #0f172a; margin: 0; padding: 0; width: 100%; height: 100%; 
-      touch-action: manipulation; 
-    }
-    .font-khmer { 
-      font-family: var(--font-khmer); 
-      line-height: 1.65;
-    }
-    .font-khmer-muol {
-      font-family: 'Moul', 'Khmer OS Muol Light', cursive;
-      font-weight: normal;
-    }
-    .font-logo { font-family: 'Montserrat', sans-serif; }
-    
-    input, textarea, select { 
-      font-size: 16px !important; 
-      outline: none; 
-      touch-action: manipulation;
-    } 
-    
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-    .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
+   :root { 
+  --font-khmer: 'Noto Sans Khmer', sans-serif; 
+  --theme-dark-blue: #0F2B5C; 
+  --theme-blue: #0ea5e9; 
+}
+* { 
+  -webkit-tap-highlight-color: transparent; 
+  box-sizing: border-box; 
+}
 
-    .btn-gradient {
-       background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
-       box-shadow: 0 4px 12px rgba(15, 43, 92, 0.22);
-       color: white; border: none; transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn-gradient:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(15, 43, 92, 0.12); }
-    
-    .premium-card {
-       background: white; border-radius: 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.03); border: 1px solid rgba(226, 232, 240, 0.75);
-    }
-    
-    .telegram-bg {
-       background-color: #f1f5f9;
-       background-image: url("'ooop.png' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%230F2B5C' fill-opacity='0.02'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z'/%3E%3C/g%3E%3C/svg%3E");
-    }
+/* 💡 ១. បន្ថែម #root និង min-height: 100dvh ដើម្បីបិទ Space ខាងក្រោមអេក្រង់ទូរស័ព្ទ */
+html, body, #root { 
+  overscroll-behavior-y: none; 
+  background-color: #0F2B5C; /* ប្តូរមកដាក់ពណ៌ស្មើនឹង Bottom Nav របស់អ្នក */
+  color: #0f172a; 
+  margin: 0; 
+  padding: 0; 
+  width: 100%; 
+  height: 100%; 
+  min-height: 100vh;
+  min-height: 100dvh; /* ការពារចំហ Space ពេល Scroll លើ Mobile Browsers */
+  touch-action: manipulation; 
+}
+
+.font-khmer { 
+  font-family: var(--font-khmer); 
+  line-height: 1.65;
+}
+.font-khmer-muol {
+  font-family: 'Moul', 'Khmer OS Muol Light', cursive;
+  font-weight: normal;
+}
+.font-logo { font-family: 'Montserrat', sans-serif; }
+
+input, textarea, select { 
+  font-size: 16px !important; 
+  outline: none; 
+  touch-action: manipulation;
+} 
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 💡 ២. កែសម្រួល Fallback ពី 20px មក 0px វិញ ដើម្បីកុំឱ្យរុញលូតខ្លាំងពេក */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
+.pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
+
+.btn-gradient {
+   background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
+   box-shadow: 0 4px 12px rgba(15, 43, 92, 0.22);
+   color: white; border: none; transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-gradient:active { transform: scale(0.96); box-shadow: 0 2px 8px rgba(15, 43, 92, 0.12); }
+
+.premium-card {
+   background: white; border-radius: 14px; box-shadow: 0 3px 10px rgba(0,0,0,0.03); border: 1px solid rgba(226, 232, 240, 0.75);
+}
+
+.telegram-bg {
+   background-color: #f1f5f9;
+}
 
     .audio-waveform-bar {
         width: 3px;
@@ -2401,7 +2410,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
               </div>
 
               {/* STICKY FOOTER SUBMIT BUTTON */}
-              <div className="p-3 border-t border-slate-100 shrink-0 pb-safe bg-slate-50 sticky bottom-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+              <div className="p-3 border-t border-slate-100 shrink-0 pb-safe bg-slate-50 sticky .bottom-nav0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
                  <button type="submit" disabled={isFormSubmitting} className="w-full py-3.5 rounded-xl font-black btn-gradient disabled:opacity-50 text-[13.5px] flex justify-center items-center gap-1.5 shadow-md">
                      {isFormSubmitting ? <><Loader2 className="w-4 h-4 animate-spin"/> កំពុងផ្ញើរ...</> : isAdmin ? '✓ បញ្ចូលទិន្នន័យ (Auto Approve)' : '📤 ផ្ញើរសំណើរទៅកាន់ Admin'}
                  </button>
