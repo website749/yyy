@@ -2551,52 +2551,41 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 };
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
-const BottomNav = ({ currentView, setCurrentView, unreadNotificationsCount = 0 }) => {
+const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   const navItems = [
-    { id: 'home', label: 'ទំព័រដើម', icon: Home },
-    { id: 'info', label: 'ព័ត៌មាន', icon: Info },
-    { id: 'reports', label: 'របាយការណ៍', icon: TrendingUp },
-    { id: 'account', label: 'គណនី', icon: User },
+    { id: 'home', icon: Home, label: 'ទំព័រដើម' },
+    { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
+    { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
+    { id: 'account', icon: User, label: 'គណនី' },
   ];
 
+  if (isAdmin) {
+    navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
+  }
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[500] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="max-w-md mx-auto flex items-center justify-around h-[58px] px-1">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 w-full">
+      <div className="flex justify-around items-center h-[46px] px-1">
         {navItems.map((item) => {
-          const Icon = item.icon;
           const isActive = currentView === item.id;
+          const Icon = item.icon;
           return (
-            <button
-              key={item.id}
-              onClick={() => setCurrentView(item.id)}
-              className={`flex-1 flex flex-col items-center justify-center h-full py-1 select-none touch-manipulation transition-transform duration-100 active:scale-90 cursor-pointer ${
-                isActive ? 'text-[#38BDF8]' : 'text-slate-300 hover:text-white'
-              }`}
+            <button 
+              key={item.id} 
+              onClick={() => setCurrentView(item.id)} 
+              className="flex-1 flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
             >
-              <div className="relative">
-                <Icon 
-                  className={`w-5 h-5 transition-all duration-200 ${
-                    isActive ? 'scale-110 text-[#38BDF8] drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)]' : 'text-slate-300'
-                  }`} 
-                />
-                {/* បង្ហាញ Badge លោតបាតតូចបើមានការជូនដំណឹង */}
-                {item.id === 'account' && unreadNotificationsCount > 0 && (
-                  <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-[#0F2B5C] animate-pulse" />
-                )}
-              </div>
-              <span className={`text-[10.5px] font-khmer font-bold mt-0.5 transition-colors duration-150 ${
-                isActive ? 'text-[#38BDF8]' : 'text-slate-300'
-              }`}>
+              <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+              <span className={`text-[10px] font-bold mt-0.5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
           );
         })}
       </div>
-    </nav>
+    </div>
   );
 };
-
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     useEffect(() => {
