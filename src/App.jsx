@@ -2550,39 +2550,50 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
   );
 };
 
-const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
+// 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
+const BottomNav = ({ currentView, setCurrentView, unreadNotificationsCount = 0 }) => {
   const navItems = [
-    { id: 'home', icon: Home, label: 'ទំព័រដើម' },
-    { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
-    { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
+    { id: 'home', label: 'ទំព័រដើម', icon: Home },
+    { id: 'info', label: 'ព័ត៌មាន', icon: Info },
+    { id: 'reports', label: 'របាយការណ៍', icon: TrendingUp },
+    { id: 'account', label: 'គណនី', icon: User },
   ];
-  navItems.push({ id: 'account', icon: User, label: 'គណនី' });
-  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-    <div 
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] pb-safe w-full"
-    >
-      <div className="flex justify-around items-center pt-2 pb-1 px-1">
-      {navItems.map(item => {
-         const isActive = currentView === item.id;
-         return (
-           <button 
-             key={item.id} 
-             onClick={() => setCurrentView(item.id)} 
-             className="relative flex-1 flex flex-col items-center justify-center transition-all active:scale-90"
-           >
-             <div className={`flex flex-col items-center justify-center transition-all ${isActive ? 'text-[#0F2B5C]' : 'text-[#94A3B8]'}`}>
-                <div className={`p-1 rounded-xl ${isActive ? 'bg-[#0F2B5C]/10' : ''}`}>
-                   <item.icon className="w-[20px] h-[20px]" />
-                </div>
-                <span className={`text-[10px] mt-0.5 font-bold`}>{item.label}</span>
-             </div>
-           </button>
-         )
-      })}
+    <nav className="fixed bottom-0 left-0 right-0 z-[500] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="max-w-md mx-auto flex items-center justify-around h-[58px] px-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id)}
+              className={`flex-1 flex flex-col items-center justify-center h-full py-1 select-none touch-manipulation transition-transform duration-100 active:scale-90 cursor-pointer ${
+                isActive ? 'text-[#38BDF8]' : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              <div className="relative">
+                <Icon 
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    isActive ? 'scale-110 text-[#38BDF8] drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)]' : 'text-slate-300'
+                  }`} 
+                />
+                {/* បង្ហាញ Badge លោតបាតតូចបើមានការជូនដំណឹង */}
+                {item.id === 'account' && unreadNotificationsCount > 0 && (
+                  <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-[#0F2B5C] animate-pulse" />
+                )}
+              </div>
+              <span className={`text-[10.5px] font-khmer font-bold mt-0.5 transition-colors duration-150 ${
+                isActive ? 'text-[#38BDF8]' : 'text-slate-300'
+              }`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </nav>
   );
 };
 
@@ -2658,29 +2669,31 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
               </div>
            </div>
            
-           <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full">
               {(currentView === 'home' || currentView === 'info') && (
-                  <form onSubmit={(e) => {
-                     e.preventDefault();
-                     document.activeElement?.blur(); 
-                  }} className="relative w-full">
-                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                       <Search className="w-4.5 h-4.5" />
-                    </div>
-                    <input 
-                      type="search" 
-                      placeholder="ស្វែងរកទីតាំង ឬសេវាកម្ម..." 
-                      className="w-full bg-slate-50 text-slate-800 placeholder-slate-400 rounded-xl py-2.5 pl-10 pr-4 outline-none text-[14px] font-bold border border-slate-200 focus:border-[#38BDF8] focus:bg-white transition-all shadow-inner" 
-                      value={searchQuery} 
-                      onChange={(e) => setSearchQuery(e.target.value)} 
-                    />
-                  </form>
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    document.activeElement?.blur(); 
+                  }} 
+                  className="relative w-full"
+                >
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <Search className="w-4.5 h-4.5" />
+                  </div>
+                  <input 
+                    type="search" 
+                    placeholder="ស្វែងរកទីតាំង ឬសេវាកម្ម..." 
+                    className="w-full bg-slate-50 text-slate-800 placeholder-slate-400 rounded-xl py-2.5 pl-10 pr-4 outline-none text-[14px] font-bold border border-slate-200 focus:border-[#38BDF8] focus:bg-white transition-all shadow-inner" 
+                    value={searchQuery} 
+                    onChange={(e) => setSearchQuery(e.target.value)} 
+                  />
+                </form>
               )}
-           </div>
-        </div>
-    );
-};
-
+            </div>
+          </div>
+        );
+      };
 const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData }) => {
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
