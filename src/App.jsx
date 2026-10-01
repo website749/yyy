@@ -2551,11 +2551,6 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 };
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
-import React, { useState } from 'react';
-import { Home, Info, TrendingUp, User, ShieldCheck } from 'lucide-react';
-// import TopHeader របស់អ្នកនៅទីនេះ
-
-// ១. Component BottomNav ដាក់នៅខាងលើ ឬខាងក្រៅ App
 const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'ទំព័រដើម' },
