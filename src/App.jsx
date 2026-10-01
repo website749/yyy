@@ -2564,8 +2564,12 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] pb-[max(env(safe-area-inset-bottom),8px)] pt-1.5 w-full">
-      <div className="flex justify-around items-center h-[46px] px-1">
+    <div className="md:hidden fixed !bottom-0 left-0 right-0 z-[999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] pb-[env(safe-area-inset-bottom,8px)] pt-1 w-full">
+      
+      {/* 🔴 បច្ចេកទេសពិសេស៖ បង្កើតផ្ទាំងពណ៌ខៀវពន្លូតចុះក្រោមចម្ងាយ 100px ដើម្បីបិទចន្លោះប្រហោងពណ៌សខាងក្រោម */}
+      <div className="absolute top-[98%] left-0 right-0 h-[100px] bg-[#0F2B5C] -z-10" />
+
+      <div className="flex justify-around items-center h-[50px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2573,10 +2577,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button 
               key={item.id} 
               onClick={() => setCurrentView(item.id)} 
-              className="flex-1 flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
+              className="flex-1 h-full flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
             >
               <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold mt-0.5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <span className={`text-[10px] font-bold mt-1 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
