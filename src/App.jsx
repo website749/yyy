@@ -2551,6 +2551,11 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 };
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
+import React, { useState } from 'react';
+import { Home, Info, TrendingUp, User, ShieldCheck } from 'lucide-react';
+// import TopHeader របស់អ្នកនៅទីនេះ
+
+// ១. Component BottomNav ដាក់នៅខាងលើ ឬខាងក្រៅ App
 const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'ទំព័រដើម' },
@@ -2564,12 +2569,15 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   }
 
   return (
-    <div className="md:hidden fixed !bottom-0 left-0 right-0 z-[999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] pb-[env(safe-area-inset-bottom,8px)] pt-1 w-full">
-      
-      {/* 🔴 បច្ចេកទេសពិសេស៖ បង្កើតផ្ទាំងពណ៌ខៀវពន្លូតចុះក្រោមចម្ងាយ 100px ដើម្បីបិទចន្លោះប្រហោងពណ៌សខាងក្រោម */}
-      <div className="absolute top-[98%] left-0 right-0 h-[100px] bg-[#0F2B5C] -z-10" />
-
-      <div className="flex justify-around items-center h-[50px] px-1">
+    <div 
+      className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] w-full"
+      style={{
+        bottom: 0,
+        paddingBottom: 'max(env(safe-area-inset-bottom), 6px)',
+        paddingTop: '6px'
+      }}
+    >
+      <div className="flex justify-around items-center h-[46px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2577,10 +2585,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button 
               key={item.id} 
               onClick={() => setCurrentView(item.id)} 
-              className="flex-1 h-full flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
+              className="flex-1 flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
             >
               <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold mt-1 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <span className={`text-[10px] font-bold mt-0.5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
@@ -2590,6 +2598,29 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
     </div>
   );
 };
+
+// ២. Component App ធំរបស់អ្នក (ផ្ទាំងមេ)
+const App = () => {
+  // កន្លែងប្រកាស State របស់អ្នក (ឧទាហរណ៍)
+  const [currentView, setCurrentView] = useState('home');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-x-hidden">
+      {/* ១. Header ខាងលើ */}
+      <TopHeader />
+
+      {/* ២. ផ្ទៃទិន្នន័យកណ្តាល (ត្រូវដាក់ pb-24 ដើម្បីរុញទិន្នន័យផុតពី BottomNav) */}
+      <main className="flex-1 pb-24">
+        {/* ទិន្នន័យ Web App របស់អ្នកនៅទីនេះ */}
+      </main>
+
+      {/* ៣. BottomNav ត្រូវដាក់នៅចុងក្រោយគេបង្អស់ត្រង់នេះ */}
+      <BottomNav currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} />
+    </div>
+  );
+};
+
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     useEffect(() => {
