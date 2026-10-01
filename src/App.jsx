@@ -2593,9 +2593,6 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
     </div>
   );
 };
-
-// ២. Component App ធំរបស់អ្នក (ផ្ទាំងមេ)
-const App = () => {
   // កន្លែងប្រកាស State របស់អ្នក (ឧទាហរណ៍)
   const [currentView, setCurrentView] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -2614,7 +2611,6 @@ const App = () => {
       <BottomNav currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} />
     </div>
   );
-};
 
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
