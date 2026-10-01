@@ -2551,7 +2551,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 };
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
-// 💡 ១. BottomNav Component (នៅខាងក្រៅ App)
+
 const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'ទំព័រដើម' },
@@ -2595,27 +2595,28 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   );
 };
 
-
-// 💡 ២. App Component មេ (ត្រូវប្រកាស const App និងបិទ } ឱ្យត្រឹមត្រូវ)
-const App = () => {
+// ២. Component App ធំរបស់អ្នក (ផ្ទាំងមេ)
+const MainAppView = () => {
+  // កន្លែងប្រកាស State របស់អ្នក (ឧទាហរណ៍)
   const [currentView, setCurrentView] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-x-hidden">
+      {/* ១. Header ខាងលើ */}
       <TopHeader />
 
+      {/* ២. ផ្ទៃទិន្នន័យកណ្តាល (ត្រូវដាក់ pb-24 ដើម្បីរុញទិន្នន័យផុតពី BottomNav) */}
       <main className="flex-1 pb-24">
         {/* ទិន្នន័យ Web App របស់អ្នកនៅទីនេះ */}
       </main>
 
+      {/* ៣. BottomNav ត្រូវដាក់នៅចុងក្រោយគេបង្អស់ត្រង់នេះ */}
       <BottomNav currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} />
     </div>
   );
-}; // 👈 ត្រូវប្រាកដថានៅត្រង់នេះមានសញ្ញា }; បិទ App ត្រឹមត្រូវ!
+};
 
-
-// 💡 ៣. Export ត្រូវនៅខាងក្រោមគេបង្អស់ដាច់ដោយឡែកបែបនេះ
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     useEffect(() => {
