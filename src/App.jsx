@@ -2095,7 +2095,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
   return (
     <div 
-      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden min-h-[100dvh]" 
+      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden " 
       style={{ backgroundColor: customBg }}
     >
       
@@ -2569,9 +2569,9 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   return (
     <div
       className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      style={{ bottom: '-2px', paddingBottom: '2px' }}
+      style={{ bottom: 0, paddingBottom: 0 }}
     >
-      <div className="flex justify-around items-center h-[48px] px-1">
+      <div className="flex justify-around items-end h-[46px] px-1 pb-[5px]">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2579,7 +2579,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-col items-center justify-center active:scale-95 transition-transform select-none"
+              className="flex-1 h-full flex flex-col items-center justify-end active:scale-95 transition-transform select-none"
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
               <span className={`text-[10px] font-bold leading-none mt-1 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
