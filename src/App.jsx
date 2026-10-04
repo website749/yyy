@@ -2565,10 +2565,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.35)' }}
+      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+      style={{ paddingBottom: 0 }}
     >
-      <div className="flex justify-around items-center h-[52px] px-1">
+      <div className="flex justify-around items-center h-[50px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2576,10 +2576,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
+              className="flex-1 h-full flex flex-col items-center justify-center active:scale-95 transition-transform select-none"
             >
-              <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold mt-0.5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <Icon className={`w-5 h-5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+              <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
@@ -2589,7 +2589,6 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
     </div>
   );
 };
-
 // ២. Component App ធំរបស់អ្នក (ផ្ទាំងមេ)
 const MainAppView = () => {
   // កន្លែងប្រកាស State របស់អ្នក (ឧទាហរណ៍)
