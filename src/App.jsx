@@ -304,7 +304,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px) * 0.35 + 12px); }
+.pb-nav { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px) * 0.15 + 12px); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
