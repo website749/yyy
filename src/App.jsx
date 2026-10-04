@@ -307,7 +307,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: 64px; }
+.pb-nav { padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px) * 0.15 + 10px); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
@@ -332,10 +332,6 @@ input, textarea, select {
     
     .toggle-checkbox:checked { right: 0; border-color: #10b981; }
     .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
-    
-html { background: red !important; }
-​​body { background: lime !important; }
-#root { background: yellow !important; }
   `;
 };
 
