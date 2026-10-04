@@ -304,6 +304,8 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
+.pb-nav { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px) * 0.35 + 12px); }
+
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
    box-shadow: 0 4px 12px rgba(15, 43, 92, 0.22);
@@ -2559,29 +2561,22 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
     { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
     { id: 'account', icon: User, label: 'គណនី' },
   ];
-
-  if (isAdmin) {
-    navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
-  }
+  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-    <div 
-      className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] w-full"
-      style={{
-        bottom: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom), 6px)',
-        paddingTop: '6px'
-      }}
+    <div
+      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.35)' }}
     >
-      <div className="flex justify-around items-center h-[46px] px-1">
+      <div className="flex justify-around items-center h-[52px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
           return (
-            <button 
-              key={item.id} 
-              onClick={() => setCurrentView(item.id)} 
-              className="flex-1 flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id)}
+              className="flex-1 h-full flex flex-col items-center justify-center touch-manipulation active:scale-95 transition-transform select-none"
             >
               <Icon className={`w-5 h-5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
               <span className={`text-[10px] font-bold mt-0.5 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
@@ -3786,7 +3781,7 @@ const ChatView = ({ chats = [], user, profile, showToast, db, appId, setCurrentV
                           onChange={e => setUserSearchTerm(e.target.value)}
                           className="w-full bg-white border border-slate-200 rounded-lg py-1.5 pl-8 pr-3 text-[13px] font-bold outline-none"
                       />
-                  </div>
+                  </div> 
                   <div className="flex-1 overflow-y-auto space-y-1.5 pb-1 hide-scrollbar">
                       {registeredUsersToShow.filter(u => u.username?.toLowerCase().includes(userSearchTerm.toLowerCase())).length === 0 ? (
                           <p className="text-center text-[10px] text-slate-400 font-bold py-2">គ្មានគណនីដែលត្រូវស្វែងរកទេ</p>
