@@ -2565,10 +2565,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      style={{ paddingBottom: 0 }}
+      className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+      style={{ bottom: '-2px', paddingBottom: '2px' }}
     >
-      <div className="flex justify-around items-end h-[44px] px-1 pb-[3px]">
+      <div className="flex justify-around items-center h-[48px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2576,10 +2576,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id)}
-              className="flex-1 flex flex-col items-center justify-end active:scale-95 transition-transform select-none"
+              className="flex-1 h-full flex flex-col items-center justify-center active:scale-95 transition-transform select-none"
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold leading-none mt-0.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <span className={`text-[10px] font-bold leading-none mt-1 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
@@ -2589,28 +2589,6 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
     </div>
   );
 };
-// ២. Component App ធំរបស់អ្នក (ផ្ទាំងមេ)
-const MainAppView = () => {
-  // កន្លែងប្រកាស State របស់អ្នក (ឧទាហរណ៍)
-  const [currentView, setCurrentView] = useState('home');
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col relative overflow-x-hidden">
-      {/* ១. Header ខាងលើ */}
-      <TopHeader />
-
-      {/* ២. ផ្ទៃទិន្នន័យកណ្តាល (ត្រូវដាក់ pb-24 ដើម្បីរុញទិន្នន័យផុតពី BottomNav) */}
-      <main className="flex-1 pb-24">
-        {/* ទិន្នន័យ Web App របស់អ្នកនៅទីនេះ */}
-      </main>
-
-      {/* ៣. BottomNav ត្រូវដាក់នៅចុងក្រោយគេបង្អស់ត្រង់នេះ */}
-      <BottomNav currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} />
-    </div>
-  );
-};
-
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     useEffect(() => {
