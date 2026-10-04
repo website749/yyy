@@ -304,7 +304,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px) * 0.15 + 12px); }
+.pb-nav { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px) * 0.15 + 12px); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
@@ -2568,7 +2568,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
       className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
       style={{ paddingBottom: 0 }}
     >
-      <div className="flex justify-around items-center h-[50px] px-1">
+      <div className="flex justify-around items-end h-[44px] px-1 pb-[3px]">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2576,10 +2576,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-col items-center justify-center active:scale-95 transition-transform select-none"
+              className="flex-1 flex flex-col items-center justify-end active:scale-95 transition-transform select-none"
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <span className={`text-[10px] font-bold leading-none mt-0.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
