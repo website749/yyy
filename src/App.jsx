@@ -307,7 +307,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px) * 0.15 + 10px); }
+.pb-nav { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
@@ -2568,10 +2568,11 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      style={{ bottom: 0, paddingBottom: 0 }}
-    >
-      <div className="flex justify-around items-end h-[46px] px-1 pb-[5px]">
+  className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+  style={{ bottom: 0, paddingBottom: 0 }}
+>
+      
+<div className="flex justify-around items-center min-h-[46px] px-1 py-[5px]">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
