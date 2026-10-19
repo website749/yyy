@@ -307,7 +307,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
+.pb-nav { padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px)); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
@@ -2557,21 +2557,31 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
-const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
+const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
+  const lang = localStorage.getItem('tp_app_lang') || 'kh';
+  const L = (kh, en) => (lang === 'en' ? en : kh);
+
   const navItems = [
-    { id: 'home', icon: Home, label: 'ទំព័រដើម' },
-    { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
-    { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
-    { id: 'account', icon: User, label: 'គណនី' },
+    { id: 'home',    icon: Home,        label: L('ទំព័រដើម',   'Home') },
+    { id: 'info',    icon: Info,        label: L('ព័ត៌មាន',    'Info') },
+    { id: 'reports', icon: TrendingUp,  label: L('របាយការណ៍',  'Reports') },
+    { id: 'account', icon: User,        label: L('គណនី',       'Account') },
   ];
   if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      style={{ bottom: 0, paddingBottom: 0 }}
+      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+      // ✅ [ចំណុច 1] រាវរករន្តកាត់នៅខាងក្រោម (gesture bar) ឱ្យទាបជាងមុន:
+      // រាប់បញ្ចូលកម្ពស់ជ្រុងសុវត្ថិភាព (safe-area) ទាំងមូល ដូច្នេះ របាររាវរក (nav bar) ឡើងដល់គែមខាងក្រោមជ្រុងក្បួនឧបករណ៍ខាងក្រោម។
+      // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
+      style={{
+        bottom: 0,
+        paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)',
+        marginBottom: 0,
+      }}
     >
-      <div className="flex justify-around items-end h-[46px] px-1 pb-[5px]">
+      <div className="flex justify-around items-center h-[48px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2579,10 +2589,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
             <button
               key={item.id}
               onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-col items-center justify-end active:scale-95 transition-transform select-none"
+              className="flex-1 h-full flex flex-row items-center justify-center gap-1 active:scale-95 transition-transform select-none"
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold leading-none mt-1 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+              <span className={`text-[10px] font-bold leading-none ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
                 {item.label}
               </span>
             </button>
@@ -2593,6 +2603,9 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   );
 };
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
+    const lang = localStorage.getItem('tp_app_lang') || 'kh';
+    const L = (kh, en) => (lang === 'en' ? en : kh);
+
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     useEffect(() => {
       const updateStatus = () => setIsOnline(navigator.onLine);
@@ -2605,7 +2618,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
     }, []);
 
     return (
-        <div className="bg-white border-b border-slate-200 pt-[calc(env(safe-area-inset-top,16px)+16px)] px-4 pb-4 shadow-sm relative z-40 shrink-0 w-full">
+        <div className="bg-white border-b border-slate-200 pt-[calc(env(safe-area-inset-top,8px)+12px)] px-4 pb-4 shadow-sm relative z-40 shrink-0 w-full">
            <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden p-0.5 border border-slate-100">
@@ -2616,7 +2629,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                     )}
                  </div>
                  <div>
-                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិ.ស្តៅសន្តិភាព</h1>
+                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិស្តៅសន្តិភាព</h1>
                     {!isOnline && <span className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5 inline-block"> Offline Mode ⚠️</span>}
                  </div>
               </div>
@@ -2633,18 +2646,23 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                  </button>
 
                  <div className="relative">
-                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
                         <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
-                        {notifications && notifications.length > 0 && <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full animate-bounce"></span>}
+                        {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
+                        {notifications && notifications.length > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full animate-bounce flex items-center justify-center text-[9px] font-black text-white border-2 border-white">
+                            {notifications.length > 99 ? '99+' : notifications.length}
+                          </span>
+                        )}
                      </button>
                      {notificationsOpen && (
                         <div className="absolute right-0 mt-2 w-[280px] bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden z-[450] text-slate-800 animate-in fade-in zoom-in-95 pointer-events-auto">
                           <div className="p-3 border-b border-slate-100 font-bold flex justify-between text-[11px] bg-slate-50 items-center text-[#0F2B5C]">
-                            <span>ការជូនដំណឹង</span>
+                            <span>{L('ការជូនដំណឹង', 'Notifications')}</span>
                             <button onClick={() => setNotificationsOpen(false)} className="p-1 hover:bg-slate-200 rounded-full"><X className="w-3.5 h-3.5 text-slate-500" /></button>
                           </div>
                           <div className="max-h-[50vh] overflow-y-auto">
-                            {!notifications || notifications.length === 0 ? <p className="p-5 text-center text-[11px] text-slate-400 font-bold">គ្មានសារថ្មីទេ</p> : 
+                            {!notifications || notifications.length === 0 ? <p className="p-5 text-center text-[11px] text-slate-400 font-bold">{L('គ្មានសារថ្មីទេ', 'No new messages')}</p> : 
                               notifications.map(n => (
                                 <div key={n.id} className="p-3 border-b border-slate-50 flex justify-between items-start gap-2 hover:bg-slate-50">
                                   <div className="flex-1">
@@ -2678,7 +2696,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                   </div>
                   <input 
                     type="search" 
-                    placeholder="ស្វែងរកទីតាំង ឬសេវាកម្ម..." 
+                    placeholder={L('ស្វែងរកទីតាំង ឬសេវាកម្ម...', 'Search locations or services...')} 
                     className="w-full bg-slate-50 text-slate-800 placeholder-slate-400 rounded-xl py-2.5 pl-10 pr-4 outline-none text-[14px] font-bold border border-slate-200 focus:border-[#38BDF8] focus:bg-white transition-all shadow-inner" 
                     value={searchQuery} 
                     onChange={(e) => setSearchQuery(e.target.value)} 
@@ -2690,13 +2708,15 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
         );
       };
 const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData }) => {
+  const lang = localStorage.getItem('tp_app_lang') || 'kh';
+  const L = (kh, en) => (lang === 'en' ? en : kh);
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
   const filtered = useMemo(() => {
      return (locations || []).filter(l => {
          if (!l) return false;
          
-         // ធ្វើឲ្យការស្វែងរកកាន់តែឆ្លាតវៃ (Smart Search): កាត់ពាក្យ "ឃុំ", "ភូមិ" ចេញ និងបំបែកពាក្យស្វែងរក
+         // ✅ [ចំណុច 9 & 12] Smart Search ដើម — រក្សាទុកដូចដើម ១០០%
          const rawSearch = searchQuery.toLowerCase().trim();
          const cleanSearch = rawSearch.replace(/^(ឃុំ|ភូមិ|ស្រុក|សង្កាត់|ខេត្ត)\s*/, '');
          const searchTerms = cleanSearch.split(/\s+/).filter(Boolean);
@@ -2719,12 +2739,10 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
 
   const sortedFiltered = useMemo(() => {
      return [...filtered].sort((a, b) => {
-         // 1. Favorites មកមុនគេ
          const aFav = favorites[a.id] ? 1 : 0;
          const bFav = favorites[b.id] ? 1 : 0;
          if (aFav !== bFav) return bFav - aFav;
          
-         // 2. ផ្តល់អាទិភាពលើសេវាកម្មសំខាន់ៗ (ប៉ូលិស ពេទ្យ សាលារៀន ជាដាច់ខាតត្រូវនៅខាងលើគេបង្អស់ Priority 3)
          const getPri = (cat) => {
              const c = String(cat || '').trim();
              if (['ប៉ូលិស', 'មន្ទីរពេទ្យ', 'ពេទ្យ', 'សាលារៀន'].includes(c)) return 3;
@@ -2735,68 +2753,75 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
          const bPri = getPri(b.category);
          if (aPri !== bPri) return bPri - aPri;
 
-         // 3. ទិន្នន័យបញ្ចូលថ្មីៗនៅខាងលើ
          return (b.timestamp || 0) - (a.timestamp || 0);
       });
   }, [filtered, favorites]);
 
   const handleOtherDistricts = () => {
-     showToast('មុខងារកំពុងអភិវឌ្ឍ (Under Development) ⚠️', 'info');
+     showToast(L('មុខងារកំពុងអភិវឌ្ឍ (Under Development) ⚠️', 'Feature under development ⚠️'), 'info');
   };
 
   return (
-    <div className="space-y-4 pt-1 w-full flex-1 font-khmer">
-      <div className="bg-[#0F2B5C] rounded-[16px] p-4 relative overflow-hidden flex flex-row items-center justify-between w-full min-h-[110px] shadow-md">
+    // ✅ [ចំណុច 10] UI ស្អាតសម្រាប់ទូរស័ព្ទ — គម្លាតតូចជាង (space-y-3), ខ្នាតអក្សរតម្រឹមឡើងវិញ
+    <div className="space-y-3 pt-1 w-full flex-1 font-khmer">
+      {/* Banner: បន្ថយកម្ពស់ 110px → 92px ឲ្យកាន់តែស្អាតលើ screen តូច */}
+      <div className="bg-[#0F2B5C] rounded-[16px] p-3.5 relative overflow-hidden flex flex-row items-center justify-between w-full min-h-[92px] shadow-md">
          <div className="absolute top-0 right-0 w-32 h-full bg-[#38BDF8]/10 rounded-l-[80px] z-0 pointer-events-none"></div>
          
          <div className="flex-1 z-10 pr-3">
-             <h1 className="text-[14px] md:text-lg font-black text-white leading-tight mb-1 font-khmer">
-                 ទិន្នន័យសំខាន់ៗ នៅទីនេះ!
+             <h1 className="text-[13px] md:text-lg font-black text-white leading-snug mb-0.5 font-khmer">
+                 {L('ទិន្នន័យសំខាន់ៗ នៅទីនេះ!', 'Key Data Right Here!')}
              </h1>
-             <p className="text-[12px] text-sky-200 mb-3 font-bold">
-                 រហ័ស ងាយស្រួល និងជឿជាក់បាន ១០០%
+             <p className="text-[11px] text-sky-200 mb-2.5 font-bold">
+                 {L('រហ័ស ងាយស្រួល និងជឿជាក់បាន ១០០%', 'Fast, easy and 100% reliable')}
              </p>
              <button onClick={()=>setCurrentView('info')} className="bg-[#38BDF8] text-[#0F2B5C] px-3 py-1.5 rounded-lg text-[11px] font-black flex items-center gap-1 hover:bg-sky-400">
-                 ស្វែងយល់ <ArrowRight className="w-3.5 h-3.5"/>
+                 {L('ស្វែងយល់', 'Explore')} <ArrowRight className="w-3.5 h-3.5"/>
              </button>
          </div>
-         <div className="w-[70px] h-[70px] shrink-0 z-10 overflow-hidden rounded-full bg-white border-2 border-[#38BDF8] flex items-center justify-center p-0.5">
+         <div className="w-[60px] h-[60px] shrink-0 z-10 overflow-hidden rounded-full bg-white border-2 border-[#38BDF8] flex items-center justify-center p-0.5">
              {homeBannerIcon ? (
                 <img src={homeBannerIcon} alt="Banner Icon" className="w-full h-full object-cover rounded-full" />
              ) : (
-                <GraduationCap className="w-10 h-10 text-[#0F2B5C]" />
+                <GraduationCap className="w-9 h-9 text-[#0F2B5C]" />
              )}
          </div>
       </div>
 
       <div>
-         <div className="flex justify-between items-center mb-2.5 px-1 border-l-4 border-[#0F2B5C] pl-2">
-            <h2 className="font-black text-[13px] text-slate-800 leading-none">ជម្រើសទីតាំង</h2>
+         <div className="flex justify-between items-center mb-2 px-1 border-l-4 border-[#0F2B5C] pl-2">
+            <h2 className="font-black text-[12.5px] text-slate-800 leading-none">{L('ជម្រើសទីតាំង', 'Location Options')}</h2>
          </div>
-         <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => setActiveHomeFilter(activeHomeFilter==='រតនមណ្ឌល'?'All':'រតនមណ្ឌល')} className={`p-2.5 flex flex-col justify-center items-center transition-all rounded-[14px] shadow-sm border ${activeHomeFilter==='រតនមណ្ឌល' ? 'border-[#0F2B5C] bg-[#0F2B5C] text-white' : 'border-slate-200 bg-white text-[#0F2B5C]'}`}>
-               <div className={`p-2 rounded-lg mb-1.5 ${activeHomeFilter==='រតនមណ្ឌល' ? 'bg-white/20 text-white' : 'bg-slate-50 text-[#0F2B5C]'}`}><MapSvgIcon /></div>
-               <span className="font-black text-[12px]">រតនមណ្ឌល</span>
+         <div className="grid grid-cols-2 gap-2.5">
+            <button onClick={() => setActiveHomeFilter(activeHomeFilter==='រតនមណ្ឌល'?'All':'រតនមណ្ឌល')} className={`p-2 flex flex-col justify-center items-center transition-all rounded-[14px] shadow-sm border ${activeHomeFilter==='រតនមណ្ឌល' ? 'border-[#0F2B5C] bg-[#0F2B5C] text-white' : 'border-slate-200 bg-white text-[#0F2B5C]'}`}>
+               <div className={`p-1.5 rounded-lg mb-1 ${activeHomeFilter==='រតនមណ្ឌល' ? 'bg-white/20 text-white' : 'bg-slate-50 text-[#0F2B5C]'}`}><MapSvgIcon /></div>
+               <span className="font-black text-[11.5px]">{L('រតនមណ្ឌល', 'Ratanak Mondul')}</span>
             </button>
-            <button onClick={handleOtherDistricts} className={`p-2.5 flex flex-col justify-center items-center transition-all rounded-[14px] shadow-sm border border-slate-200 bg-white text-[#38BDF8]`}>
-               <div className="p-2 rounded-lg mb-1.5 bg-slate-50"><Globe className="w-5 h-5" /></div>
-               <span className="font-black text-[12px]">ស្រុកផ្សេងៗ</span>
+            <button onClick={handleOtherDistricts} className={`p-2 flex flex-col justify-center items-center transition-all rounded-[14px] shadow-sm border border-slate-200 bg-white text-[#38BDF8]`}>
+               <div className="p-1.5 rounded-lg mb-1 bg-slate-50"><Globe className="w-5 h-5" /></div>
+               <span className="font-black text-[11.5px]">{L('ស្រុកផ្សេងៗ', 'Other Districts')}</span>
             </button>
          </div>
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-2.5 px-1 border-l-4 border-[#38BDF8] pl-2">
-          <h2 className="text-[13px] font-black text-slate-800 leading-none">ទិន្នន័យដែលបានបញ្ចូល</h2>
-          <button onClick={() => setCurrentView('info')} className="text-[11px] font-bold text-slate-600 flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">មើលទាំងអស់ <ArrowRight className="w-3.5 h-3.5"/></button>
+        <div className="flex items-center justify-between mb-2 px-1 border-l-4 border-[#38BDF8] pl-2">
+          <h2 className="text-[12.5px] font-black text-slate-800 leading-none">
+            {L('ទិន្នន័យដែលបានបញ្ចូល', 'Added Data')}
+            {/* ✅ [ចំណុច 9 & 12] បង្ហាញចំនួនលទ្ធផលពេលស្វែងរកតាមភូមិ */}
+            {searchQuery.trim() && <span className="ml-2 text-[10px] font-black text-[#38BDF8] bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-full">({sortedFiltered.length})</span>}
+          </h2>
+          <button onClick={() => setCurrentView('info')} className="text-[11px] font-bold text-slate-600 flex items-center gap-1 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+            {L('មើលទាំងអស់', 'View All')} <ArrowRight className="w-3.5 h-3.5"/>
+          </button>
         </div>
         {sortedFiltered.length === 0 ? (
            isFetchingData ? (
-               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 w-full">
+               <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4 w-full">
                    {[1,2,3,4].map(i => (
-                       <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[220px] animate-pulse">
+                       <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[200px] animate-pulse">
                            <div className="w-full aspect-[16/10] bg-slate-200 shrink-0"></div>
-                           <div className="p-3 flex flex-col gap-2 flex-1">
+                           <div className="p-2.5 flex flex-col gap-2 flex-1">
                                <div className="h-3 bg-slate-200 rounded-md w-1/3"></div>
                                <div className="h-4 bg-slate-200 rounded-md w-3/4 mt-1"></div>
                                <div className="h-2.5 bg-slate-200 rounded-md w-1/2 mt-2"></div>
@@ -2808,11 +2833,13 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
            ) : (
                <div className="text-center py-8 bg-white rounded-xl border border-dashed border-slate-200 font-bold text-[12px] text-slate-400 shadow-sm flex flex-col items-center">
                  <MapPin className="w-8 h-8 mb-2 text-slate-300"/>
-                 គ្មានទិន្នន័យ
+                 {searchQuery.trim() 
+                    ? L(`គ្មានទិន្នន័យត្រូវនឹង "${searchQuery.trim()}"`, `No data matching "${searchQuery.trim()}"`) 
+                    : L('គ្មានទិន្នន័យ', 'No data')}
                </div>
            )
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 lg:grid-cols-4">
             {sortedFiltered.map(loc => loc && (
               <LocationCard key={loc.id} location={loc} isFavorite={!!favorites[loc.id]} onToggleFavorite={() => toggleFavorite(loc.id)} onClick={() => onOpenLocation(loc)} />
             ))}
