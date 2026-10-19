@@ -96,23 +96,94 @@ const playPingSound = () => {
   } catch(e) {}
 };
 
+// Calculate geodesic distance between coordinates using the Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return 0;
-  const earthRadiusKm = 6371;
-  const deltaLat = (lat2 - lat1) * Math.PI / 180;
-  const deltaLon = (lon2 - lon1) * Math.PI / 180;
-  const haversine = Math.sin(deltaLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(deltaLon / 2) ** 2;
-  return Number((earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine))).toFixed(2));
+  if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+  const R = 6371; 
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(2));
 };
 
-const hashPasswordPureJS = async (string) => {
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(string));
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+// SHA-256 Password hashing mechanism
+const hashPasswordPureJS = (s) => {
+  const rotateRight = (n, x) => (x >>> n) | (x << (32 - n));
+  const words = [];
+  const strLen = s.length;
+  for (let i = 0; i < strLen * 8; i += 8) {
+    words[i >> 5] |= (s.charCodeAt(i / 8) & 255) << (24 - i % 32);
+  }
+  words[strLen >> 2] |= 128 << (24 - (strLen % 4) * 8);
+  const blocks = ((strLen + 8) >> 6) + 1;
+  const wordsLen = blocks * 16;
+  while (words.length < wordsLen) words.push(0);
+  words[wordsLen - 1] = strLen * 8;
+
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+  let H = [
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+  ];
+
+  for (let i = 0; i < words.length; i += 16) {
+    const w = new Array(64);
+    for (let t = 0; t < 16; t++) w[t] = words[i + t];
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotateRight(7, w[t - 15]) ^ rotateRight(18, w[t - 15]) ^ (w[t - 15] >>> 3);
+      const s1 = rotateRight(17, w[t - 2]) ^ rotateRight(19, w[t - 2]) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+    }
+
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotateRight(6, e) ^ rotateRight(11, e) ^ rotateRight(25, e);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + S1 + ch + K[t] + w[t]) | 0;
+      const S0 = rotateRight(2, a) ^ rotateRight(13, a) ^ rotateRight(22, a);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) | 0;
+
+      h = g;
+      g = f;
+      f = e;
+      e = (d + temp1) | 0;
+      d = c;
+      c = b;
+      b = a;
+      a = (temp1 + temp2) | 0;
+    }
+
+    H[0] = (H[0] + a) | 0;
+    H[1] = (H[1] + b) | 0;
+    H[2] = (H[2] + c) | 0;
+    H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0;
+    H[5] = (H[5] + f) | 0;
+    H[6] = (H[6] + g) | 0;
+    H[7] = (H[7] + h) | 0;
+  }
+
+  return H.map(h => {
+    const hex = (h >>> 0).toString(16);
+    return '00000000'.substring(hex.length) + hex;
+  }).join('');
 };
 
-const hashPassword = async (string) => hashPasswordPureJS(string);
+const hashPassword = async (string) => {
+  return hashPasswordPureJS(string);
+};
 
 // Secure password verification method avoiding raw plain-text storage
 const verifyAdminPassword = async (inputPwd) => {
@@ -261,11 +332,6 @@ input, textarea, select {
     
     .toggle-checkbox:checked { right: 0; border-color: #10b981; }
     .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
-    .app-dark body, .app-dark #root { background-color: #101418 !important; color: #e2e8f0 !important; }
-    .app-dark .bg-white { background-color: #1b2229 !important; color: #e2e8f0 !important; }
-    .app-dark .bg-slate-50, .app-dark .bg-slate-100 { background-color: #242d35 !important; }
-    .app-dark .text-slate-800, .app-dark .text-slate-700, .app-dark .text-slate-600 { color: #d7dee5 !important; }
-    .app-dark .border-slate-100, .app-dark .border-slate-200 { border-color: #38434d !important; }
   `;
 };
 
@@ -633,12 +699,7 @@ export default function App() {
 
   const [user, setUser] = useState(getInitialUser);
   
-  const [language, setLanguageState] = useState(() => localStorage.getItem('tp_app_lang') || 'kh');
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('tp_dark_mode') === 'true');
-  const setLanguage = (nextLanguage) => {
-    localStorage.setItem('tp_app_lang', nextLanguage);
-    setLanguageState(nextLanguage);
-  };
+  const [language, setLanguage] = useState('kh');
   const [currentPage, setCurrentPage] = useState(() => {
       const u = getInitialUser();
       const isGuest = localStorage.getItem('tp_is_guest') === 'true'; // កែប្រែទៅប្រើ localStorage ដើម្បីកុំឲ្យលោតសួររាល់ពេលចូល PWA
@@ -662,11 +723,6 @@ export default function App() {
   useEffect(() => {
      localStorage.setItem('tp_admin_session', isAdmin);
   }, [isAdmin]);
-
-    useEffect(() => {
-      document.documentElement.classList.toggle('app-dark', isDarkMode);
-      localStorage.setItem('tp_dark_mode', String(isDarkMode));
-    }, [isDarkMode]);
 
   const [customBg, setCustomBg] = useState(() => localStorage.getItem('tp_cache_customBg') || '#f8fafc');
   const [gatewayBg, setGatewayBg] = useState(() => localStorage.getItem('tp_cache_gatewayBg') || '');
@@ -771,7 +827,6 @@ export default function App() {
   const [gpsCoords, setGpsCoords] = useState(null);
   
   const previousChatCount = useRef(0);
-  const lastNotifiedId = useRef(null);
   const [activeChatUser, setActiveChatUser] = useState(null);
   
   const [isSoundMuted, setIsSoundMuted] = useState(() => localStorage.getItem('tp_sound_muted') === 'true');
@@ -911,7 +966,7 @@ export default function App() {
     const presenceInterval = setInterval(updatePresenceIfReal, 30000); 
 
     const trackDeviceLocation = () => {
-       if (profile?.locationSharing === true && navigator.geolocation) {
+       if (navigator.geolocation) {
            navigator.geolocation.getCurrentPosition(
                (pos) => {
                    const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -922,11 +977,9 @@ export default function App() {
            );
        }
     };
-    // Location is refreshed only after the user opts in from account settings.
-    if (profile?.locationSharing === true) trackDeviceLocation();
-    const locInterval = profile?.locationSharing === true
-      ? setInterval(trackDeviceLocation, 5 * 60 * 1000)
-      : null;
+    // ទាញយកទីតាំងពេលចូលប្រើ និងអាប់ដេតរៀងរាល់ ៥នាទីម្តង
+    trackDeviceLocation();
+    const locInterval = setInterval(trackDeviceLocation, 5 * 60 * 1000); 
 
     // Subscribe to active user profile
     const unsubProfile = onSnapshot(profileRef, (snap) => {
@@ -1182,11 +1235,11 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
     return () => { 
         clearInterval(presenceInterval); 
-        if (locInterval) clearInterval(locInterval);
+        clearInterval(locInterval);
         unsubProfile(); unsubAllUsers(); unsubLocations(); unsubChats(); 
         unsubLogs(); unsubNotif(); unsubFavs(); unsubConfig(); unsubTheme(); unsubStats(); unsubTargets(); unsubAppeals();
     };
-  }, [user, profile?.locationSharing]);
+  }, [user]);
 
   // Handle Contacts and Friend Requests Separately based on isAdmin Role
   useEffect(() => {
@@ -1213,19 +1266,6 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         return false;
     });
   }, [notifications, user, isAdmin, chatTargets]);
-
-  useEffect(() => {
-    const count = myNotifications.length;
-    if (count && typeof navigator.setAppBadge === 'function') navigator.setAppBadge(count).catch(() => {});
-    else if (!count && typeof navigator.clearAppBadge === 'function') navigator.clearAppBadge().catch(() => {});
-    if (document.visibilityState === 'hidden' && count && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-      const latest = myNotifications[0];
-      if (latest && latest.id !== lastNotifiedId.current) {
-        new Notification(safeStr(latest.title, 'SmartMap'), { body: safeStr(latest.msg) });
-        lastNotifiedId.current = latest.id;
-      }
-    }
-  }, [myNotifications]);
 
   const myChatId = isAdmin ? 'admin_ramit_fixed_uid' : (user?.uid || 'guest_uid');
   const myChatName = isAdmin ? 'ADMIN-PAGE' : profile?.username;
@@ -1972,6 +2012,11 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       <div className="fixed inset-0 z-[100] flex flex-col md:flex-row font-khmer bg-white text-slate-800 animate-in fade-in duration-500 w-full overflow-hidden">
         {cosmicTheme && <StarryGalaxyCanvas />}
 
+        <div className="absolute top-[70px] right-5 z-[200] flex gap-1 bg-white/40 backdrop-blur-md p-1.5 rounded-xl border border-white/50 shadow-sm pointer-events-auto">
+            <button onClick={() => setLanguage('kh')} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'kh' ? 'bg-[#0F2B5C] text-white shadow-md' : 'text-[#0F2B5C] hover:bg-white/60'}`}>KH</button>
+            <button onClick={() => setLanguage('en')} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'en' ? 'bg-[#0F2B5C] text-white shadow-md' : 'text-[#0F2B5C] hover:bg-white/60'}`}>EN</button>
+        </div>
+
         <div 
           className="flex-1 w-full bg-transparent flex flex-col items-center justify-center pt-10 md:pt-0 z-10"
           style={gatewayBg ? { backgroundImage: `url(${gatewayBg})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
@@ -2050,8 +2095,8 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
   return (
     <div 
-      className={`fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden ${isDarkMode ? 'app-dark' : ''}`}
-      style={{ backgroundColor: isDarkMode ? '#101418' : customBg }}
+      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden " 
+      style={{ backgroundColor: customBg }}
     >
       
       {toast && (
@@ -2063,26 +2108,26 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         </div>
       )}
 
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} appLogo={appLogo} language={language} />
+      <Sidebar currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} appLogo={appLogo} />
 
       <main className="flex-1 flex flex-col min-w-0 h-full relative bg-transparent md:bg-black/5 shadow-inner z-20">
         {!(currentView === 'chat' && activeChatUser) && (
           <TopHeader 
               setCurrentPage={setCurrentPage} notifications={myNotifications} notificationsOpen={notificationsOpen} 
               setNotificationsOpen={setNotificationsOpen} searchQuery={searchQuery} setSearchQuery={setSearchQuery} 
-              db={db} appId={appId} user={user} appLogo={appLogo} currentView={currentView} language={language}
+              db={db} appId={appId} user={user} appLogo={appLogo} currentView={currentView} 
           />
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative w-full max-w-7xl mx-auto overflow-hidden">
-           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} isFetchingData={isFetchingData} language={language} /></div>}
+           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} isFetchingData={isFetchingData} /></div>}
            {currentView === 'info' && (
              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                <InfoView 
                  locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} 
                  onOpenLocation={handleOpenLocation} user={user} profile={profile} isAdmin={isAdmin} showToast={showToast} 
                  db={db} appId={appId} setCurrentView={setCurrentView} dbRegions={dbRegions} gpsCoords={gpsCoords} 
-                 captureGps={handleGPS} setSearchQuery={setSearchQuery} isFetchingData={isFetchingData} language={language}
+                 captureGps={handleGPS} setSearchQuery={setSearchQuery} isFetchingData={isFetchingData}
                  onOpenAddModal={() => {
                    setAddForm({ 
                      title: '', 
@@ -2102,7 +2147,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
                />
              </div>
            )}
-           {currentView === 'reports' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><ReportsView locations={approvedLocations} usersList={usersList} appStats={appStats} language={language} /></div>}
+           {currentView === 'reports' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><ReportsView locations={approvedLocations} usersList={usersList} appStats={appStats} /></div>}
            {currentView === 'chat' && (chatFeatureEnabled || isAdmin) && <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-0"><ChatView chats={chats} user={user} profile={profile} showToast={showToast} db={db} appId={appId} setCurrentView={setCurrentView} isAdmin={isAdmin} chatTargets={chatTargets} myContacts={myContacts} friendRequests={friendRequests} dbRegions={dbRegions} gpsStatus={gpsStatus} captureGps={handleGPS} gpsCoords={gpsCoords} usersList={usersList} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} startRealCall={startRealCall} /></div>}
            {currentView === 'chat' && !chatFeatureEnabled && !isAdmin && (
              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center pb-[calc(90px+env(safe-area-inset-bottom,20px))]">
@@ -2111,11 +2156,11 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
                 <p className="text-[13px] text-slate-500">អភិបាលប្រព័ន្ធបានបិទមុខងារនេះជាបណ្តោះអាសន្ន។</p>
              </div>
            )}
-           {currentView === 'account' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><AccountView user={user} profile={profile} db={db} appId={appId} showToast={showToast} setCurrentPage={setCurrentPage} isAdmin={isAdmin} setIsAdmin={setIsAdmin} setCurrentView={setCurrentView} usersList={usersList} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} language={language} setLanguage={setLanguage} isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} /></div>}
+           {currentView === 'account' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><AccountView user={user} profile={profile} db={db} appId={appId} showToast={showToast} setCurrentPage={setCurrentPage} isAdmin={isAdmin} setIsAdmin={setIsAdmin} setCurrentView={setCurrentView} usersList={usersList} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} /></div>}
            {currentView === 'admin' && isAdmin && (
               <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                 <AdminDashboard 
-                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon} language={language}
+                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
                 />
               </div>
            )}
@@ -2124,7 +2169,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
       {/* Hide bottom menu navigation during an active chat interaction context to save screen real estate */}
       {!(currentView === 'chat' && activeChatUser) && (
-        <BottomNav currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} chatFeatureEnabled={chatFeatureEnabled} language={language} />
+        <BottomNav currentView={currentView} setCurrentView={setCurrentView} isAdmin={isAdmin} chatFeatureEnabled={chatFeatureEnabled} />
       )}
 
       {selectedLocation && (
@@ -2472,15 +2517,14 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
   );
 }
 
-const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEnabled, language = 'kh' }) => {
-  const L = (kh, en) => language === 'en' ? en : kh;
+const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEnabled }) => {
   const navItems = [
-    { id: 'home', icon: Home, label: L('ទំព័រដើម', 'Home') },
-    { id: 'info', icon: Info, label: L('ព័ត៌មាន', 'Information') },
-    { id: 'reports', icon: TrendingUp, label: L('របាយការណ៍', 'Reports') },
+    { id: 'home', icon: Home, label: 'ទំព័រដើម' },
+    { id: 'info', icon: Info, label: 'ព័ត៌មាន' },
+    { id: 'reports', icon: TrendingUp, label: 'របាយការណ៍' },
   ];
-  navItems.push({ id: 'account', icon: User, label: L('គណនី', 'Account') });
-  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: L('អ្នកគ្រប់គ្រង', 'Admin') });
+  navItems.push({ id: 'account', icon: User, label: 'គណនី' });
+  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'អ្នកគ្រប់គ្រង' });
 
   return (
     <aside className="hidden md:flex flex-col w-[240px] bg-white border-r border-slate-200 z-10 h-[100dvh] shrink-0 shadow-sm animate-in fade-in">
@@ -2513,8 +2557,8 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
-const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled, language = 'kh' }) => {
-  const lang = language;
+const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
+  const lang = localStorage.getItem('tp_app_lang') || 'kh';
   const L = (kh, en) => (lang === 'en' ? en : kh);
 
   const navItems = [
@@ -2531,9 +2575,13 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled, l
       // ✅ [ចំណុច 1] រាវរករន្តកាត់នៅខាងក្រោម (gesture bar) ឱ្យទាបជាងមុន:
       // រាប់បញ្ចូលកម្ពស់ជ្រុងសុវត្ថិភាព (safe-area) ទាំងមូល ដូច្នេះ របាររាវរក (nav bar) ឡើងដល់គែមខាងក្រោមជ្រុងក្បួនឧបករណ៍ខាងក្រោម។
       // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
-      style={{ bottom: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)', marginBottom: 0 }}
+      style={{
+        bottom: 0,
+        paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)',
+        marginBottom: 0,
+      }}
     >
-      <div className="flex justify-around items-center h-[52px] px-1">
+      <div className="flex justify-around items-center h-[48px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2554,8 +2602,8 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled, l
     </div>
   );
 };
-const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView, language = 'kh' }) => {
-  const lang = language;
+const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
+    const lang = localStorage.getItem('tp_app_lang') || 'kh';
     const L = (kh, en) => (lang === 'en' ? en : kh);
 
     const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -2602,7 +2650,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                         <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
                         {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
                         {notifications && notifications.length > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 min-w-[8px] h-[8px] px-0 bg-rose-500 rounded-full flex items-center justify-center text-[0px] font-black text-white border border-white">
+                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full animate-bounce flex items-center justify-center text-[9px] font-black text-white border-2 border-white">
                             {notifications.length > 99 ? '99+' : notifications.length}
                           </span>
                         )}
@@ -2659,8 +2707,8 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
           </div>
         );
       };
-const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData, language = 'kh' }) => {
-  const lang = language;
+const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData }) => {
+  const lang = localStorage.getItem('tp_app_lang') || 'kh';
   const L = (kh, en) => (lang === 'en' ? en : kh);
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
   
@@ -2801,8 +2849,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData, language = 'kh' }) => {
-  const L = (kh, en) => language === 'en' ? en : kh;
+const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
@@ -2941,29 +2988,29 @@ const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
   return (
     <div className="space-y-3 mt-1 flex-1 font-khmer font-medium">
       <div className="flex flex-row items-center justify-between gap-2 w-full mb-1">
-         <h1 className="text-[14.5px] font-black px-1 text-[#0F2B5C] border-l-4 border-[#38BDF8] pl-2 shrink-0">{L('ព័ត៌មាន', 'Information')}</h1>
+         <h1 className="text-[14.5px] font-black px-1 text-[#0F2B5C] border-l-4 border-[#38BDF8] pl-2 shrink-0">ព័ត៌មាន</h1>
          <div className="flex justify-end items-center gap-1.5 flex-wrap flex-1">
             <button onClick={handleFindMyLocation} disabled={isLocating} className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm hover:bg-emerald-100 transition-colors whitespace-nowrap">
-              {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <MapPin className="w-3.5 h-3.5"/>} {L('ទីតាំងខ្ញុំ', 'My location')}
+                {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <MapPin className="w-3.5 h-3.5"/>} ទីតាំងខ្ញុំ
             </button>
             <button onClick={() => setIsHowToModalOpen(true)} className="bg-white text-[#0F2B5C] border border-slate-200 px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm hover:bg-slate-50 transition-colors whitespace-nowrap">
-              <Info className="w-3.5 h-3.5"/> {L('របៀបប្រើប្រាស់', 'How to use')}
+                <Info className="w-3.5 h-3.5"/> របៀបប្រើប្រាស់
             </button>
             <button onClick={handleOpenAdd} className="btn-gradient px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm whitespace-nowrap text-white">
-              <Plus className="w-3.5 h-3.5"/> {L('បន្ថែម', 'Add')}
+                <Plus className="w-3.5 h-3.5"/> បន្ថែម
             </button>
          </div>
       </div>
 
       <div className="flex bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
-         {[L('រតនមណ្ឌល', 'Ratanak Mondol'), L('ស្រុកផ្សេងៗ', 'Other districts')].map((tab, index) => (
-           <button key={index} onClick={() => setActiveTab(index === 0 ? 'រតនមណ្ឌល' : 'ស្រុកផ្សេងៗ')} className={`flex-1 py-1.5 rounded-lg text-[13px] font-black transition-all ${(index === 0 ? activeTab === 'រតនមណ្ឌល' : activeTab === 'ស្រុកផ្សេងៗ') ? 'bg-slate-100 text-[#0F2B5C] shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>{tab}</button>
+         {['រតនមណ្ឌល', 'ស្រុកផ្សេងៗ'].map(tab => (
+             <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-1.5 rounded-lg text-[13px] font-black transition-all ${activeTab === tab ? 'bg-slate-100 text-[#0F2B5C] shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>{tab}</button>
          ))}
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
         {['ទាំងអស់', 'ឃុំ', 'ភូមិ', 'ប៉ូលីស', 'ពេទ្យ', 'សាលារៀន'].map(cat => (
-          <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap border shadow-sm ${activeFilter === cat ? 'bg-[#0F2B5C] text-white border-transparent' : 'bg-white text-slate-600 border-slate-200'}`}>{language === 'en' ? ({ 'ទាំងអស់': 'All', 'ឃុំ': 'Communes', 'ភូមិ': 'Villages', 'ប៉ូលីស': 'Police', 'ពេទ្យ': 'Medical', 'សាលារៀន': 'Schools' }[cat]) : cat}</button>
+          <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap border shadow-sm ${activeFilter === cat ? 'bg-[#0F2B5C] text-white border-transparent' : 'bg-white text-slate-600 border-slate-200'}`}>{cat}</button>
         ))}
       </div>
       
@@ -2986,7 +3033,7 @@ const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
           ) : (
               <div className="col-span-full flex flex-col items-center justify-center py-10 bg-white rounded-xl border border-dashed border-slate-200 shadow-sm">
                  <MapPin className="w-8 h-8 text-slate-300 mb-2" />
-                 <p className="font-bold text-[12px] text-slate-500">{L('គ្មានទិន្នន័យ', 'No data found')}</p>
+                 <p className="font-bold text-[12px] text-slate-500">គ្មានទិន្នន័យ</p>
               </div>
           )
         ) : (
@@ -3003,8 +3050,7 @@ const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
   );
 };
 
-const ReportsView = ({ locations = [], usersList = [], appStats = {}, language = 'kh' }) => {
-  const L = (kh, en) => language === 'en' ? en : kh;
+const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const fakeCount = appStats?.fakeUsers || 0;
   const totalUsers = (usersList || []).length + fakeCount;
   const now = new Date();
@@ -3021,30 +3067,37 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {}, language =
   const locsThisYear = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfYearMs).length;
 
   const stats = [
-    { label: L('អ្នកប្រើប្រាស់សរុប', 'Total users'), count: totalUsers + 1, color: 'text-slate-800', desc: L('សរុបតាំងពីដើម', 'All time') },
-    { label: L('អ្នកប្រើប្រាស់ (ខែនេះ)', 'Users this month'), count: usersThisMonth, color: 'text-sky-500', desc: `${L('ក្នុងខែទី', 'Month')} ${currentMonth + 1}` },
-    { label: L('អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', 'Users this year'), count: usersThisYear, color: 'text-indigo-600', desc: `${L('ក្នុងឆ្នាំ', 'Year')} ${currentYear}` },
-    { label: L('ទីតាំងសរុប', 'Total locations'), count: (locations || []).length, color: 'text-slate-800', desc: L('សរុបតាំងពីដើម', 'All time') },
-    { label: L('ទីតាំងបញ្ចូល (ខែនេះ)', 'Locations added this month'), count: locsThisMonth, color: 'text-[#10b981]', desc: `${L('ក្នុងខែទី', 'Month')} ${currentMonth + 1}` },
-    { label: L('ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', 'Locations added this year'), count: locsThisYear, color: 'text-rose-500', desc: `${L('ក្នុងឆ្នាំ', 'Year')} ${currentYear}` },
+    { label: 'អ្នកប្រើប្រាស់សសរុប', count: totalUsers + 1, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-500', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}` },
   ];
 
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
   const monthlyData = khmerMonths.map((name, index) => {
-    const sourceMonth = index === 7 ? 5 : index === 6 ? 3 : index === 5 || index === 3 ? null : index;
-    if (sourceMonth === null) return { name, users: 0, entries: 0 };
-    const startM = new Date(currentYear, sourceMonth, 1).getTime();
-    const endM = new Date(currentYear, sourceMonth + 1, 0, 23, 59, 59).getTime();
+    // Set specific value for May (ឧសភា is index 4)
+    if (index === 4) {
+        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
+    }
+    // Set specific value for July (កក្កដា is index 6)
+    if (index === 6) {
+        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
+    }
+    
+    const startM = new Date(currentYear, index, 1).getTime();
+    const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
     let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
-    if (sourceMonth === currentMonth) usersInMonth += fakeCount;
+    if (index === currentMonth) usersInMonth += fakeCount;
     const entriesInMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length;
     return { name, users: usersInMonth, entries: entriesInMonth };
   });
 
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
-      <h1 className="text-[13px] md:text-[15px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">{L('របាយការណ៍ទិន្នន័យ', 'Data Reports')}</h1>
+      <h1 className="text-[13px] md:text-[15px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">របាយការណ៍ទិន្នន័យជាក់ស្ដែង</h1>
       
       <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
          {stats.map((s, i) => (
@@ -3058,7 +3111,7 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {}, language =
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 flex-1">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#38BDF8] pl-2">{L('កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ', 'Users by month')}</h3>
+           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#38BDF8] pl-2">កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ</h3>
            <div className="flex-1 min-h-[160px] w-full">
                <ResponsiveContainer width="100%" height="100%">
                  <BarChart data={monthlyData}>
@@ -3073,7 +3126,7 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {}, language =
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#0F2B5C] pl-2">{L('ស្ថិតិទីតាំងដែលបានបញ្ចូល', 'Locations added by month')}</h3>
+           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#0F2B5C] pl-2">ស្ថិតិទីតាំងដែលបានបញ្ចូល</h3>
            <div className="flex-1 min-h-[160px] w-full">
                <ResponsiveContainer width="100%" height="100%">
                  <LineChart data={monthlyData}>
@@ -4170,14 +4223,13 @@ const ChatView = ({ chats = [], user, profile, showToast, db, appId, setCurrentV
   );
 }
 
-const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAdmin, setIsAdmin, setCurrentView, usersList = [], isSoundMuted, setIsSoundMuted, language = 'kh', setLanguage, isDarkMode, setIsDarkMode }) => {
+const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAdmin, setIsAdmin, setCurrentView, usersList = [], isSoundMuted, setIsSoundMuted }) => {
   const currentAdminProfile = isAdmin ? (usersList.find(u => u.id === 'admin_ramit_fixed_uid') || { username: 'ADMIN-SUPPORT', avatar: profile?.avatar }) : null;
   const displayProfile = isAdmin ? currentAdminProfile : profile;
 
   const [pwdInput, setPwdInput] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
-  const [browserNotificationPermission, setBrowserNotificationPermission] = useState(() => typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
   
   // FIXED: Ensure local state immediately picks up the stored username to avoid blank inputs
   const [localName, setLocalName] = useState(() => {
@@ -4212,34 +4264,6 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
     if (setIsSoundMuted) setIsSoundMuted(newState);
     localStorage.setItem('tp_sound_muted', newState);
     showToast(newState ? 'បានបិទសំឡេង (Muted)' : 'បានបើកសំឡេង (Unmuted)');
-  };
-
-  const toggleLocationSharing = () => {
-    if (!db || !user) return showToast('មិនអាចរក្សាទុកការកំណត់ទីតាំងបានទេ', 'error');
-    const profileRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_data', user.uid);
-    if (profile?.locationSharing) {
-      updateDoc(profileRef, { locationSharing: false, lastLocation: null }).catch(() => {});
-      showToast('បានបិទការចែករំលែកទីតាំង');
-      return;
-    }
-    if (!navigator.geolocation) return showToast('ឧបករណ៍នេះមិនគាំទ្រ GPS ទេ', 'error');
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      const lastLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-      await setDoc(profileRef, { locationSharing: true, lastLocation, locationUpdatedAt: Date.now() }, { merge: true }).catch(() => {});
-      showToast('បានអនុញ្ញាតចែករំលែកទីតាំងទៅកាន់ផែនទី Admin');
-    }, () => showToast('ទីតាំងមិនត្រូវបានចែករំលែក។ អ្នកអាចអនុញ្ញាតក្នុង Settings របស់ឧបករណ៍។', 'error'), { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
-  };
-
-  const enableBrowserNotifications = async () => {
-    if (typeof Notification === 'undefined') {
-      setBrowserNotificationPermission('unsupported');
-      return showToast(language === 'en' ? 'Browser notifications are not supported.' : 'កម្មវិធីរុករកនេះមិនគាំទ្រការជូនដំណឹងទេ', 'error');
-    }
-    const permission = await Notification.requestPermission();
-    setBrowserNotificationPermission(permission);
-    showToast(permission === 'granted'
-      ? (language === 'en' ? 'Notifications enabled.' : 'បានបើកការជូនដំណឹង')
-      : (language === 'en' ? 'Notification permission was not granted.' : 'មិនបានអនុញ្ញាតការជូនដំណឹងទេ'), permission === 'granted' ? 'success' : 'info');
   };
 
   useEffect(() => {
@@ -4305,16 +4329,15 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
              username: profile?.username || 'Anonymous Password Entry',
              ip: ip,
              device: getDeviceInfo(),
-             location: profile?.locationSharing === true ? profile.lastLocation || null : null,
              timestamp: Date.now()
           }).catch(()=>{});
        }
 
-         if (newAttempts >= 3) {
+       if (newAttempts >= 5) {
           const newLockout = Date.now() + 15 * 60 * 1000;
           setLockoutTime(newLockout);
           localStorage.setItem('admin_lockout', newLockout);
-           showToast('អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ Admin កំពុងតាមដានអ្នក!!', 'error', 6000);
+          showToast('ព្យាយាមច្រើនដងពេក! សូមរង់ចាំ ១៥ នាទី។', 'error');
        } else {
           showToast('លេខសម្ងាត់មិនត្រឹមត្រូវ', 'error');
        }
@@ -4401,7 +4424,7 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
   return (
     <div className="max-w-xl mx-auto space-y-3 pt-1 flex-1 w-full font-khmer">
       <div className="flex items-center gap-1 px-1 border-l-4 border-[#0F2B5C] pl-2 mb-3">
-         <h1 className="text-[14.5px] font-black text-[#0F2B5C]">{language === 'en' ? 'Account' : 'គណនី'}</h1>
+         <h1 className="text-[14.5px] font-black text-[#0F2B5C]">គណនី</h1>
       </div>
 
       <div className="bg-white p-4 rounded-xl flex flex-col items-center shadow-sm border border-slate-200 relative overflow-hidden">
@@ -4443,27 +4466,8 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
          </h2>
          
          <div className="pt-1 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[12px] font-bold text-slate-700">{language === 'en' ? 'Language' : 'ភាសា'}</span>
-            <div className="flex gap-1">
-              <button onClick={() => setLanguage?.('kh')} aria-pressed={language === 'kh'} className={`px-3 py-1.5 rounded-lg text-[11px] font-black border ${language === 'kh' ? 'bg-[#0F2B5C] text-white' : 'bg-white text-slate-600 border-slate-200'}`}>KH</button>
-              <button onClick={() => setLanguage?.('en')} aria-pressed={language === 'en'} className={`px-3 py-1.5 rounded-lg text-[11px] font-black border ${language === 'en' ? 'bg-[#0F2B5C] text-white' : 'bg-white text-slate-600 border-slate-200'}`}>EN</button>
-            </div>
-          </div>
-          <label className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-            <span className="text-[12px] font-bold text-slate-700">{language === 'en' ? 'Dark mode' : 'របៀបងងឹត'}</span>
-            <input type="checkbox" checked={!!isDarkMode} onChange={() => setIsDarkMode?.(!isDarkMode)} aria-label={language === 'en' ? 'Dark mode' : 'របៀបងងឹត'} />
-          </label>
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-3">
-            <span className="text-[12px] font-bold text-slate-700">{language === 'en' ? `Browser notifications: ${browserNotificationPermission}` : `ការជូនដំណឹង៖ ${browserNotificationPermission === 'granted' ? 'បានបើក' : browserNotificationPermission === 'denied' ? 'បានបិទ' : 'មិនទាន់កំណត់'}`}</span>
-            <button type="button" onClick={enableBrowserNotifications} className="px-3 py-2 bg-[#0F2B5C] text-white rounded-lg text-[10px] font-black">{language === 'en' ? 'Enable' : 'បើក'}</button>
-          </div>
-          {!isAdmin && <label className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center gap-3">
-            <span className="text-[12px] font-bold text-slate-700">{language === 'en' ? 'Share my location with admin' : 'អនុញ្ញាតបង្ហាញទីតាំងទៅ Admin'}</span>
-            <input type="checkbox" checked={profile?.locationSharing === true} onChange={toggleLocationSharing} aria-label={language === 'en' ? 'Share my location' : 'ចែករំលែកទីតាំង'} />
-          </label>}
             <button onClick={() => setShowAdminLogin(true)} className="w-full bg-slate-50/50 hover:bg-slate-100/55 text-[#0F2B5C] py-3 rounded-xl font-black flex items-center justify-center gap-2 text-[12.5px] transition active:scale-95 shadow-sm border border-slate-200/50">
-              <ShieldAlert className="w-4.5 h-4.5 text-[#0F2B5C] animate-pulse"/> {language === 'en' ? 'System Admin Portal' : 'Admin Portal របស់ប្រព័ន្ធ'}
+               <ShieldAlert className="w-4.5 h-4.5 text-[#0F2B5C] animate-pulse"/> Admin Portal របស់ប្រព័ន្ធ
             </button>
 
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
@@ -4472,8 +4476,8 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
                      {isSoundMuted ? <VolumeX className="w-4 h-4"/> : <Volume2 className="w-4 h-4"/>}
                   </div>
                   <div>
-                     <h4 className="font-bold text-[12px] text-slate-800">{language === 'en' ? 'Message sound' : 'សំឡេងជូនដំណឹង (Ping Sound)'}</h4>
-                     <p className="text-[10px] text-slate-500 font-medium">{language === 'en' ? 'Play a sound when a new message arrives' : 'បើក ឬបិទសំឡេងរោទ៍ពេលមានសារថ្មីចូល'}</p>
+                     <h4 className="font-bold text-[12px] text-slate-800">សំឡេងជូនដំណឹង (Ping Sound)</h4>
+                     <p className="text-[10px] text-slate-500 font-medium">បើក ឬបិទសំឡេងរោទ៍ពេលមានសារថ្មីចូល</p>
                   </div>
                </div>
                <label className="relative flex items-center cursor-pointer">
@@ -4492,8 +4496,8 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
                  <ShieldCheck className="w-6 h-6 text-[#38BDF8]"/>
               </div>
               
-              <h3 className="text-[14px] font-black mb-1 text-[#0F2B5C] uppercase">{language === 'en' ? 'Administrator verification' : 'បញ្ជាក់សិទ្ធិជាអភិបាល'}</h3>
-              <p className="text-[11.5px] text-slate-400 mb-4 font-medium">{language === 'en' ? 'Enter the admin password' : 'សូមបញ្ចូលលេខសម្ងាត់ Admin'}</p>
+              <h3 className="text-[14px] font-black mb-1 text-[#0F2B5C] uppercase">បញ្ជាក់សិទ្ធិជាអភិបាល</h3>
+              <p className="text-[11.5px] text-slate-400 mb-4 font-medium">សូមបញ្ចូលលេខសម្ងាត់ Admin</p>
               
               <div className="mb-4">
                  <input 
@@ -4519,11 +4523,9 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
   );
 };
 
-const AdminLiveTrackerMapLegacy = ({ usersList }) => {
+const AdminLiveTrackerMap = ({ usersList }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const realUsers = (usersList || []).filter(person => person.id !== 'admin_ramit_fixed_uid' && person.username && person.username !== 'ភ្ញៀវ');
-  const sharingUsers = realUsers.filter(person => person.locationSharing === true && Number.isFinite(person.lastLocation?.lat) && Number.isFinite(person.lastLocation?.lng));
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -4629,80 +4631,21 @@ const AdminLiveTrackerMapLegacy = ({ usersList }) => {
 
   return (
     <div className="w-full space-y-2 font-khmer flex flex-col items-center">
-      <div className="flex justify-between items-center w-full mb-3 px-1 gap-3">
-        <h3 className="font-black text-[14px] text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-emerald-400" /> {`អ្នកប្រើប្រាស់ ${realUsers.length} នាក់`}</h3>
-        <span className="text-[11px] text-slate-400">{`ចែករំលែកទីតាំង ${sharingUsers.length} នាក់`}</span>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full mb-3 px-1 gap-3">
+         <div>
+             <h3 className="font-black text-[16px] text-white flex items-center gap-2"><MapPin className="w-5 h-5 text-[#38BDF8] animate-bounce" /> ប្រព័ន្ធតាមដាន (Live Tracking)</h3>
+             <p className="text-[11px] text-slate-400 font-bold mt-1">ខ្សែ Digital បង្ហាញទីតាំងជាក់ស្តែងរបស់អ្នកប្រើប្រាស់ភ្ជាប់មក HQ</p>
+         </div>
+         <span className="text-[11px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-2 rounded-xl font-black shadow-sm animate-pulse flex items-center gap-1.5 cursor-default">
+            <Globe className="w-4 h-4"/> ចុចលើរូបសមាជិកដើម្បីបើក Google Maps
+         </span>
       </div>
-      <div ref={mapContainerRef} className="w-full h-[55vh] min-h-[320px] rounded-lg overflow-hidden border border-slate-700 z-0 relative bg-slate-900" />
+      <div ref={mapContainerRef} className="w-full h-[65vh] min-h-[500px] rounded-[24px] overflow-hidden border border-slate-700 shadow-2xl z-0 relative bg-slate-900" />
     </div>
   );
 };
 
-const AdminLiveTrackerMap = ({ usersList, language = 'kh' }) => {
-  const L = (kh, en) => language === 'en' ? en : kh;
-  const mapContainerRef = useRef(null);
-  const realUsers = (usersList || []).filter(person => person.id !== 'admin_ramit_fixed_uid' && person.username && person.username !== 'ភ្ញៀវ');
-  const sharingUsers = realUsers.filter(person => person.locationSharing === true && Number.isFinite(person.lastLocation?.lat) && Number.isFinite(person.lastLocation?.lng));
-
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-    let cancelled = false;
-    const initializeMap = () => {
-      if (cancelled || !window.google?.maps || !mapContainerRef.current) return;
-      const maps = window.google.maps;
-      const map = new maps.Map(mapContainerRef.current, {
-        center: sharingUsers[0]?.lastLocation || { lat: 12.9840, lng: 102.9348 },
-        zoom: sharingUsers.length ? 11 : 7,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: true,
-        styles: [{ elementType: 'geometry', stylers: [{ color: '#171b20' }] }, { elementType: 'labels.text.fill', stylers: [{ color: '#aeb7c0' }] }]
-      });
-      const bounds = new maps.LatLngBounds();
-      sharingUsers.forEach(person => {
-        const marker = new maps.Marker({ map, position: person.lastLocation, title: safeStr(person.username) || 'User' });
-        const info = new maps.InfoWindow({ content: '' });
-        marker.addListener('click', () => {
-          const name = document.createElement('strong');
-          name.textContent = safeStr(person.username) || 'User';
-          info.setContent(name);
-          info.open({ map, anchor: marker });
-        });
-        bounds.extend(person.lastLocation);
-      });
-      if (sharingUsers.length > 1) map.fitBounds(bounds, 48);
-    };
-
-    if (window.google?.maps) {
-      initializeMap();
-    } else {
-      let script = document.querySelector('script[data-google-maps-api]');
-      if (!script) {
-        script = document.createElement('script');
-        script.dataset.googleMapsApi = 'true';
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg';
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
-      }
-      script.addEventListener('load', initializeMap, { once: true });
-    }
-    return () => { cancelled = true; };
-  }, [usersList]);
-
-  return (
-    <div className="w-full space-y-2 font-khmer">
-      <div className="flex justify-between items-center w-full mb-3 px-1 gap-3">
-        <h3 className="font-black text-[14px] text-white flex items-center gap-2"><MapPin className="w-4 h-4 text-emerald-400" /> {language === 'en' ? `${realUsers.length} users` : `អ្នកប្រើប្រាស់ ${realUsers.length} នាក់`}</h3>
-        <span className="text-[11px] text-slate-400">{language === 'en' ? `${sharingUsers.length} sharing location` : `ចែករំលែកទីតាំង ${sharingUsers.length} នាក់`}</span>
-      </div>
-      <div ref={mapContainerRef} className="w-full h-[55vh] min-h-[320px] rounded-lg overflow-hidden border border-slate-700 relative bg-slate-900" />
-    </div>
-  );
-};
-
-const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon, language = 'kh' }) => {
-  const L = (kh, en) => language === 'en' ? en : kh;
+const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
   const [editingLoc, setEditingLoc] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -4726,11 +4669,12 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
               canvas.height = img.height;
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0);
+
               const offCanvas = document.createElement('canvas');
               offCanvas.width = img.width;
               offCanvas.height = img.height;
               const oCtx = offCanvas.getContext('2d');
-              oCtx.filter = 'blur(20px)';
+              oCtx.filter = 'blur(20px)'; // កម្រិតភាពព្រិល (Blur Radius)
               oCtx.drawImage(img, 0, 0);
               blurredOffscreenCanvasRef.current = offCanvas;
           };
@@ -4743,19 +4687,26 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       const canvas = editorCanvasRef.current;
       const blurCanvas = blurredOffscreenCanvasRef.current;
       if (!canvas || !blurCanvas) return;
+
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
       const scaleY = canvas.height / rect.height;
+
       let clientX = e.clientX;
       let clientY = e.clientY;
       if (e.touches && e.touches.length > 0) {
          clientX = e.touches[0].clientX;
          clientY = e.touches[0].clientY;
-      } else if (clientX === undefined) return;
+      } else if (clientX === undefined) {
+         return;
+      }
+
       const x = (clientX - rect.left) * scaleX;
       const y = (clientY - rect.top) * scaleY;
+
       const ctx = canvas.getContext('2d');
-      const brushSize = Math.max(canvas.width, canvas.height) * 0.04;
+      const brushSize = Math.max(canvas.width, canvas.height) * 0.04; // ទំហំជក់គូស Blur
+
       ctx.save();
       ctx.beginPath();
       ctx.arc(x, y, brushSize, 0, Math.PI * 2);
@@ -4766,43 +4717,52 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
 
   const saveBlurEdit = () => {
       const canvas = editorCanvasRef.current;
-      if (canvas) setEditingLoc({...editingLoc, image: canvas.toDataURL('image/jpeg', 0.9)});
+      if (canvas) {
+         setEditingLoc({...editingLoc, image: canvas.toDataURL('image/jpeg', 0.9)});
+      }
       setBlurModeActive(false);
   };
 
   const [howToData, setHowToData] = useState({ guides: [], videoUrl: '' });
+
   useEffect(() => {
       if (!db || !appId) return;
       const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'how_to_use'), (docSnap) => {
-          if (docSnap.exists()) setHowToData(docSnap.data());
-      }, () => {});
+          if (docSnap.exists()) {
+              setHowToData(docSnap.data());
+          }
+      }, (err) => {});
       return () => unsub();
   }, [db, appId]);
 
   const [confirmAction, setConfirmAction] = useState(null);
   const [monitoringUser, setMonitoringUser] = useState(null);
   const [monitoringTarget, setMonitoringTarget] = useState('Admin');
+
   const openConfirm = (title, message, action) => setConfirmAction({ title, message, action });
+  
   const handleConfirm = async () => {
-     if (confirmAction?.action) await confirmAction.action();
+     if (confirmAction && confirmAction.action) {
+        await confirmAction.action();
+     }
      setConfirmAction(null);
   };
 
   const [newCommune, setNewCommune] = useState('');
   const [newVillage, setNewVillage] = useState('');
   const [selectedCommune, setSelectedCommune] = useState('');
+  
   const [newChatLabel, setNewChatLabel] = useState('');
   const [newChatRole, setNewChatRole] = useState('');
   const [newChatAvatar, setNewChatAvatar] = useState('');
   const [newChatDistrictType, setNewChatDistrictType] = useState('រតនមណ្ឌល');
   const [newChatCustomDistrict, setNewChatCustomDistrict] = useState('');
+
   const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [broadcastTargetMode, setBroadcastTargetMode] = useState('all');
-  const [broadcastTargetId, setBroadcastTargetId] = useState('');
   const [editingBroadcast, setEditingBroadcast] = useState(null);
   const [editBroadcastText, setEditBroadcastText] = useState('');
 
-  const handleApprove = async (id, authorUid) => {
+  const handleApprove = async (id, authorUid) => { 
       try {
         if (!db) throw new Error("Offline mode");
         const targetId = String(id || '');
@@ -5225,18 +5185,13 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
   const handleSendBroadcast = async () => {
     if (!broadcastMessage.trim()) return showToast('សូមបញ្ជូលសារប្រកាសសិន', 'error');
     if (!db) return showToast('Offline Sandbox Mode');
-
-    const recipients = broadcastTargetMode === 'all'
-      ? realRecipients(usersList)
-      : realRecipients(usersList).filter(person => person.id === broadcastTargetId);
-    if (recipients.length === 0) return showToast('សូមជ្រើសរើសអ្នកទទួលដែលមានសុពលភាព', 'error');
-    const recipientLabel = broadcastTargetMode === 'all' ? 'User ទាំងអស់' : recipients[0].username;
-    openConfirm(`ផ្ញើសារទៅ ${recipientLabel}`, `តើអ្នកចង់ផ្ញើសារនេះទៅ ${recipients.length} គណនីមែនទេ?`, async () => {
+    
+    openConfirm("ផ្ញើសារប្រកាស (Broadcast)", "តើអ្នកពិតជាចង់ផ្ញើសារនេះទៅកាន់ User ទាំងអស់មែនទេ? សារនេះនឹងធ្លាក់ចូលប្រអប់សាររបស់ User គ្រប់ៗគ្នា។", async () => {
         try {
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA'), {
               text: broadcastMessage.trim(), 
               msgType: 'text',
-              target: broadcastTargetMode === 'all' ? 'all' : broadcastTargetId,
+              target: 'all', 
               userId: 'admin_ramit_fixed_uid', 
               userName: 'ADMIN-SUPPORT', 
               seen: false,
@@ -5244,23 +5199,26 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
               timestamp: Date.now()
             });
             
-            await Promise.all(recipients.map(person => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
-              targetId: person.id,
-              title: '📢 សារពី Admin',
-              msg: broadcastMessage.trim(),
-              type: 'info',
-              timestamp: Date.now()
-            })));
+            // បាញ់ Notification ទៅកាន់ User ទាំងអស់ដើម្បីឲ្យលោតសំឡេង និងចូលប្រអប់សារ
+            usersList.forEach(u => {
+               if (u.id && u.id !== 'admin_ramit_fixed_uid' && u.username !== 'ភ្ញៀវ') {
+                   addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
+                      targetId: u.id,
+                      title: '📢 សារប្រកាសពី Admin',
+                      msg: broadcastMessage.trim(),
+                      type: 'info',
+                      timestamp: Date.now()
+                   }).catch(()=>{});
+               }
+            });
 
             setBroadcastMessage('');
-            showToast(`បានផ្ញើសារទៅ ${recipients.length} គណនី ✅`, 'success');
+            showToast('បានផ្ញើសារប្រកាសទៅកាន់ User ទាំងអស់រួចរាល់ ✅', 'success');
         } catch (e) {
             showToast('មានបញ្ហាក្នុងការបញ្ជូន', 'error');
         }
     });
   };
-
-  const realRecipients = (people) => (people || []).filter(person => person?.id && person.id !== 'admin_ramit_fixed_uid' && person.username && person.username !== 'ភ្ញៀវ');
 
   const searchedUsersList = useMemo(() => {
      return (usersList || []).filter(u => {
@@ -5467,15 +5425,14 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
 
       <div className="flex w-full gap-2 overflow-x-auto hide-scrollbar pb-2 pt-1 touch-pan-x scroll-smooth">
         {[
-          {id: 'data', label: L('ទិន្នន័យ & ទីតាំង', 'Data & Locations')},
-          {id: 'live_map', label: L('ផែនទីអ្នកប្រើ (Live)', 'User Map')},
-          {id: 'messages', label: L('ផ្ញើសារ', 'Send Message')},
-          {id: 'users', label: L('គ្រប់គ្រងសមាជិក', 'Manage Users')},
-          {id: 'how_to', label: L('គ្រប់គ្រង របៀបប្រើប្រាស់', 'Manage Help Content')},
-          {id: 'appeals', label: L('សំណើសម្រុះសម្រួល', 'Appeals')},
-          {id: 'approvals', label: L('អនុម័តសំណើរ', 'Approvals')},
-          {id: 'security', label: L('Security & Logs', 'Security & Logs')},
-          {id: 'settings', label: L('Settings', 'Settings')}
+          {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
+          {id: 'live_map', label: 'ផែនទីអ្នកប្រើ (Live)'},
+          {id: 'users', label: 'គ្រប់គ្រងសមាជិក'},
+          {id: 'how_to', label: 'គ្រប់គ្រង របៀបប្រើប្រាស់'},
+          {id: 'appeals', label: 'សំណើសម្រុះសម្រួល'},
+          {id: 'approvals', label: 'អនុម័តសំណើរ'},
+          {id: 'security', label: 'Security & Logs'},
+          {id: 'settings', label: 'Settings'}
         ].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)} className={`shrink-0 px-3.5 py-2 rounded-lg text-[11px] font-black whitespace-nowrap transition-colors shadow-sm ${activeTab === t.id ? 'bg-[#0F2B5C] text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>{t.label}</button>
         ))}
@@ -5638,30 +5595,9 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
              </div>
           )}
 
-           {activeTab === 'messages' && (
-             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3 animate-in fade-in duration-200">
-                <h3 className="font-black text-[13px] text-[#0F2B5C] flex items-center gap-2"><Megaphone className="w-4 h-4"/> {L('ផ្ញើសារទៅអ្នកប្រើប្រាស់', 'Send a message')}</h3>
-               <div className="flex gap-2" role="group" aria-label={L('ជ្រើសរើសអ្នកទទួល', 'Choose recipients')}>
-                 <button type="button" onClick={() => setBroadcastTargetMode('all')} aria-pressed={broadcastTargetMode === 'all'} className={`flex-1 px-3 py-2 rounded-lg border text-[11px] font-black ${broadcastTargetMode === 'all' ? 'bg-[#0F2B5C] text-white border-[#0F2B5C]' : 'bg-white text-slate-600 border-slate-200'}`}>{L('អ្នកប្រើប្រាស់ទាំងអស់', 'All users')}</button>
-                 <button type="button" onClick={() => setBroadcastTargetMode('selected')} aria-pressed={broadcastTargetMode === 'selected'} className={`flex-1 px-3 py-2 rounded-lg border text-[11px] font-black ${broadcastTargetMode === 'selected' ? 'bg-[#0F2B5C] text-white border-[#0F2B5C]' : 'bg-white text-slate-600 border-slate-200'}`}>{L('ជ្រើសរើសអ្នកប្រើ', 'Select a user')}</button>
-               </div>
-               {broadcastTargetMode === 'selected' && (
-                 <select value={broadcastTargetId} onChange={event => setBroadcastTargetId(event.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[12px] font-bold" aria-label="ជ្រើសរើសគណនីអ្នកទទួល">
-                      <option value="">{L('ជ្រើសរើសអ្នកទទួល...', 'Select recipient...')}</option>
-                   {realRecipients(usersList).map(person => <option key={person.id} value={person.id}>{safeStr(person.username)} ({person.id.slice(0, 8)})</option>)}
-                 </select>
-               )}
-                <textarea value={broadcastMessage} onChange={event => setBroadcastMessage(event.target.value)} rows={4} maxLength={1000} placeholder={L('សរសេរសាររបស់អ្នក...', 'Write your message...')} className="w-full resize-y bg-slate-50 border border-slate-200 rounded-lg p-3 text-[13px] font-medium" />
-               <div className="flex items-center justify-between gap-2">
-                 <span className="text-[10px] text-slate-500">{broadcastMessage.length}/1000</span>
-                   <button type="button" onClick={handleSendBroadcast} disabled={!broadcastMessage.trim() || (broadcastTargetMode === 'selected' && !broadcastTargetId)} className="px-4 py-2.5 rounded-lg bg-[#0F2B5C] text-white text-[11px] font-black disabled:opacity-50 flex items-center gap-2"><Send className="w-3.5 h-3.5"/> {L('ផ្ញើសារ', 'Send')}</button>
-               </div>
-             </div>
-           )}
-
-           {activeTab === 'live_map' && (
+          {activeTab === 'live_map' && (
              <div className="bg-slate-900 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.1)] border border-slate-800 animate-in fade-in duration-200">
-                 <AdminLiveTrackerMap usersList={usersList} language={language} />
+                 <AdminLiveTrackerMap usersList={usersList} />
              </div>
           )}
 
