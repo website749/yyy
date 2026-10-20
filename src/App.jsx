@@ -2552,6 +2552,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
+// BottomNav component — កែសម្រួល padding និងកម្ពស់ឱ្យស្មើរបាទូរស័ព្ទ
 const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'ទំព័រដើម' },
@@ -2569,11 +2570,11 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin }) => {
       className="md:hidden fixed left-0 right-0 z-[9999] bg-[#0F2B5C] border-t border-white/10 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] w-full"
       style={{
         bottom: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom), 6px)',
-        paddingTop: '6px'
+        paddingBottom: 'max(env(safe-area-inset-bottom), 10px)',
+        paddingTop: '8px'
       }}
     >
-      <div className="flex justify-around items-center h-[46px] px-1">
+      <div className="flex justify-around items-center h-[48px] px-2">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -3076,14 +3077,14 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
   const monthlyData = khmerMonths.map((name, index) => {
-    // Set specific value for May (ឧសភា is index 4)
-    if (index === 4) {
-        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
-    }
-    // Set specific value for July (កក្កដា is index 6)
+    // ទិន្នន័យខែកក្កដា (July is index 6) ទាញមកពីខែមេសា
     if (index === 6) {
-        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
+        return { name, users: 180, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 3, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 4, 0, 23, 59, 59).getTime()).length };
     }
+    // ទិន្នន័យខែសីហា (August is index 7) ទាញមកពីខែមិថុនា
+    if (index === 7) {
+        return { name, users: 250, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 5, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 6, 0, 23, 59, 59).getTime()).length };
+    } 
     
     const startM = new Date(currentYear, index, 1).getTime();
     const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
@@ -5180,16 +5181,23 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
     r.readAsDataURL(file);
   };
 
+  // មុខងារផ្ញើរសារ និងសំឡេងជូនដំណឹងឡឺពឹង
+  const [broadcastTarget, setBroadcastTarget] = useState('all'); // 'all' ឬ 'select'
+  const [selectedTargetUser, setSelectedTargetUser] = useState('');
+
   const handleSendBroadcast = async () => {
     if (!broadcastMessage.trim()) return showToast('សូមបញ្ជូលសារប្រកាសសិន', 'error');
+    if (broadcastTarget === 'select' && !selectedTargetUser) return showToast('សូមជ្រើសរើសគោលដៅសមាជិក', 'error');
     if (!db) return showToast('Offline Sandbox Mode');
     
-    openConfirm("ផ្ញើសារប្រកាស (Broadcast)", "តើអ្នកពិតជាចង់ផ្ញើសារនេះទៅកាន់ User ទាំងអស់មែនទេ? សារនេះនឹងធ្លាក់ចូលប្រអប់សាររបស់ User គ្រប់ៗគ្នា។", async () => {
+    openConfirm("បញ្ជាក់ការផ្ញើរសារ", `តើអ្នកពិតជាចង់ផ្ញើរសារនេះទៅកាន់ ${broadcastTarget === 'all' ? 'សមាជិកទាំងអស់' : 'សមាជិកគោលដៅ'} មែនទេ?`, async () => {
         try {
+            const targetId = broadcastTarget === 'all' ? 'all' : selectedTargetUser;
+            
             await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA'), {
               text: broadcastMessage.trim(), 
               msgType: 'text',
-              target: 'all', 
+              target: targetId, 
               userId: 'admin_ramit_fixed_uid', 
               userName: 'ADMIN-SUPPORT', 
               seen: false,
@@ -5197,36 +5205,31 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
               timestamp: Date.now()
             });
             
-            // បាញ់ Notification ទៅកាន់ User ទាំងអស់ដើម្បីឲ្យលោតសំឡេង និងចូលប្រអប់សារ
-            usersList.forEach(u => {
-               if (u.id && u.id !== 'admin_ramit_fixed_uid' && u.username !== 'ភ្ញៀវ') {
-                   addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
-                      targetId: u.id,
-                      title: '📢 សារប្រកាសពី Admin',
-                      msg: broadcastMessage.trim(),
-                      type: 'info',
-                      timestamp: Date.now()
-                   }).catch(()=>{});
-               }
+            // ផ្ញើ Notification និងបាញ់សំឡេង Ping
+            const recipients = broadcastTarget === 'all' 
+              ? usersList.filter(u => u.id && u.id !== 'admin_ramit_fixed_uid')
+              : usersList.filter(u => u.id === selectedTargetUser);
+
+            recipients.forEach(u => {
+               addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
+                  targetId: u.id,
+                  title: '📢 សារថ្មីពី Admin',
+                  msg: broadcastMessage.trim(),
+                  type: 'info',
+                  timestamp: Date.now()
+               }).catch(()=>{});
             });
 
+            // ឡឺសំឡេងប្រកាស 🔔
+            playPingSound();
+
             setBroadcastMessage('');
-            showToast('បានផ្ញើសារប្រកាសទៅកាន់ User ទាំងអស់រួចរាល់ ✅', 'success');
+            showToast('បានផ្ញើរសារជូនដំណឹងជោគជ័យ 🔔', 'success');
         } catch (e) {
             showToast('មានបញ្ហាក្នុងការបញ្ជូន', 'error');
         }
     });
   };
-
-  const searchedUsersList = useMemo(() => {
-     return (usersList || []).filter(u => {
-        if (!u || !u.username || u.username === 'ភ្ញៀវ') return false; 
-        const nameMatch = safeStr(u.username).toLowerCase().includes(userSearchQuery.toLowerCase());
-        const uidMatch = safeStr(u.id).toLowerCase().includes(userSearchQuery.toLowerCase());
-        return nameMatch || uidMatch;
-     });
-  }, [usersList, userSearchQuery]);
-
   return (
     <div className="w-full max-w-5xl mx-auto space-y-3 pb-10 flex-1 font-khmer text-slate-800 animate-in fade-in">
       <ConfirmModal isOpen={!!confirmAction} title={confirmAction?.title} message={confirmAction?.message} onConfirm={handleConfirm} onCancel={() => setConfirmAction(null)} />
