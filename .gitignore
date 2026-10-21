@@ -25,3 +25,6 @@ dist-ssr
 .vercel
 .env*
 .env.local
+
+# Ignore a specific file inside src
+/src/ramit.txt
