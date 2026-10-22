@@ -307,7 +307,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px)); }
+.pb-nav { padding-bottom: calc(34px + env(safe-area-inset-bottom, 0.35px)); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
@@ -2575,13 +2575,9 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
       // ✅ [ចំណុច 1] រាវរករន្តកាត់នៅខាងក្រោម (gesture bar) ឱ្យទាបជាងមុន:
       // រាប់បញ្ចូលកម្ពស់ជ្រុងសុវត្ថិភាព (safe-area) ទាំងមូល ដូច្នេះ របាររាវរក (nav bar) ឡើងដល់គែមខាងក្រោមជ្រុងក្បួនឧបករណ៍ខាងក្រោម។
       // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
-      style={{
-        bottom: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.35px)',
-        marginBottom: 0,
-      }}
+      style={{ bottom: 0, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.35)', marginBottom: 0 }}
     >
-      <div className="flex justify-around items-center h-[48px] px-1">
+      <div className="flex justify-around items-center h-[44px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
