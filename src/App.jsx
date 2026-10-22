@@ -2606,31 +2606,31 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      // ✅ [ចំណុច 1] រាវរករន្តកាត់នៅខាងក្រោម (gesture bar) ឱ្យទាបជាងមុន:
-      // រាប់បញ្ចូលកម្ពស់ជ្រុងសុវត្ថិភាព (safe-area) ទាំងមូល ដូច្នេះ របាររាវរក (nav bar) ឡើងដល់គែមខាងក្រោមជ្រុងក្បួនឧបករណ៍ខាងក្រោម។
-      // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
-      style={{ bottom: 0, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.35)', marginBottom: 0 }}
-    >
-      <div className="flex justify-around items-center h-[44px] px-1">
-        {navItems.map((item) => {
-          const isActive = currentView === item.id;
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-row items-center justify-center gap-1 active:scale-95 transition-transform select-none"
-            >
-              <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10px] font-bold leading-none ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+  style={{ bottom: 0, paddingBottom: 0, marginBottom: 0 }}
+>
+  <div
+    className="flex justify-around items-end px-1"
+    style={{ height: 'calc(40px + env(safe-area-inset-bottom, 0px) * 0.5)', paddingBottom: '3px' }}
+  >
+    {navItems.map((item) => {
+      const isActive = currentView === item.id;
+      const Icon = item.icon;
+      return (
+        <button
+          key={item.id}
+          onClick={() => setCurrentView(item.id)}
+          className="flex-1 h-[34px] flex flex-row items-center justify-center gap-1 active:scale-95 transition-transform select-none"
+        >
+          <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+          <span className={`text-[10px] font-bold leading-none ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+            {item.label}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+</div>
   );
 };
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
@@ -2794,7 +2794,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
 
   return (
     // ✅ [ចំណុច 10] UI ស្អាតសម្រាប់ទូរស័ព្ទ — គម្លាតតូចជាង (space-y-3), ខ្នាតអក្សរតម្រឹមឡើងវិញ
-    <div className="space-y-3 pt-1 w-full flex-1 font-khmer">
+    <div className="space-y-3 pt-2 w-full flex-1 font-khmer">
       {/* Banner: បន្ថយកម្ពស់ 110px → 92px ឲ្យកាន់តែស្អាតលើ screen តូច */}
       <div className="bg-[#0F2B5C] rounded-[16px] p-3.5 relative overflow-hidden flex flex-row items-center justify-between w-full min-h-[92px] shadow-md">
          <div className="absolute top-0 right-0 w-32 h-full bg-[#38BDF8]/10 rounded-l-[80px] z-0 pointer-events-none"></div>
