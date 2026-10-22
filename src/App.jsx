@@ -2632,7 +2632,7 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
         >
           <Icon className="w-4 h-4 shrink-0 text-white transition-colors" />
 
-<span className="text-[11px] font-bold leading-none whitespace-nowrap text-white transition-colors">
+          <span className="text-[11px] font-bold leading-none whitespace-nowrap text-white transition-colors">
             {item.label}
           </span>
         </button>
