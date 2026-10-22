@@ -2625,10 +2625,13 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
         <button
           key={item.id}
           onClick={() => setCurrentView(item.id)}
-          className="flex-1 h-[34px] flex flex-row items-center justify-center gap-1 active:scale-95 transition-transform select-none"
+          className="flex-1 h-11 flex flex-row items-center justify-center gap-1.5 px-1 rounded-xl active:scale-95 select-none ${
+          isActive ? 'bg-white/10' : ''
+          }"
+
         >
-          <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-          <span className={`text-[10px] font-bold leading-none ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+          <Icon className={`w-4 h-4 shrink-0 transition-colors {isActice ? 'text-[#38BDF8]' : 'text-slate-300'}`}/>
+          <span className={`text-[11px] font-hold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
             {item.label}
           </span>
         </button>
@@ -2682,7 +2685,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                  </button>
 
                  <div className="relative">
-                     <button className="p-3 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                     <button className="p-1.5 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
                         <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
                         {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
                         {notifications && notifications.length > 0 && (
