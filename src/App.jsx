@@ -8,7 +8,6 @@ import {
   CheckCheck, Hexagon, GraduationCap, Pause, Copy, Check, Radio, Eye, Shield, Info
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import app from "./firebase";
 import { 
   getAuth, 
   signInAnonymously, 
