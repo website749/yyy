@@ -2577,7 +2577,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
       // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
       style={{
         bottom: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.35px)',
         marginBottom: 0,
       }}
     >
