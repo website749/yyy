@@ -2039,9 +2039,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       );
   }
   
-  {log.location && <a href={`https://www.google.com/maps?q=${log.location.lat},${log.location.lng}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-sky-600 underline">📍 មើលទីតាំងលើផែនទី</a>}
-
-
+  
   if (currentPage === 'gateway') {
     return (
       <div className="fixed inset-0 z-[100] flex flex-col md:flex-row font-khmer bg-white text-slate-800 animate-in fade-in duration-500 w-full overflow-hidden">
