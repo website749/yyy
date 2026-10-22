@@ -2570,7 +2570,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2630,8 +2630,9 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
           }"
 
         >
-          <Icon className={`w-4 h-4 shrink-0 transition-colors {isActice ? 'text-[#38BDF8]' : 'text-slate-300'}`}/>
-          <span className={`text-[11px] font-hold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+          <Icon className="w-4 h-4 shrink-0 text-white transition-colors" />
+
+<span className="text-[11px] font-bold leading-none whitespace-nowrap text-white transition-colors">
             {item.label}
           </span>
         </button>
@@ -2888,7 +2889,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const InfoView  = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
+const Infoview = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
