@@ -2605,14 +2605,19 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
   if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-    <div
-  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-  style={{ bottom: 0, paddingBottom: 0, marginBottom: 0 }}
->
   <div
-    className="flex justify-around items-end px-1"
-    style={{ height: 'calc(40px + env(safe-area-inset-bottom, 0px) * 0.5)', paddingBottom: '3px' }}
-  >
+  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+  style={{ bottom: '-4px', paddingBottom: 0, marginBottom: 0 }}
+>
+  
+<div
+  className="flex justify-around items-end px-1"
+  style={{
+    height: 'calc(40px + env(safe-area-inset-bottom, 0px) * 0.5)',
+    paddingBottom: '3px'
+  }}
+>
+
     {navItems.map((item) => {
       const isActive = currentView === item.id;
       const Icon = item.icon;
@@ -2677,7 +2682,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                  </button>
 
                  <div className="relative">
-                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                     <button className="p-3 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
                         <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
                         {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
                         {notifications && notifications.length > 0 && (
