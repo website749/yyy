@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useContext, createContext, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Home, MessageCircle, ShieldCheck, User, Bell, 
   Search, Plus, XCircle, Trash2, Edit3, 
@@ -61,32 +61,39 @@ const ImageSvgIcon = (props) => (
 );
 
 // High-fidelity standard audio context notifier ("Ping" sound)
-let sharedAudioCtx = null;
-const getAudioCtx = () => {
-  const C = window.AudioContext || window.webkitAudioContext;
-  if (!C) return null;
-  if (!sharedAudioCtx) sharedAudioCtx = new C();
-  return sharedAudioCtx;
-};
-const unlockAudio = () => { const c = getAudioCtx(); if (c && c.state === 'suspended') c.resume().catch(() => {}); };
-['touchstart', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, unlockAudio, { passive: true }));
-
 const playPingSound = () => {
   try {
-    const ctx = getAudioCtx(); if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-    const t0 = ctx.currentTime;
-    [[880, 0], [1175, 0.14], [1568, 0.28]].forEach(([f, d]) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.value = f;
-      o.connect(g); g.connect(ctx.destination);
-      g.gain.setValueAtTime(0.0001, t0 + d);
-      g.gain.exponentialRampToValueAtTime(0.5, t0 + d + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.25);
-      o.start(t0 + d); o.stop(t0 + d + 0.26);
-    });
-    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
-  } catch (e) {}
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.08);
+    gain1.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc1.start();
+    osc1.stop(ctx.currentTime + 0.15);
+
+    setTimeout(() => {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(1150, ctx.currentTime);
+      osc2.frequency.exponentialRampToValueAtTime(1300, ctx.currentTime + 0.08);
+      gain2.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc2.start();
+      osc2.stop(ctx.currentTime + 0.2);
+    }, 100);
+
+  } catch(e) {}
 };
 
 // Calculate geodesic distance between coordinates using the Haversine formula
@@ -207,7 +214,14 @@ const parseContactsList = (location) => {
   return [];
 };
 
-// firebase initialization with error handling for offline persistence ! ======================
+const firebaseConfig = {
+  apiKey: "AIzaSyBq_1YKH4Hf4M65qMHirvWCD_-tyqCDz5E",
+  authDomain: "ramit-7e364.firebaseapp.com",
+  projectId: "ramit-7e364",
+  storageBucket: "ramit-7e364.firebasestorage.app",
+  messagingSenderId: "1036691345731",
+  appId: "1:1036691345731:web:df8121852c6137e3b35ff6"
+};
 
 let app, auth, db;
 try {
@@ -318,14 +332,6 @@ input, textarea, select {
     
     .toggle-checkbox:checked { right: 0; border-color: #10b981; }
     .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
-
-
-
-@keyframes badge-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
-.badge-pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
-@keyframes bell-ring { 0%,100%{transform:rotate(0)} 15%{transform:rotate(12deg)} 30%{transform:rotate(-12deg)} 45%{transform:rotate(8deg)} 60%{transform:rotate(-8deg)} 75%{transform:rotate(0)} }
-.bell-ring { animation: bell-ring 1.4s ease-in-out infinite; transform-origin: top center; }
-
   `;
 };
 
@@ -371,23 +377,25 @@ const containsAbuse = (text) => {
 const StarryGalaxyCanvas = () => {
   const canvasRef = useRef(null);
 
-  unsubNotif(() => {
-    let notifFirst = true;
-const unsubNotif = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), snap => {
-  const mt = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  mt.sort((a, b) => b.timestamp - a.timestamp);
-  if (!notifFirst) {
-    const amAdmin = localStorage.getItem('tp_admin_session') === 'true';
-    snap.docChanges().forEach(ch => {
-      if (ch.type !== 'added') return;
-      const d = ch.doc.data();
-      const mine = d.targetId === user.uid || (amAdmin && d.targetId === 'admin_ramit_fixed_uid');
-      if (mine && Date.now() - (d.timestamp || 0) < 60000 && localStorage.getItem('tp_sound_muted') !== 'true') playPingSound();
-    });
-  }
-  notifFirst = false;
-  setNotifications(mt);
-}, () => {});
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const stars = Array(60).fill().map(() => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 1.5 + 0.3,
+        alpha: Math.random(),
+        speed: Math.random() * 0.02 + 0.005
+    }));
 
     const animate = () => {
       ctx.fillStyle = '#090d16'; 
@@ -665,28 +673,7 @@ const CallPickerModal = ({ isOpen, title, contacts, onClose }) => {
   );
 };
 
-const LangContext = createContext({ lang: 'kh', setLang: () => {}, tr: (s) => s });
-
-const EN = {
-  'ទំព័រដើម': 'Home', 'ព័ត៌មាន': 'Info', 'របាយការណ៍': 'Reports', 'គណនី': 'Account', 'អ្នកគ្រប់គ្រង': 'Admin',
-  'ទីតាំងខ្ញុំ': 'My location', 'របៀបប្រើប្រាស់': 'How to use', 'បន្ថែម': 'Add',
-  'ទាំងអស់': 'All', 'ឃុំ': 'Commune', 'ភូមិ': 'Village', 'ប៉ូលីស': 'Police', 'ពេទ្យ': 'Hospital', 'សាលារៀន': 'School',
-  'រតនមណ្ឌល': 'Ratanak Mondul', 'ស្រុកផ្សេងៗ': 'Other districts', 'គ្មានទិន្នន័យ': 'No data',
-  'ការកំណត់': 'Settings', 'កែប្រែ': 'Edit', 'រក្សាទុក': 'Save', 'ទូរស័ព្ទ': 'Call', 'ផែនទី': 'Map',
-  'ការជូនដំណឹង': 'Notifications', 'គ្មានសារថ្មីទេ': 'No new messages', 'ទំនាក់ទំនងឆាត': 'Chats',
-  'សរសេរសារ...': 'Type a message...', 'ព័ត៌មានលម្អិត': 'Details', 'អាសយដ្ឋាន': 'Address',
-  'ភាសា': 'Language', 'ផ្ញើសារ': 'Send message',
-};
-
 export default function App() {
-  const [lang, setLang] = useState(() => localStorage.getItem('tp_app_lang') || 'kh');
-  useEffect(() => { localStorage.setItem('tp_app_lang', lang); }, [lang]);
-  const tr = useCallback((s) => (lang === 'en' ? (EN[s] || s) : s), [lang]);
-  const value = useMemo(() => ({ lang, setLang, tr }), [lang, tr]);
-  return <LangContext.Provider value={value}><AppInner /></LangContext.Provider>;
-}
-
-export function AppInner() {
   // Streamlining initial state load from local storage for 0ms render delay (Offline-First)
   // FIXED: Using a permanent device ID with Cookie Fallback to prevent profile loss on refresh or storage clear
   const getInitialUser = () => {
@@ -712,7 +699,7 @@ export function AppInner() {
 
   const [user, setUser] = useState(getInitialUser);
   
-  const { lang: language, setLang: setLanguage } = useContext(LangContext);
+  const [language, setLanguage] = useState('kh');
   const [currentPage, setCurrentPage] = useState(() => {
       const u = getInitialUser();
       const isGuest = localStorage.getItem('tp_is_guest') === 'true'; // កែប្រែទៅប្រើ localStorage ដើម្បីកុំឲ្យលោតសួររាល់ពេលចូល PWA
@@ -1300,26 +1287,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       }, (error) => { console.warn("Incoming call listener error:", error.code); });
       return () => unsub();
   }, [db, user, myChatId]);
-  const unreadChatCount = useMemo(() =>
-  (chats || []).filter(c => c && c.target === myChatId && c.userId !== myChatId && !c.seen).length, [chats, myChatId]);
 
-useEffect(() => {
-  const n = (myNotifications?.length || 0) + unreadChatCount;
-  if ('setAppBadge' in navigator) {
-    if (n > 0) navigator.setAppBadge(n).catch(() => {});
-    else navigator.clearAppBadge().catch(() => {});
-  }
-}, [myNotifications, unreadChatCount]);
-
-useEffect(() => {
-  const ask = () => {
-    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
-    window.removeEventListener('click', ask);
-  };
-  window.addEventListener('click', ask);
-  return () => window.removeEventListener('click', ask);
-}, []);
-    
   const toggleMic = () => {
       if (localStreamRef.current) {
           const audioTrack = localStreamRef.current.getAudioTracks()[0];
@@ -2590,7 +2558,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
 const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
-  const { lang, tr } = useContext(LangContext);
+  const lang = localStorage.getItem('tp_app_lang') || 'kh';
   const L = (kh, en) => (lang === 'en' ? en : kh);
 
   const navItems = [
@@ -2609,11 +2577,11 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
       // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
       style={{
         bottom: 0,
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.35)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)',
         marginBottom: 0,
       }}
     >
-      <div className="flex justify-around items-center h-[52px] px-1">
+      <div className="flex justify-around items-center h-[48px] px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -2678,14 +2646,15 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                  </button>
 
                  <div className="relative">
-                     <button className="relative p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 overflow-visible" onClick={() => setNotificationsOpen(!notificationsOpen)}>
-                      <Bell className={`w-4.5 h-4.5 text-[#0F2B5C] ${notifications?.length > 0 ? 'bell-ring' : ''}`} />
+                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                        <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
+                        {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
                         {notifications && notifications.length > 0 && (
-                          <span className="badge-pulse absolute -top-1.5 -right-1.5 z-10 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full flex items-center justify-center text-[9px] font-black text-white border-2 border-white">
-                          {notifications.length > 99 ? '99+' : notifications.length}
+                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full animate-bounce flex items-center justify-center text-[9px] font-black text-white border-2 border-white">
+                            {notifications.length > 99 ? '99+' : notifications.length}
                           </span>
-                       )}
-                      </button>
+                        )}
+                     </button>
                      {notificationsOpen && (
                         <div className="absolute right-0 mt-2 w-[280px] bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden z-[450] text-slate-800 animate-in fade-in zoom-in-95 pointer-events-auto">
                           <div className="p-3 border-b border-slate-100 font-bold flex justify-between text-[11px] bg-slate-50 items-center text-[#0F2B5C]">
@@ -2738,17 +2707,6 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
           </div>
         );
       };
-// append coding new line this
-const cleanKh = (s) => safeStr(s).toLowerCase().replace(/[\u200b-\u200d]/g, '').trim();
-
-const matchesQuery = (l, q) => {
-  const terms = cleanKh(q).split(/\s+/).map(t => t.replace(/^(ឃុំ|ភូមិ|ស្រុក|សង្កាត់|ខេត្ត)/, '')).filter(Boolean);
-  if (terms.length === 0) return true;
-  const hay = [l.title, l.desc, l.commune, l.village, l.category, l.district, ...parseContactsList(l).map(c => c.name)]
-    .map(cleanKh).join(' | ');
-  return terms.every(t => hay.includes(t));
-};
-
 const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData }) => {
   const lang = localStorage.getItem('tp_app_lang') || 'kh';
   const L = (kh, en) => (lang === 'en' ? en : kh);
@@ -3119,22 +3077,23 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
 
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
-  const calcMonth = (index) => {
-  const startM = new Date(currentYear, index, 1).getTime();
-  const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
-  return {
-    users: (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length,
-    entries: (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length,
-  };
-};
-// [ខែគោលដៅ]: ខែប្រភព   (មេសា=3, មិថុនា=5, កក្កដា=6, សីហា=7)
-const MOVES = { 7: 5, 6: 3 }; // សីហា ← មិថុនា, កក្កដា ← មេសា
-const movedFrom = Object.values(MOVES);
-const monthlyData = khmerMonths.map((name, index) => {
-  if (MOVES[index] !== undefined) return { name, ...calcMonth(MOVES[index]) };
-  if (movedFrom.includes(index)) return { name, users: 0, entries: 0 };
-  return { name, ...calcMonth(index) };
-});
+  const monthlyData = khmerMonths.map((name, index) => {
+    // Set specific value for May (ឧសភា is index 4)
+    if (index === 4) {
+        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
+    }
+    // Set specific value for July (កក្កដា is index 6)
+    if (index === 6) {
+        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
+    }
+    
+    const startM = new Date(currentYear, index, 1).getTime();
+    const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
+    let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
+    if (index === currentMonth) usersInMonth += fakeCount;
+    const entriesInMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length;
+    return { name, users: usersInMonth, entries: entriesInMonth };
+  });
 
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
@@ -4267,7 +4226,7 @@ const ChatView = ({ chats = [], user, profile, showToast, db, appId, setCurrentV
 const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAdmin, setIsAdmin, setCurrentView, usersList = [], isSoundMuted, setIsSoundMuted }) => {
   const currentAdminProfile = isAdmin ? (usersList.find(u => u.id === 'admin_ramit_fixed_uid') || { username: 'ADMIN-SUPPORT', avatar: profile?.avatar }) : null;
   const displayProfile = isAdmin ? currentAdminProfile : profile;
-  const [showIntruderWarning, setShowIntruderWarning] = useState(false);
+
   const [pwdInput, setPwdInput] = useState('');
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
@@ -4359,41 +4318,30 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
          throw new Error("Password mismatch");
       }
     } catch (err) {
-  const newAttempts = attempts + 1;
-  setAttempts(newAttempts);
-  localStorage.setItem('admin_attempts', newAttempts);
+       const newAttempts = attempts + 1;
+       setAttempts(newAttempts);
+       localStorage.setItem('admin_attempts', newAttempts);
+       
+       if (db) {
+          const ip = await getClientIP();
+          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
+             type: 'Unauthorized security breach attempt to admin panel',
+             username: profile?.username || 'Anonymous Password Entry',
+             ip: ip,
+             device: getDeviceInfo(),
+             timestamp: Date.now()
+          }).catch(()=>{});
+       }
 
-  const getPos = () => new Promise(res => {
-    if (!navigator.geolocation) return res(null);
-    navigator.geolocation.getCurrentPosition(
-      p => res({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: Math.round(p.coords.accuracy) }),
-      () => res(null),
-      { timeout: 6000, maximumAge: 60000 }
-    );
-  });
-
-  if (db) {
-    const [ip, pos] = await Promise.all([getClientIP(), getPos()]);
-    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
-      type: newAttempts >= 3 ? '🚨 ព្យាយាមចូល Admin ច្រើនដង (ជាប់ទប់ស្កាត់)' : 'ព្យាយាមចូល Admin ខុសលេខសម្ងាត់',
-      username: profile?.username || 'Anonymous',
-      uid: user?.uid || '',
-      attempt: newAttempts,
-      ip, device: getDeviceInfo(), location: pos,
-      timestamp: Date.now()
-    }).catch(() => {});
-  }
-
-  if (newAttempts >= 3) {
-    const newLockout = Date.now() + 15 * 60 * 1000;
-    setLockoutTime(newLockout);
-    localStorage.setItem('admin_lockout', newLockout);
-    setShowAdminLogin(false);
-    setShowIntruderWarning(true);
-  } else {
-    showToast(`លេខសម្ងាត់មិនត្រឹមត្រូវ (${newAttempts}/3)`, 'error');
-  }
-  setPwdInput('');
+       if (newAttempts >= 5) {
+          const newLockout = Date.now() + 15 * 60 * 1000;
+          setLockoutTime(newLockout);
+          localStorage.setItem('admin_lockout', newLockout);
+          showToast('ព្យាយាមច្រើនដងពេក! សូមរង់ចាំ ១៥ នាទី។', 'error');
+       } else {
+          showToast('លេខសម្ងាត់មិនត្រឹមត្រូវ', 'error');
+       }
+       setPwdInput('');
     } finally {
        setIsLoginLoading(false);
     }
@@ -4541,16 +4489,6 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
          </div>
       </div>
 
-       {showIntruderWarning && (
-  <div className="fixed inset-0 z-[9000] bg-black/90 flex items-center justify-center p-6 text-center">
-    <div className="max-w-sm space-y-4">
-      <div className="text-5xl">🚨</div>
-      <h2 className="text-rose-500 font-black text-[17px]">អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ!</h2>
-      <p className="text-slate-200 text-[13px] leading-relaxed">Admin កំពុងតាមដានអ្នក!! ឧបករណ៍ អាសយដ្ឋាន IP និងទីតាំងរបស់អ្នកត្រូវបានកត់ត្រាទុករួចហើយ។</p>
-      <button onClick={() => setShowIntruderWarning(false)} className="px-6 py-2.5 bg-rose-600 text-white rounded-xl font-black text-[13px]">យល់ហើយ</button>
-    </div>
-  </div>
-)}
       {showAdminLogin && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in bg-slate-900/70 backdrop-blur-md">
            <div className="relative w-full max-w-sm mx-auto bg-white rounded-2xl p-6 shadow-2xl border border-slate-100 text-center animate-in zoom-in-95">
@@ -4584,200 +4522,125 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
     </div>
   );
 };
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg';
 
-const HACKER_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#000a00' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#00cc55' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#000000' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#0a5c2a' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#06310f' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#001a08' }] },
-];
-
-const loadGoogleMaps = () => new Promise((resolve, reject) => {
-  if (window.google?.maps) return resolve(window.google.maps);
-  const existing = document.getElementById('gmaps-script');
-  if (existing) { existing.addEventListener('load', () => resolve(window.google.maps)); return; }
-  const s = document.createElement('script');
-  s.id = 'gmaps-script';
-  s.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&language=km`;
-  s.async = true;
-  s.onload = () => resolve(window.google.maps);
-  s.onerror = () => reject(new Error('Google Maps load failed'));
-  document.head.appendChild(s);
-});
-
-const AdminLiveTrackerMap = ({ usersList = [] }) => {
-  const ref = useRef(null);
-  const mapRef = useRef(null);
-  const infoRef = useRef(null);
-  const markersRef = useRef({});
-  const fittedRef = useRef(false);
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState('');
-
-  const realUsers = useMemo(() => (usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid'), [usersList]);
-  const withLoc = useMemo(() => realUsers.filter(u => u.lastLocation?.lat && u.lastLocation?.lng), [realUsers]);
-  const onlineCount = realUsers.filter(u => Date.now() - (u.lastActive || 0) < 120000).length;
+const AdminLiveTrackerMap = ({ usersList }) => {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
   useEffect(() => {
-    let dead = false;
-    loadGoogleMaps().then(maps => {
-      if (dead || !ref.current) return;
-      mapRef.current = new maps.Map(ref.current, {
-        center: { lat: 13.0, lng: 104.9 }, zoom: 7,
-        styles: HACKER_MAP_STYLE, disableDefaultUI: true, zoomControl: true, backgroundColor: '#000a00'
-      });
-      infoRef.current = new maps.InfoWindow();
-      setReady(true);
-    }).catch(() => setError('មិនអាចផ្ទុក Google Maps បានទេ (ពិនិត្យ API key / Billing)'));
-    return () => { dead = true; Object.values(markersRef.current).forEach(m => m.setMap(null)); markersRef.current = {}; };
-  }, []);
+    if (!mapContainerRef.current) return;
 
-  useEffect(() => {
-    if (!ready || !mapRef.current) return;
-    const maps = window.google.maps;
-    const map = mapRef.current;
-    const seen = new Set();
+    const initMap = () => {
+      const L = window.L;
+      if (!L) return;
 
-    const showInfo = (marker) => {
-      const u = marker.__user;
-      const pos = { lat: u.lastLocation.lat, lng: u.lastLocation.lng };
-      const box = document.createElement('div');
-      box.style.cssText = 'font-family:monospace;font-size:12px;color:#00ff66;background:#000;padding:6px 8px;line-height:1.6';
-      const add = (t) => { const d = document.createElement('div'); d.textContent = t; box.appendChild(d); return d; };
-      add(`> ${u.username || 'ភ្ញៀវ'}`);
-      add(`LAT ${pos.lat.toFixed(5)}  LNG ${pos.lng.toFixed(5)}`);
-      const addrLine = add('...');
-      add(Date.now() - (u.lastActive || 0) < 120000 ? 'STATUS: ONLINE' : 'STATUS: OFFLINE');
-      const a = document.createElement('a');
-      a.href = `https://www.google.com/maps?q=${pos.lat},${pos.lng}`;
-      a.target = '_blank'; a.rel = 'noreferrer'; a.textContent = '[ OPEN IN GOOGLE MAPS ]'; a.style.color = '#00ff66';
-      box.appendChild(a);
-      infoRef.current.setContent(box);
-      infoRef.current.open(map, marker);
-      new maps.Geocoder().geocode({ location: pos }, (res, st) => {
-        addrLine.textContent = st === 'OK' && res?.[0] ? res[0].formatted_address : '(មិនមានអាសយដ្ឋាន)';
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
+
+      // បង្កើតផែនទី និងកំណត់ចំនុចកណ្តាលនៅស្រុករតនមណ្ឌល
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([12.9840, 102.9348], 7); 
+      mapInstanceRef.current = map;
+
+      // ប្រើប្រាស់ Dark Mode Map ដើម្បីរំលេចខ្សែ Digital
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+      // រូបតំណាងបញ្ជាការដ្ឋានកណ្តាល (HQ)
+      const centerIcon = L.divIcon({
+        html: `<div class="w-6 h-6 bg-rose-600 rounded-full border-2 border-white animate-pulse shadow-[0_0_20px_#e11d48]"></div>`,
+        className: ''
       });
+      L.marker([12.9840, 102.9348], { icon: centerIcon }).addTo(map).bindPopup("ទីបញ្ជាការកណ្តាល (HQ)");
+
+      const validUsers = (usersList || []).filter(u => u.lastLocation && u.lastLocation.lat && u.lastLocation.lng);
+
+      validUsers.forEach(u => {
+        const lat = u.lastLocation.lat;
+        const lng = u.lastLocation.lng;
+        // កំណត់ស្ថានភាព Online ពណ៌បៃតង, Offline ពណ៌ផ្ទៃមេឃ
+        const isOnline = (Date.now() - (u.lastActive || 0)) < 120000;
+        const color = isOnline ? '#10b981' : '#38BDF8';
+
+        // រូបតំណាង User លើផែនទី
+        const uIcon = L.divIcon({
+          html: `
+            <div style="border-color: ${color}; box-shadow: 0 0 12px ${color};" class="relative w-9 h-9 rounded-full border-2 overflow-hidden bg-slate-900 transition-transform hover:scale-110 cursor-pointer">
+              <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-full h-full object-cover"/>
+            </div>
+          `,
+          className: ''
+        });
+
+        const marker = L.marker([lat, lng], { icon: uIcon }).addTo(map);
+
+        // ខ្សែ Digital (Digital Wire) ភ្ជាប់ពី HQ ទៅកាន់ User
+        L.polyline([
+          [12.9840, 102.9348],
+          [lat, lng]
+        ], {
+          color: color,
+          weight: 2,
+          dashArray: '5, 10',
+          opacity: 0.6,
+          className: 'animate-pulse'
+        }).addTo(map);
+
+        // មុខងារចុចដើម្បីបើក Google Maps
+        marker.on('click', () => {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        });
+
+        // ផ្ទាំងឈ្មោះពេលយក Mouse ទៅដាក់លើ
+        marker.bindTooltip(
+           `<div class="font-khmer font-bold text-[12px] text-white">${safeStr(u.username) || 'User'}</div><div class="text-[9px] text-slate-300 mt-1">ចុចបើក Google Maps</div>`, 
+           { permanent: false, direction: 'top', className: 'bg-slate-900/90 backdrop-blur-md border border-slate-700 shadow-xl' }
+        );
+      });
+
+      // ពង្រីកផែនទីអោយឃើញ User ទាំងអស់ដោយស្វ័យប្រវត្តិ
+      if(validUsers.length > 0) {
+          const bounds = L.latLngBounds([[12.9840, 102.9348], ...validUsers.map(u => [u.lastLocation.lat, u.lastLocation.lng])]);
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
     };
 
-    withLoc.forEach(u => {
-      seen.add(u.id);
-      const pos = { lat: u.lastLocation.lat, lng: u.lastLocation.lng };
-      const online = Date.now() - (u.lastActive || 0) < 120000;
-      const icon = { path: maps.SymbolPath.CIRCLE, scale: 7, fillColor: online ? '#00ff66' : '#1f7a3f', fillOpacity: 1, strokeColor: '#00ff66', strokeWeight: 2 };
-      let m = markersRef.current[u.id];
-      if (!m) {
-        m = new maps.Marker({ position: pos, map, icon, title: u.username || 'User' });
-        m.addListener('click', () => showInfo(m));
-        markersRef.current[u.id] = m;
-      } else { m.setPosition(pos); m.setIcon(icon); }
-      m.__user = u;
-    });
+    if (!window.L) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
 
-    Object.keys(markersRef.current).forEach(id => {
-      if (!seen.has(id)) { markersRef.current[id].setMap(null); delete markersRef.current[id]; }
-    });
-
-    if (withLoc.length > 0 && !fittedRef.current) {
-      const b = new maps.LatLngBounds();
-      withLoc.forEach(u => b.extend({ lat: u.lastLocation.lat, lng: u.lastLocation.lng }));
-      map.fitBounds(b, 60);
-      if (withLoc.length === 1) map.setZoom(13);
-      fittedRef.current = true;
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = initMap;
+      document.head.appendChild(script);
+    } else {
+      initMap();
     }
-  }, [ready, withLoc]);
 
-  const Stat = ({ label, value }) => (
-    <div className="py-2.5 text-center border-r border-green-500/30 last:border-r-0">
-      <div className="text-[9px] tracking-[0.25em] text-green-500/70">{label}</div>
-      <div className="text-[20px] font-bold text-[#00ff66] leading-tight">{value}</div>
-    </div>
-  );
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [usersList]);
 
   return (
-    <div className="w-full space-y-2" style={{ fontFamily: 'monospace' }}>
-      <div className="grid grid-cols-3 bg-black border border-green-500/40 rounded-md">
-        <Stat label="USERS" value={realUsers.length} />
-        <Stat label="ONLINE" value={onlineCount} />
-        <Stat label="ON MAP" value={withLoc.length} />
+    <div className="w-full space-y-2 font-khmer flex flex-col items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full mb-3 px-1 gap-3">
+         <div>
+             <h3 className="font-black text-[16px] text-white flex items-center gap-2"><MapPin className="w-5 h-5 text-[#38BDF8] animate-bounce" /> ប្រព័ន្ធតាមដាន (Live Tracking)</h3>
+             <p className="text-[11px] text-slate-400 font-bold mt-1">ខ្សែ Digital បង្ហាញទីតាំងជាក់ស្តែងរបស់អ្នកប្រើប្រាស់ភ្ជាប់មក HQ</p>
+         </div>
+         <span className="text-[11px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-2 rounded-xl font-black shadow-sm animate-pulse flex items-center gap-1.5 cursor-default">
+            <Globe className="w-4 h-4"/> ចុចលើរូបសមាជិកដើម្បីបើក Google Maps
+         </span>
       </div>
-      {error && <p className="text-[12px] text-rose-400">{error}</p>}
-      <div ref={ref} className="w-full h-[60vh] min-h-[420px] rounded-md overflow-hidden border border-green-500/40 bg-black" />
-    </div>
-  );
-};
-
-const AdminSendMessage = ({ usersList = [], db, appId, showToast }) => {
-  const [mode, setMode] = useState('all');
-  const [title, setTitle] = useState('📢 សារពី Admin');
-  const [text, setText] = useState('');
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState([]);
-  const [sending, setSending] = useState(false);
-
-  const recipients = useMemo(() => (usersList || []).filter(u =>
-    u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ'), [usersList]);
-  const visible = recipients.filter(u => safeStr(u.username).toLowerCase().includes(search.toLowerCase()));
-  const toggle = (id) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
-
-  const send = async () => {
-    const msg = text.trim();
-    if (!msg) return showToast('សូមសរសេរសារសិន', 'error');
-    if (mode === 'select' && selected.length === 0) return showToast('សូមជ្រើសរើសអ្នកទទួលយ៉ាងហោចណាស់ម្នាក់', 'error');
-    if (!db) return showToast('Offline Sandbox Mode', 'info');
-    setSending(true);
-    try {
-      const now = Date.now();
-      const chatCol = collection(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA');
-      const notiCol = collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications');
-      const targets = mode === 'all' ? recipients.map(u => u.id) : selected;
-      const base = { text: msg, msgType: 'text', userId: 'admin_ramit_fixed_uid', userName: 'ADMIN-SUPPORT', seen: false, edited: false, timestamp: now };
-
-      if (mode === 'all') await addDoc(chatCol, { ...base, target: 'all' });
-      else await Promise.all(targets.map(id => addDoc(chatCol, { ...base, target: id })));
-
-      await Promise.all(targets.map(id => addDoc(notiCol, { targetId: id, title, msg, type: 'info', timestamp: now })));
-      showToast(`បានផ្ញើទៅកាន់ ${targets.length} នាក់ ✅`, 'success');
-      setText(''); setSelected([]);
-    } catch (e) {
-      showToast('មានបញ្ហាក្នុងការផ្ញើ', 'error');
-    }
-    setSending(false);
-  };
-
-  return (
-    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3 animate-in fade-in">
-      <h3 className="font-black text-[12.5px] border-l-4 border-[#38BDF8] pl-2 text-[#0F2B5C]">ផ្ញើសារទៅអ្នកប្រើប្រាស់</h3>
-      <div className="flex bg-slate-100 p-1 rounded-xl">
-        {[['all', `All User (${recipients.length})`], ['select', `Select (${selected.length})`]].map(([id, label]) => (
-          <button key={id} onClick={() => setMode(id)} className={`flex-1 py-2 rounded-lg text-[12px] font-black ${mode === id ? 'bg-[#0F2B5C] text-white' : 'text-slate-500'}`}>{label}</button>
-        ))}
-      </div>
-
-      {mode === 'select' && (
-        <div className="space-y-2">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ស្វែងរកឈ្មោះ..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[13px] font-bold" />
-          <div className="max-h-48 overflow-y-auto space-y-1.5 hide-scrollbar">
-            {visible.map(u => (
-              <label key={u.id} className="flex items-center gap-2.5 p-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer">
-                <input type="checkbox" checked={selected.includes(u.id)} onChange={() => toggle(u.id)} />
-                <img src={u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} className="w-7 h-7 rounded-full object-cover" alt="" />
-                <span className="text-[12.5px] font-bold">{safeStr(u.username)}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <input value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[13px] font-bold" placeholder="ចំណងជើង..." />
-      <textarea value={text} onChange={e => setText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[14px] h-28 resize-none" placeholder="សរសេរសារនៅទីនេះ..." />
-      <button onClick={send} disabled={sending} className="w-full btn-gradient py-3 rounded-xl font-black text-[13px] flex items-center justify-center gap-1.5 disabled:opacity-60">
-        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} ផ្ញើសារ
-      </button>
+      <div ref={mapContainerRef} className="w-full h-[65vh] min-h-[500px] rounded-[24px] overflow-hidden border border-slate-700 shadow-2xl z-0 relative bg-slate-900" />
     </div>
   );
 };
@@ -5733,8 +5596,8 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
           )}
 
           {activeTab === 'live_map' && (
-             <div className="bg-black p-3 rounded-xl border border-green-500/30 animate-in fade-in duration-200">
-              <AdminLiveTrackerMap usersList={usersList} />
+             <div className="bg-slate-900 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.1)] border border-slate-800 animate-in fade-in duration-200">
+                 <AdminLiveTrackerMap usersList={usersList} />
              </div>
           )}
 
@@ -5839,9 +5702,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                                      <p className="text-[12px] font-black text-rose-600 flex items-center gap-1">⚠️ {safeStr(log.type)}</p>
                                      <p className="text-[10px] text-slate-500 mt-0.5">ឈ្មោះ: <span className="font-bold text-slate-700">{safeStr(log.username)}</span> | IP: <span className="font-bold text-slate-700">{safeStr(log.ip)}</span></p>
                                      <p className="text-[9.5px] text-slate-400 font-bold mt-1 tracking-wider leading-relaxed">Device: {safeStr(log.device)}</p>
-                                     {log.location?.lat && (
-                                       <a href={`https://www.google.com/maps?q=${log.location.lat},${log.location.lng}`} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-sky-600 underline">📍 មើលទីតាំងលើ Google Maps (±{log.location.accuracy}m)</a>
-)}
                                  </div>
                                  <div className="text-right shrink-0">
                                      <span className="text-[8.5px] text-slate-400 font-bold block">{new Date(log.timestamp).toLocaleTimeString()}</span>
