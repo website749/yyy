@@ -332,6 +332,11 @@ input, textarea, select {
     
     .toggle-checkbox:checked { right: 0; border-color: #10b981; }
     .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
+  @keyframes badge-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+.badge-pulse { animation: badge-pulse 1.6s ease-in-out infinite; }
+@keyframes bell-ring { 0%,100%{transform:rotate(0)} 15%{transform:rotate(12deg)} 30%{transform:rotate(-12deg)} 45%{transform:rotate(8deg)} 60%{transform:rotate(-8deg)} 75%{transform:rotate(0)} }
+.bell-ring { animation: bell-ring 1.4s ease-in-out infinite; transform-origin: top center; }
+
   `;
 };
 
@@ -2558,7 +2563,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
 const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
-  const lang = localStorage.getItem('tp_app_lang') || 'kh';
+  const { lang, tr } = useContext(LangContext);
   const L = (kh, en) => (lang === 'en' ? en : kh);
 
   const navItems = [
@@ -2618,6 +2623,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
     }, []);
 
     return (
+      
         <div className="bg-white border-b border-slate-200 pt-[calc(env(safe-area-inset-top,8px)+12px)] px-4 pb-4 shadow-sm relative z-40 shrink-0 w-full">
            <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
@@ -2646,13 +2652,12 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                  </button>
 
                  <div className="relative">
-                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
-                        <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
-                        {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
-                        {notifications && notifications.length > 0 && (
-                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full animate-bounce flex items-center justify-center text-[9px] font-black text-white border-2 border-white">
-                            {notifications.length > 99 ? '99+' : notifications.length}
-                          </span>
+                     <button className="relative p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 overflow-visible" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+  <Bell className={`w-4.5 h-4.5 text-[#0F2B5C] ${notifications?.length > 0 ? 'bell-ring' : ''}`} />
+  {notifications && notifications.length > 0 && (
+    <span className="badge-pulse absolute -top-1.5 -right-1.5 z-10 min-w-[18px] h-[18px] px-1 bg-rose-500 rounded-full flex items-center justify-center text-[9px] font-black text-white border-2 border-white">
+      {notifications.length > 99 ? '99+' : notifications.length}
+    </span>
                         )}
                      </button>
                      {notificationsOpen && (
@@ -3077,23 +3082,22 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
 
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
-  const monthlyData = khmerMonths.map((name, index) => {
-    // Set specific value for May (ឧសភា is index 4)
-    if (index === 4) {
-        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
-    }
-    // Set specific value for July (កក្កដា is index 6)
-    if (index === 6) {
-        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
-    }
-    
-    const startM = new Date(currentYear, index, 1).getTime();
-    const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
-    let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
-    if (index === currentMonth) usersInMonth += fakeCount;
-    const entriesInMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length;
-    return { name, users: usersInMonth, entries: entriesInMonth };
-  });
+  const calcMonth = (index) => {
+  const startM = new Date(currentYear, index, 1).getTime();
+  const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
+  return {
+    users: (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length,
+    entries: (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length,
+  };
+};
+// [ខែគោលដៅ]: ខែប្រភព   (មេសា=3, មិថុនា=5, កក្កដា=6, សីហា=7)
+const MOVES = { 7: 5, 6: 3 }; // សីហា ← មិថុនា, កក្កដា ← មេសា
+const movedFrom = Object.values(MOVES);
+const monthlyData = khmerMonths.map((name, index) => {
+  if (MOVES[index] !== undefined) return { name, ...calcMonth(MOVES[index]) };
+  if (movedFrom.includes(index)) return { name, users: 0, entries: 0 };
+  return { name, ...calcMonth(index) };
+});
 
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
