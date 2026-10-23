@@ -2723,32 +2723,40 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-    <div
-    style={{
-  height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-  boxSizing: 'border-box'
-}}
-    >
-      <div className="flex justify-around items-center h-full px-1">
-        {navItems.map((item) => {
-          const isActive = currentView === item.id;
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-col items-center justify-center gap-0.5 active:scale-95 select-none transition-transform"
-            >
-              <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10.5px] font-bold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+    <>
+      {/* DEBUG — លុបចោលពេលដឹងចម្លើយ */}
+      <div style={{ position: 'fixed', top: '58px', left: 0, zIndex: 99999, background: '#000', color: '#0f0', fontSize: '10px', padding: '2px 4px' }}>
+        {`inner ${window.innerWidth}x${window.innerHeight} | screen ${window.screen.width}x${window.screen.height} | pwa ${String(window.navigator.standalone)}`}
       </div>
-    </div>
+
+      <div
+        className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+        style={{
+          height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div className="flex justify-around items-center px-1" style={{ height: '56px' }}>
+          {navItems.map((item) => {
+            const isActive = currentView === item.id;
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setCurrentView(item.id)}
+                className="flex-1 h-full flex flex-col items-center justify-center gap-0.5 active:scale-95 select-none transition-transform"
+              >
+                <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+                <span className={`text-[10.5px] font-bold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
   );
 };
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
