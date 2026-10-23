@@ -2607,9 +2607,12 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-    >
+  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+  style={{
+    paddingBottom: 'min(env(safe-area-inset-bottom, 0px), 18px)',
+    height: 'calc(56px + min(env(safe-area-inset-bottom, 0px), 18px))'
+  }}
+>
       <div className="flex justify-around items-center px-1" style={{ height: '56px' }}>
         {navItems.map((item) => {
           const isActive = currentView === item.id;
