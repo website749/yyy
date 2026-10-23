@@ -2710,38 +2710,88 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
+
 const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
   const lang = localStorage.getItem('tp_app_lang') || 'kh';
   const L = (kh, en) => (lang === 'en' ? en : kh);
 
   const navItems = [
-    { id: 'home',    icon: Home,       label: L('ទំព័រដើម',  'Home') },
-    { id: 'info',    icon: Info,       label: L('ព័ត៌មាន',   'Info') },
+    { id: 'home', icon: Home, label: L('ទំព័រដើម', 'Home') },
+    { id: 'info', icon: Info, label: L('ព័ត៌មាន', 'Info') },
     { id: 'reports', icon: TrendingUp, label: L('របាយការណ៍', 'Reports') },
-    { id: 'account', icon: User,       label: L('គណនី',      'Account') },
+    { id: 'account', icon: User, label: L('គណនី', 'Account') },
   ];
-  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
+
+  if (isAdmin) {
+    navItems.push({
+      id: 'admin',
+      icon: ShieldCheck,
+      label: 'Admin',
+    });
+  }
 
   return (
     <div
-    style={{
-  height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-  boxSizing: 'border-box'
-}}
+      className="md:hidden"
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+        height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        boxSizing: 'border-box',
+        backgroundColor: '#0F2B5C',
+        borderTop: '1px solid rgba(255,255,255,0.15)',
+        isolation: 'isolate',
+      }}
     >
-      <div className="flex justify-around items-center h-full px-1">
+      <div
+        className="flex justify-around items-center w-full h-full"
+        style={{
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
+
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => setCurrentView(item.id)}
-              className="flex-1 h-full flex flex-col items-center justify-center gap-0.5 active:scale-95 select-none transition-transform"
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex-1 h-full flex flex-col items-center justify-center gap-1 !bg-transparent !border-0 !shadow-none !rounded-none active:scale-95 select-none transition-transform"
+              style={{
+                minWidth: 0,
+                color: isActive ? '#38BDF8' : '#FFFFFF',
+                opacity: 1,
+                padding: '4px 0',
+                cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+              }}
             >
-              <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
-              <span className={`text-[10.5px] font-bold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+              <Icon
+                className="w-6 h-6 shrink-0"
+                style={{
+                  color: isActive ? '#38BDF8' : '#FFFFFF',
+                  stroke: isActive ? '#38BDF8' : '#FFFFFF',
+                  opacity: 1,
+                }}
+                aria-hidden="true"
+              />
+
+              <span
+                className="text-[10.5px] font-bold leading-tight whitespace-nowrap"
+                style={{
+                  color: isActive ? '#38BDF8' : '#FFFFFF',
+                  opacity: 1,
+                }}
+              >
                 {item.label}
               </span>
             </button>
@@ -2751,6 +2801,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
     </div>
   );
 };
+
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const lang = localStorage.getItem('tp_app_lang') || 'kh';
     const L = (kh, en) => (lang === 'en' ? en : kh);
