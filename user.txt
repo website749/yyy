@@ -186,3 +186,221 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
     </div>
   );
 };
+
+
+ផ្នែកទី២
+/* =====================================================================
+   PATCH 2 — កែតែ ៥ កន្លែងប៉ុណ្ណោះ (មិនប៉ះពាល់កូដផ្សេងទេ)
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   ជំហាន ១ — ក្រាប់ "ស្ថិតិទីតាំងដែលបានបញ្ចូល" ទទេ
+   មូលហេតុ: កូដចាស់មាន SRC = {6:3, 7:5, 3:null, 5:null} ដែលរុញទិន្នន័យខែមេសា/មិថុនា
+   ទៅបង្ហាញក្នុងខែកក្កដា/សីហា ហើយលាក់ទិន្នន័យពិតរបស់ខែកក្កដា/សីហា។
+   ដូច្នេះទីតាំងដែលបញ្ចូលក្នុងខែកក្កដា/សីហាពិតៗ ត្រូវបាត់។
+
+   ក្នុង ReportsView ត្រូវលុបបន្ទាត់ទាំងនេះ៖
+     const SRC = { 6: 3, 7: 5, 3: null, 5: null };
+     const entriesOf = (index) => { ... };      (ទាំងមូល)
+   ហើយជំនួសដោយកូដនេះ (រាប់តាមខែពិតរបស់ timestamp)៖
+   --------------------------------------------------------------------- */
+
+  const tsMs = (t) => {
+    if (!t) return 0;
+    if (typeof t === 'object') { if (t.toMillis) return t.toMillis(); if (t.seconds) return t.seconds * 1000; }
+    let n = Number(t);
+    if (!n) n = new Date(t).getTime();
+    if (n && n < 1e11) n *= 1000;
+    return n || 0;
+  };
+  const entriesOf = (index) => (locations || []).filter(l => {
+    if (!l) return false;
+    const d = new Date(tsMs(l.timestamp));
+    return d.getFullYear() === currentYear && d.getMonth() === index;
+  }).length;
+
+/* ហើយក្នុង LineChart ជំនួស <Line ... /> ដោយកូដនេះ (បង្ហាញលេខលើចំណុច)៖ */
+
+                   <Line type="monotone" dataKey="entries" stroke="#0F2B5C" strokeWidth={2} dot={{r: 3, fill: '#0F2B5C'}}>
+                     <LabelList dataKey="entries" position="top" formatter={(v) => (v > 0 ? v : '')} style={{ fontSize: 9, fontWeight: 800, fill: '#0F2B5C' }} />
+                   </Line>
+
+
+/* ---------------------------------------------------------------------
+   ជំហាន ២ — បង្ហាញចំនួនសមាជិកក្នុង Admin > គ្រប់គ្រងសមាជិក
+   (ក) ក្នុង AdminDashboard ពីលើ "return (" ចុងក្រោយ (បន្ទាប់ searchedUsersList) បន្ថែម៖
+   --------------------------------------------------------------------- */
+
+  const registeredUsers = (usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ');
+  const onlineNow = registeredUsers.filter(u => (Date.now() - (u.lastActive || 0)) < 120000).length;
+
+/* (ខ) រកបន្ទាត់នេះ៖
+   <p className="text-[10px] text-slate-500 font-bold mt-1">រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក</p>
+   ជំនួសដោយ៖ */
+
+   <p className="text-[10px] text-slate-500 font-bold mt-1">រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក</p>
+   <div className="flex flex-wrap gap-2 mt-2">
+      <span className="text-[11px] font-black text-[#0F2B5C] bg-white border border-slate-200 px-2.5 py-1 rounded-lg">👥 សមាជិកដែលបានចុះឈ្មោះ: {registeredUsers.length} នាក់</span>
+      <span className="text-[11px] font-black text-emerald-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg">🟢 កំពុង Online: {onlineNow} នាក់</span>
+   </div>
+
+
+/* ---------------------------------------------------------------------
+   ជំហាន ៣ — Skeuomorphic UI សម្រាប់ Admin Panel
+   (ក) ក្នុង AdminDashboard រកបន្ទាត់ return ដំបូង៖
+   <div className="w-full max-w-5xl mx-auto space-y-3 pb-10 flex-1 font-khmer text-slate-800 animate-in fade-in">
+   ប្តូរទៅជា (បន្ថែម skeu-admin)៖
+   <div className="skeu-admin w-full max-w-5xl mx-auto space-y-3 pb-10 flex-1 font-khmer text-slate-800 animate-in fade-in">
+
+   (ខ) ក្នុង injectStyles() បន្ថែម CSS នេះបន្ទាប់ពីបន្ទាត់ .bell-ring{...} (មុនសញ្ញា ` បិទ)៖
+   --------------------------------------------------------------------- */
+
+/* ----- Skeuomorphic Admin ----- */
+.skeu-admin{background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 1px,rgba(0,0,0,.025) 1px 3px),linear-gradient(180deg,#d9dce1,#aeb3bb);border:1px solid #7d828a;border-radius:18px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -2px 6px rgba(0,0,0,.25),0 4px 14px rgba(0,0,0,.35)}
+.skeu-admin [class~="bg-white"]{background:linear-gradient(180deg,#fff 0%,#f4f1e9 60%,#e7e2d6 100%)!important;border-color:#a9a293!important;box-shadow:inset 0 1px 0 #fff,0 1px 3px rgba(0,0,0,.35)!important}
+.skeu-admin [class~="bg-slate-50"],.skeu-admin [class~="bg-slate-100"]{background:linear-gradient(180deg,#e4dfd3,#f3f0e8)!important;border-color:#b3ac9c!important;box-shadow:inset 0 2px 4px rgba(0,0,0,.18)!important}
+.skeu-admin input:not([type=checkbox]):not([type=file]),.skeu-admin textarea,.skeu-admin select{background:#f7f5ee!important;border:1px solid #8f897a!important;box-shadow:inset 0 2px 5px rgba(0,0,0,.3)!important}
+.skeu-admin [class~="bg-[#0F2B5C]"],.skeu-admin .btn-gradient{background:linear-gradient(180deg,#5b8bd6 0%,#2a5aa8 48%,#123a7a 52%,#0F2B5C 100%)!important;border:1px solid #081a3a!important;text-shadow:0 -1px 0 rgba(0,0,0,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 4px rgba(0,0,0,.45)!important}
+.skeu-admin [class~="bg-[#10b981]"],.skeu-admin [class~="bg-emerald-600"]{background:linear-gradient(180deg,#6fdca8 0%,#22b574 48%,#0e9a5e 52%,#0b7d4c 100%)!important;border:1px solid #065a36!important;text-shadow:0 -1px 0 rgba(0,0,0,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 4px rgba(0,0,0,.4)!important}
+.skeu-admin button:active{transform:translateY(1px)}
+
+
+/* ---------------------------------------------------------------------
+   ជំហាន ៤ — ភាសា (KH/EN) ឱ្យប្តូរទាំងកម្មវិធី (User + Admin)
+   មូលហេតុ: ប៊ូតុង KH/EN ក្នុងទំព័រស្វាគមន៍ ប្តូរតែ state មិនបានរក្សាទុក
+   ក្នុង localStorage ('tp_app_lang') ហើយអត្ថបទក្នុងកម្មវិធីភាគច្រើនសរសេរជាខ្មែរផ្ទាល់។
+
+   (ក) បន្ថែមកូដនេះ ពីក្រោម "export const tr = ..." (នៅខាងលើ export default function App)៖
+   --------------------------------------------------------------------- */
+
+const I18N = {
+  // Navigation / General
+  'ទំព័រដើម':'Home','ព័ត៌មាន':'Info','របាយការណ៍':'Reports','គណនី':'Account','អ្នកគ្រប់គ្រង':'Admin',
+  'ទាំងអស់':'All','ឃុំ':'Commune','ភូមិ':'Village','ស្រុក':'District','ស្រុករតនមណ្ឌល':'Ratanak Mondul','រតនមណ្ឌល':'Ratanak Mondul','ស្រុកផ្សេងៗ':'Other Districts','ផ្សេងៗ':'Others',
+  'ប៉ូលីស':'Police','ប៉ូលិស':'Police','ពេទ្យ':'Hospital','មន្ទីរពេទ្យ':'Hospital','សាលារៀន':'School','សង្កាត់':'Sangkat',
+  'ដង':'views','លម្អិត':'Details','គ្មានទិន្នន័យ':'No data','បន្ថែម':'Add','កែប្រែ':'Edit','រក្សាទុក':'Save','លុប':'Delete','បោះបង់':'Cancel','បិទ':'Close','ព្រម':'OK','បដិសេធ':'Decline','ចាកចេញ':'Logout','ទូរស័ព្ទ':'Call','ផែនទី':'Map','ជ្រើសរើស':'Select','ទទួល':'Accept','អត់':'Decline',
+  // Info
+  'ទីតាំងខ្ញុំ':'My Location','របៀបប្រើប្រាស់':'How to use','របៀបប្រើប្រាស់ Web App':'How to use the Web App','មើលការណែនាំ':'View Guide','មើលជា Video':'Watch Video','កំពុងអភិវឌ្ឍ':'Under development',
+  // Reports
+  'របាយការណ៍ទិន្នន័យជាក់ស្ដែង':'Live Data Report','អ្នកប្រើប្រាស់សសរុប':'Total Users','អ្នកប្រើប្រាស់ (ខែនេះ)':'Users (This Month)','អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)':'Users (This Year)','ទីតាំងសរុប':'Total Locations','ទីតាំងបញ្ចូល (ខែនេះ)':'Locations Added (This Month)','ទីតាំងបញ្ចូល (ឆ្នាំនេះ)':'Locations Added (This Year)','សរុបតាំងពីដើម':'Total since start','កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ':'Yearly User Growth','ស្ថិតិទីតាំងដែលបានបញ្ចូល':'Locations Added Statistics',
+  'មករា':'Jan','កុម្ភៈ':'Feb','មីនា':'Mar','មេសា':'Apr','ឧសភា':'May','មិថុនា':'Jun','កក្កដា':'Jul','សីហា':'Aug','កញ្ញា':'Sep','តុលា':'Oct','វិច្ឆិកា':'Nov','ធ្នូ':'Dec',
+  // Account
+  'ឈ្មោះអ្នកប្រើប្រាស់ឧបករណ៍នេះ':'Device username','ការកំណត់':'Settings','Admin Portal របស់ប្រព័ន្ធ':'System Admin Portal','សំឡេងជូនដំណឹង (Ping Sound)':'Notification Sound (Ping)','បើក ឬបិទសំឡេងរោទ៍ពេលមានសារថ្មីចូល':'Turn the new-message sound on or off','បញ្ជាក់សិទ្ធិជាអភិបាល':'Confirm Admin Access','សូមបញ្ចូលលេខសម្ងាត់ Admin':'Enter the Admin password','ចូលគណនី':'Log in','ផ្អាក...':'Locked...',
+  // Chat
+  'ទំនាក់ទំនងឆាត':'Chat Contacts','ជ្រើសរើសស្ថាប័ន ឬមិត្តភក្តិដែលអ្នកចង់ឆាតឯកជនជាមួយ។':'Choose an institution or friend to chat with privately.','Add មិត្ត':'Add Friend','ក្នុងមូលដ្ឋាន':'Local','សុំធ្វើមិត្ត':'Add friend','បានផ្ញើសំណើរ':'Request sent','ចង់ក្លាយជាមិត្តរបស់អ្នក':'wants to be your friend','បញ្ជីទំនាក់ទំនង៖':'Contact list:','មិត្តឯកជន':'Private friend','ស្ថាប័ន':'Institution','ស្វែងរកគណនីមិត្តភក្តិ':'Find friend accounts','គ្មានគណនីដែលត្រូវស្វែងរកទេ':'No matching accounts','មិន Online ⚪':'Not online ⚪','ចាប់ផ្តើមការសន្ទនា...':'Start the conversation...','ចម្លងអត្ថបទ':'Copy text','កែប្រែ (Edit)':'Edit','លុបចោល (Delete)':'Delete','Online • ឆ្លើយតបរហ័ស':'Online • Fast reply','កំពុងកែប្រែសារ':'Editing message','ប្រកាសទូទៅ':'Announcement','ប្រលែងដៃដើម្បីផ្ញើ 📤':'Release to send 📤','ផ្ញើររូបភាព':'Send photo','ផ្ញើទីតាំង (GPS)':'Send location (GPS)','🗺️ បើកផែនទី Google Maps':'🗺️ Open Google Maps','តម្រូវឲ្យមានឈ្មោះគណនី':'Account name required','កំណត់ឈ្មោះឥឡូវនេះ':'Set your name now','មុខងារឆាតត្រូវបានបិទ':'Chat is turned off','អភិបាលប្រព័ន្ធបានបិទមុខងារនេះជាបណ្តោះអាសន្ន។':'The admin has temporarily disabled this feature.','Admin Support':'Admin Support','អ្នកគ្រប់គ្រងប្រព័ន្ធ':'System Administrator','📍 គណនាចម្ងាយសរុប (A → B)':'📍 Total distance (A → B)',
+  // Location modal / card
+  'អាសយដ្ឋាន':'Address','ព័ត៌មានលម្អិត':'Details','គ្មានការពណ៌នាព័ត៌មានបន្ថែមទេ។':'No additional description.','ជ្រើសរើសលេខទូរស័ព្ទ':'Choose a phone number',
+  // Add form
+  'បន្ថែមទិន្នន័យ៖ ស្រុករតនមណ្ឌល':'Add Data: Ratanak Mondul District','បន្ថែមទិន្នន័យ៖ ស្រុកផ្សេងៗ':'Add Data: Other Districts','ចំណងជើង / ឈ្មោះទីតាំង *':'Title / Location name *','ប្រភេទ Category *':'Category *','ព័ត៌មានទំនាក់ទំនង (Contacts) *':'Contacts *','ថែមឈ្មោះ/តួនាទីថ្មី':'Add name/role','ឈ្មោះ ឬ តួនាទី':'Name or role','លេខទូរស័ព្ទរបស់គាត់':'Phone numbers','ថែមលេខឲ្យគាត់':'Add number','កំណត់ទីតាំង':'Set location','ទីតាំង (GPS)':'Location (GPS)','កំពុងចាប់ទីតាំង...':'Getting location...','✓ ចាប់បានទីតាំងជោគជ័យ':'✓ Location captured','ចុចដើម្បីទាញយក GPS':'Tap to get GPS','រូបភាព (Upload Picture) *':'Picture (Upload) *','ប្តូររូបភាព':'Change picture','ចុចដើម្បី Upload រូបភាព':'Tap to upload a picture','ការពណ៌នា':'Description','កំពុងផ្ញើរ...':'Sending...','✓ បញ្ចូលទិន្នន័យ (Auto Approve)':'✓ Add data (Auto Approve)','📤 ផ្ញើរសំណើរទៅកាន់ Admin':'📤 Send request to Admin',
+  'ឈ្មោះទីតាំង...':'Location name...','ឧ: លោក មេឃុំ...':'e.g. Commune chief...','ឧ: 012 345 678...':'e.g. 012 345 678...','ខេត្ត...':'Province...','ស្រុក...':'District...','សរសេរការពណ៌នាខ្លីៗ...':'Write a short description...','សរសេរសារ...':'Write a message...','កំណត់ឈ្មោះរបស់អ្នក...':'Set your name...','លេខសម្ងាត់...':'Password...','ស្វែងរកឈ្មោះសមាជិក...':'Search member name...','ស្វែងរកតាមឈ្មោះ ឬ UID...':'Search by name or UID...','បញ្ចូលឈ្មោះគណនីឧបករណ៍នេះ...':'Enter this device account name...',
+  // Admin
+  'ទិន្នន័យ & ទីតាំង':'Data & Locations','ផ្ញើសារ':'Send Message','ផែនទីអ្នកប្រើ (Live)':'User Map (Live)','គ្រប់គ្រងសមាជិក':'Manage Members','គ្រប់គ្រង របៀបប្រើប្រាស់':'Manage How-to','សំណើសម្រុះសម្រួល':'Appeals','អនុម័តសំណើរ':'Approvals','ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យផ្លូវការ':'Official Data Management System',
+  'ការគ្រប់គ្រងគណនី និងអ្នកប្រើប្រាស់':'Account & User Management','រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក':'Actions such as block, delete or warn members','Download ទិន្នន័យ':'Download data','បញ្ចូលទៅ Flash USB':'Save to Flash USB','លុប User ទាំងអស់ចោល':'Delete all users','សមាជិក':'Member','ស្ថានភាព':'Status','សកម្មភាព (Actions)':'Actions','ធម្មតា ✅':'Normal ✅','Blocked 🚫':'Blocked 🚫','សកម្មភាព:':'Actions:',
+  'សមាជិកដែលបានចុះឈ្មោះ:':'Registered members:','នាក់':'people','កំពុង Online:':'Online now:',
+  'ផ្ញើសារ ':'Send ','សរសេរសារនៅទីនេះ...':'Write your message here...','គ្រប់គ្រង របៀបប្រើប្រាស់ Web App':'Manage Web App How-to','ផ្នែកទី១: ការណែនាំ (Guides)':'Part 1: Guides','ផ្នែកទី២: Video ការណែនាំ':'Part 2: Guide Video','រក្សាទុក (Save)':'Save',
+  'សម្អាត Logs ទាំងអស់':'Clear all logs','គ្មានសកម្មភាពគួរឱ្យសង្ស័យឡើយ ✅':'No suspicious activity ✅','ការកំណត់ចលនាទំព័រដើម & UI':'Home animation & UI settings','មុខងារឆាត និងផ្ញើសារ':'Chat & messaging','ចលនាគ្រាប់ផ្កាយ Cosmic Theme':'Cosmic Theme star animation',
+  'សំណើររង់ចាំ (Pending:':'Pending requests (','គ្មានសំណើរថ្មីទេ':'No new requests','ព្រម ':'Approve ','មិនព្រម':'Reject','យល់ព្រម':'Approve','សំណើសម្រុះសម្រួលទណ្ឌកម្ម (Appeals List)':'Penalty Appeals List','គ្មានសំណើរសុំសម្រុះសម្រួលថ្មីទេ':'No new appeals',
+  'រចនាសម្ព័ន្ធទីតាំង (រតនមណ្ឌល)':'Location structure (Ratanak Mondul)','បន្ថែមឃុំថ្មី':'Add new commune','បន្ថែមភូមិថ្មី':'Add new village','ឈ្មោះឃុំ...':'Commune name...','ឈ្មោះភូមិ...':'Village name...','ជ្រើសរើសឃុំ...':'Select commune...','គ្មានភូមិ':'No villages','ស្រុករតនមណ្ឌល ':'Ratanak Mondul ','១. ស្រុករតនមណ្ឌល':'1. Ratanak Mondul District','២. ស្រុកផ្សេងៗ':'2. Other Districts',
+  'កែប្រែទិន្នន័យទីតាំង':'Edit location data','ព័ត៌មានទំនាក់ទំនង (JSON Editor)':'Contacts (JSON Editor)','ប្រភេទ Category *':'Category *',
+  // Ban / appeal / call
+  'កំពុងរង់ចាំការត្រួតពិនិត្យ':'Waiting for review','ត្រឡប់ក្រោយ':'Back','ផ្ញើសំណើ':'Submit request','គណនីត្រូវបានបិទ! (Device Blocked)':'Account blocked! (Device Blocked)','វីដេអូខល (Video Call)':'Video Call','ហៅសំឡេង (Voice Call)':'Voice Call','កំពុងហៅ (Calling)...':'Calling...',
+};
+
+// ប្រយោគ/បំណែកសម្រាប់ Toast និងអត្ថបទមានអថេរ (ជំនួសបំណែក)
+const I18N_PART = {
+  'ក្នុងខែទី':'In month','ក្នុងឆ្នាំ':'In year','បញ្ជីខ្សែទូរស័ព្ទទាក់ទង':'Phone lines','ចម្ងាយពីអ្នក:':'Distance from you:','ម៉ែត្រ (m)':'m','គីឡូម៉ែត្រ (KM)':'KM',
+  'សំណើរសុំធ្វើមិត្ត':'Friend requests','អ្នកកំពុងស្ថិតនៅ ឃុំ:':'You are in Commune:','ភូមិ:':'Village:','ឃុំ:':'Commune:',
+  'សូមបញ្ចូលចំណងជើង ឬឈ្មោះទីតាំង':'Please enter a title or location name','សូមបញ្ចូលរូបភាព':'Please add a picture','សូមបញ្ចូលឈ្មោះ និងលេខទូរស័ព្ទទំនាក់ទំនងយ៉ាងហោចណាស់ ១ ខ្សែ!':'Enter at least 1 contact name and phone number!',
+  'ទិន្នន័យត្រូវបានបញ្ចូលជោគជ័យ ✅':'Data added successfully ✅','សំណើររបស់អ្នកកំពុងរង់ចាំការត្រួតពិនិត្យពី Admin':'Your request is waiting for Admin review','បរាជ័យក្នុងការបញ្ជូន:':'Failed to submit:','សូមបើក Location ឧបករណ៍របស់អ្នក':'Please turn on your device Location','ឧបករណ៍របស់អ្នកមិនគាំទ្រ GPS ទេ':'Your device does not support GPS',
+  'សូមអនុញ្ញាតសិទ្ធិប្រើប្រាស់ Location ឧបករណ៍របស់អ្នកជាមុនសិន':'Please allow Location access first','មិនអាចកំណត់ទីតាំងភូមិ/ឃុំបានទេ ដោយសារខ្វះទិន្នន័យ GPS ក្នុងប្រព័ន្ធ។':'Cannot determine the village/commune: not enough GPS data.',
+  'សូមកំណត់ឈ្មោះគណនីជាមុនសិន ដើម្បីអាចបញ្ចូលទិន្នន័យបាន':'Please set your account name first to add data','សូមចុះឈ្មោះគណនីជាមុនសិន មុននឹងអាចឆាតបាន':'Please register an account before chatting','សូមកំណត់ឈ្មោះគណនីសិន':'Please set your account name first',
+  'ចុះឈ្មោះគណនីបានជោគជ័យ!':'Account registered successfully!','សូមបញ្ជាក់ឈ្មោះគណនីរបស់អ្នក':'Please enter your account name','ឈ្មោះមិនត្រឹមត្រូវ!':'Invalid name!',
+  'បានបិទសំឡេង (Muted)':'Sound muted','បានបើកសំឡេង (Unmuted)':'Sound on','សូមបំពេញលេខសម្ងាត់':'Please enter the password','ចូលប្រើជាគណនី ADMIN ជោគជ័យ ✅':'Logged in as ADMIN ✅','លេខសម្ងាត់មិនត្រឹមត្រូវ':'Incorrect password',
+  'រក្សាទុកឈ្មោះនិង Bio បានជោគជ័យ ✅':'Name and Bio saved ✅','បានប្តូររូបភាព Profile និងរក្សាទុកចូល Database ជោគជ័យ ✅':'Profile picture updated ✅','ឈ្មោះមិនអាចទទេ ឬដាក់ថាភ្ញៀវទេ':'Name cannot be empty or "Guest"',
+  'បានផ្ញើទីតាំង GPS ទៅកាន់ម្ចាស់ទិន្នន័យជោគជ័យ ✅':'GPS location sent to the owner ✅','ផ្ញើទីតាំងជោគជ័យ':'Location sent','ផ្ញើររូបភាពជោគជ័យ':'Photo sent','បានចម្លង (Copied)':'Copied',
+  'អនុម័តជោគជ័យ ✅':'Approved ✅','បានបដិសេធសំណើរ':'Request rejected','លុបទិន្នន័យបានជោគជ័យ':'Data deleted','សម្អាតបានជោគជ័យ':'Cleared','បានចាកចេញពី Admin':'Logged out of Admin','រក្សាទុករួចរាល់ ✅':'Saved ✅','លុបជោគជ័យ ✅':'Deleted ✅',
+  'បានយល់ព្រមបើកគណនីឡើងវិញ':'Account re-enabled','បានបដិសេធសំណើរសម្រុះសម្រួល':'Appeal rejected','បន្ថែមទំនាក់ទំនងឆាតថ្មីជោគជ័យ ✅':'Chat contact added ✅','ទាញយកទិន្នន័យជោគជ័យ ✅':'Data downloaded ✅','សូមសរសេរសារសិន':'Please write a message first','សូមជ្រើសរើសអ្នកទទួលយ៉ាងហោចណាស់ម្នាក់':'Select at least one recipient',
+  'បញ្ជាក់ការលុប':'Confirm deletion','បញ្ជាក់ការបដិសេធ':'Confirm rejection','តើអ្នកពិតជាចង់លុបទិន្នន័យទីតាំងនេះមែនទេ?':'Do you really want to delete this location?',
+};
+
+const _i18nOrig = new WeakMap();
+const _i18nIsEn = () => localStorage.getItem('tp_app_lang') === 'en';
+const _i18nPartList = Object.entries(I18N_PART).sort((a, b) => b[0].length - a[0].length);
+const _i18nTr = (s) => {
+  const t = s.trim();
+  if (!t) return s;
+  if (I18N[t]) return s.replace(t, I18N[t]);
+  let out = s;
+  for (const [k, v] of _i18nPartList) if (out.includes(k)) out = out.split(k).join(v);
+  return out;
+};
+const _i18nNode = (n) => {
+  if (!n || n.nodeType !== 3) return;
+  const p = n.parentNode && n.parentNode.nodeName;
+  if (p === 'SCRIPT' || p === 'STYLE') return;
+  const rec = _i18nOrig.get(n);
+  if (rec && n.nodeValue === rec.shown) {
+    if (!_i18nIsEn()) { n.nodeValue = rec.orig; _i18nOrig.delete(n); }
+    return;
+  }
+  if (!_i18nIsEn()) return;
+  const src = n.nodeValue;
+  const out = _i18nTr(src);
+  if (out !== src) { _i18nOrig.set(n, { orig: src, shown: out }); n.nodeValue = out; }
+  else if (rec) _i18nOrig.delete(n);
+};
+const _i18nAttrs = (el) => {
+  if (!el || !el.getAttribute) return;
+  ['placeholder', 'title'].forEach(a => {
+    const v = el.getAttribute(a);
+    if (v == null) return;
+    const key = '__i18n_' + a;
+    const rec = el[key];
+    if (rec && v === rec.shown) { if (!_i18nIsEn()) { el.setAttribute(a, rec.orig); el[key] = null; } return; }
+    if (!_i18nIsEn()) return;
+    const out = _i18nTr(v);
+    if (out !== v) { el[key] = { orig: v, shown: out }; el.setAttribute(a, out); }
+  });
+};
+const _i18nWalk = (root) => {
+  if (!root) return;
+  if (root.nodeType === 3) return _i18nNode(root);
+  if (root.nodeType !== 1) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = w.nextNode())) _i18nNode(n);
+  _i18nAttrs(root);
+  root.querySelectorAll('[placeholder],[title]').forEach(_i18nAttrs);
+};
+let _i18nObs = null;
+const applyAppLanguage = (l) => {
+  localStorage.setItem('tp_app_lang', l);
+  document.documentElement.lang = l === 'en' ? 'en' : 'km';
+  _i18nWalk(document.body);
+};
+const startAutoTranslate = () => {
+  if (_i18nObs) return;
+  _i18nObs = new MutationObserver(muts => {
+    for (const m of muts) {
+      if (m.type === 'characterData') _i18nNode(m.target);
+      else if (m.type === 'attributes') _i18nAttrs(m.target);
+      else m.addedNodes.forEach(_i18nWalk);
+    }
+  });
+  _i18nObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title'] });
+  _i18nWalk(document.body);
+};
+
+/* (ខ) ក្នុង App រកបន្ទាត់៖
+     const [language, setLanguage] = useState('kh');
+   ប្តូរទៅជា៖
+     const [language, setLanguage] = useState(() => localStorage.getItem('tp_app_lang') || 'kh');
+
+   (គ) ក្នុង App ត្រង់ useEffect ដែលមាន meta viewport រកបន្ទាត់ "injectStyles();" (ក្នុង useEffect នោះ)
+       ហើយបន្ថែមបន្ទាត់នេះបន្ទាប់ពីវា៖
+     startAutoTranslate();
+
+   (ឃ) ក្នុងទំព័រ gateway ប្តូរប៊ូតុង KH / EN ទាំងពីរ៖
+     onClick={() => setLanguage('kh')}   ->   onClick={() => { setLanguage('kh'); applyAppLanguage('kh'); }}
+     onClick={() => setLanguage('en')}   ->   onClick={() => { setLanguage('en'); applyAppLanguage('en'); }}
+   --------------------------------------------------------------------- */
