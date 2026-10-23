@@ -2724,8 +2724,11 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
 
   return (
     <div
-      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-      style={{ height: '62px', paddingBottom: '6px', boxSizing: 'border-box' }}
+    style={{
+  height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  boxSizing: 'border-box'
+}}
     >
       <div className="flex justify-around items-center h-full px-1">
         {navItems.map((item) => {
