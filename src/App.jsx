@@ -2630,9 +2630,8 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
           }"
 
         >
-          <Icon className="w-4 h-4 shrink-0 text-white transition-colors" />
-
-          <span className="text-[11px] font-bold leading-none whitespace-nowrap text-white transition-colors">
+          <Icon className={`w-4 h-4 shrink-0 transition-colors {isActice ? 'text-[#FFFFFFF]' : 'text-slate-300'}`}/>
+          <span className={`text-[11px] font-hold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
             {item.label}
           </span>
         </button>
