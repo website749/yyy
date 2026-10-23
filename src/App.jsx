@@ -66,15 +66,7 @@ const playPingSound = () => {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
-    let sharedCtx = null;
-const getCtx = () => {
-  const C = window.AudioContext || window.webkitAudioContext;
-  if (!C) return null;
-  if (!sharedCtx) sharedCtx = new C();
-  if (sharedCtx.state === 'suspended') sharedCtx.resume().catch(() => {});
-  return sharedCtx;
-};
-['touchstart', 'click'].forEach(ev => window.addEventListener(ev, () => getCtx(), { once: true, passive: true }));
+    
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1);
@@ -116,7 +108,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return parseFloat((R * c).toFixed(2));
 };
-
 
 // SHA-256 Password hashing mechanism
 const hashPasswordPureJS = (s) => {
@@ -316,7 +307,7 @@ input, textarea, select {
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px) !important; }
 .pt-safe { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.pb-nav { padding-bottom: calc(34px + env(safe-area-inset-bottom, 0.35px)); }
+.pb-nav { padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px)); }
 
 .btn-gradient {
    background: linear-gradient(135deg, #0F2B5C, #1e3a8a);
@@ -341,10 +332,6 @@ input, textarea, select {
     
     .toggle-checkbox:checked { right: 0; border-color: #10b981; }
     .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
-
-@keyframes bell-ring{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-4deg)}}
-.bell-ring{animation:bell-ring 1.2s ease-in-out infinite;transform-origin:top center}
-
   `;
 };
 
@@ -390,7 +377,7 @@ const containsAbuse = (text) => {
 const StarryGalaxyCanvas = () => {
   const canvasRef = useRef(null);
 
-  usfecteEf(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -685,18 +672,6 @@ const CallPickerModal = ({ isOpen, title, contacts, onClose }) => {
     </div>
   );
 };
-
-const TR = {
-  'ទំព័រដើម':'Home','ព័ត៌មាន':'Info','របាយការណ៍':'Reports','គណនី':'Account',
-  'ស្វែងយល់':'Explore','មើលទាំងអស់':'View All','ជម្រើសទីតាំង':'Location Options',
-  'ទិន្នន័យដែលបានបញ្ចូល':'Added Data','គ្មានទិន្នន័យ':'No data','បន្ថែម':'Add',
-  'ទីតាំងខ្ញុំ':'My Location','របៀបប្រើប្រាស់':'How to use','ទូរស័ព្ទ':'Call','ផែនទី':'Map',
-  'ឈ្មោះអ្នកប្រើប្រាស់ឧបករណ៍នេះ':'Device username','រក្សាទុក':'Save','កែប្រែ':'Edit',
-  'ការកំណត់':'Settings','ចាកចេញ':'Logout','ផ្ញើសារ':'Send message','ទាំងអស់':'All',
-  'ឃុំ':'Commune','ភូមិ':'Village','ប៉ូលីស':'Police','ពេទ្យ':'Hospital','សាលារៀន':'School',
-  // បន្ថែមអត្ថបទផ្សេងទៀតនៅទីនេះ
-};
-export const tr = (kh) => (localStorage.getItem('tp_app_lang') === 'en' && TR[kh]) || kh;
 
 export default function App() {
   // Streamlining initial state load from local storage for 0ms render delay (Offline-First)
@@ -1291,14 +1266,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         return false;
     });
   }, [notifications, user, isAdmin, chatTargets]);
-  
-  useEffect(() => {
-  try {
-    if ('setAppBadge' in navigator) {
-      myNotifications.length > 0 ? navigator.setAppBadge(myNotifications.length) : navigator.clearAppBadge();
-    }
-  } catch (e) {}
-}, [myNotifications]);
+
   const myChatId = isAdmin ? 'admin_ramit_fixed_uid' : (user?.uid || 'guest_uid');
   const myChatName = isAdmin ? 'ADMIN-PAGE' : profile?.username;
   const myChatAvatar = isAdmin ? (usersList.find(u => u.id === 'admin_ramit_fixed_uid')?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png') : profile?.avatar;
@@ -2038,8 +2006,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         </div>
       );
   }
-  
-  
+
   if (currentPage === 'gateway') {
     return (
       <div className="fixed inset-0 z-[100] flex flex-col md:flex-row font-khmer bg-white text-slate-800 animate-in fade-in duration-500 w-full overflow-hidden">
@@ -2592,8 +2559,6 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 
 const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
   const lang = localStorage.getItem('tp_app_lang') || 'kh';
-  const [language, setLanguageState] = useState(() => localStorage.getItem('tp_app_lang') || 'kh');
-const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguageState(l); };
   const L = (kh, en) => (lang === 'en' ? en : kh);
 
   const navItems = [
@@ -2605,40 +2570,36 @@ const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguage
   if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-  <div
-  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-  style={{ bottom: '-4px', paddingBottom: 0, marginBottom: 0 }}
->
-  
-<div
-  className="flex justify-around items-end px-1"
-  style={{
-    height: 'calc(40px + env(safe-area-inset-bottom, 0px) * 0.5)',
-    paddingBottom: '3px'
-  }}
->
-
-    {navItems.map((item) => {
-      const isActive = currentView === item.id;
-      const Icon = item.icon;
-      return (
-        <button
-          key={item.id}
-          onClick={() => setCurrentView(item.id)}
-          className="flex-1 h-11 flex flex-row items-center justify-center gap-1.5 px-1 rounded-xl active:scale-95 select-none ${
-          isActive ? 'bg-white/10' : ''
-          }"
-
-        >
-          <Icon className={`w-4 h-4 shrink-0 transition-colors {isActice ? 'text-[#FFFFFFF]' : 'text-slate-300'}`}/>
-          <span className={`text-[11px] font-hold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
-            {item.label}
-          </span>
-        </button>
-      );
-    })}
-  </div>
-</div>
+    <div
+      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+      // ✅ [ចំណុច 1] រាវរករន្តកាត់នៅខាងក្រោម (gesture bar) ឱ្យទាបជាងមុន:
+      // រាប់បញ្ចូលកម្ពស់ជ្រុងសុវត្ថិភាព (safe-area) ទាំងមូល ដូច្នេះ របាររាវរក (nav bar) ឡើងដល់គែមខាងក្រោមជ្រុងក្បួនឧបករណ៍ខាងក្រោម។
+      // ក្នុងករណីឧបករណ៍ដែលគ្មាន safe-area (ឧបករណ៍ទូរស័ព្ទដៃធម្មតា) វាបន្ថែម 8px ដើម្បីឱ្យវាទាបជាងកន្លែងរាវរកលំនាំដើម។
+      style={{
+        bottom: 0,
+        paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)',
+        marginBottom: 0,
+      }}
+    >
+      <div className="flex justify-around items-center h-[48px] px-1">
+        {navItems.map((item) => {
+          const isActive = currentView === item.id;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id)}
+              className="flex-1 h-full flex flex-row items-center justify-center gap-1 active:scale-95 transition-transform select-none"
+            >
+              <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+              <span className={`text-[10px] font-bold leading-none ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
@@ -2685,7 +2646,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                  </button>
 
                  <div className="relative">
-                     <button className="p-1.5 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
+                     <button className="p-2 bg-slate-50 rounded-full active:scale-95 transition shadow-sm border border-slate-200 relative" onClick={() => setNotificationsOpen(!notificationsOpen)}>
                         <Bell className="w-4.5 h-4.5 text-[#0F2B5C]" />
                         {/* ✅ [ចំណុច 4] Badge ស្ថិតនៅជ្រុងខាងលើ-ខាងស្តាំ តម្រឹមជាមួយឆ្អឹងជំនីរ ដោយស្ថិតក្នុងប៊ូតុង (relative) */}
                         {notifications && notifications.length > 0 && (
@@ -2802,7 +2763,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
 
   return (
     // ✅ [ចំណុច 10] UI ស្អាតសម្រាប់ទូរស័ព្ទ — គម្លាតតូចជាង (space-y-3), ខ្នាតអក្សរតម្រឹមឡើងវិញ
-    <div className="space-y-3 pt-2 w-full flex-1 font-khmer">
+    <div className="space-y-3 pt-1 w-full flex-1 font-khmer">
       {/* Banner: បន្ថយកម្ពស់ 110px → 92px ឲ្យកាន់តែស្អាតលើ screen តូច */}
       <div className="bg-[#0F2B5C] rounded-[16px] p-3.5 relative overflow-hidden flex flex-row items-center justify-between w-full min-h-[92px] shadow-md">
          <div className="absolute top-0 right-0 w-32 h-full bg-[#38BDF8]/10 rounded-l-[80px] z-0 pointer-events-none"></div>
@@ -2888,7 +2849,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const Infoview = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
+const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
@@ -2927,17 +2888,17 @@ const Infoview = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
             safeStr(l.district).toLowerCase().includes(term)
         );
         
-        if (searchTerms.length > 0) return matchesSearch; // វាយស្វែងរក = បង្ហាញទាំងអស់ដែលត្រូវ មិនកំណត់ Tab/Filter
-const isRatanak = l.district === 'រតនមណ្ឌល';
-if (activeTab === 'រតនមណ្ឌល' && !isRatanak) return false;
-if (activeTab === 'ស្រុកផ្សេងៗ' && isRatanak) return false;
-let matchesLevel = true;
-if (activeFilter === 'ឃុំ' && l.category !== 'ឃុំ') matchesLevel = false;
-if (activeFilter === 'ភូមិ' && l.category !== 'ភូមិ') matchesLevel = false;
-if (activeFilter === 'ប៉ូលីស' && l.category !== 'ប៉ូលិស') matchesLevel = false;
-if (activeFilter === 'ពេទ្យ' && l.category !== 'មន្ទីរពេទ្យ' && l.category !== 'ពេទ្យ') matchesLevel = false;
-if (activeFilter === 'សាលារៀន' && l.category !== 'សាលារៀន') matchesLevel = false;
-return matchesLevel;
+        const isRatanak = l.district === 'រតនមណ្ឌល';
+        if (activeTab === 'រតនមណ្ឌល' && !isRatanak) return false;
+        if (activeTab === 'ស្រុកផ្សេងៗ' && isRatanak) return false;
+        
+        let matchesLevel = true;
+        if (activeFilter === 'ឃុំ' && l.category !== 'ឃុំ') matchesLevel = false;
+        if (activeFilter === 'ភូមិ' && l.category !== 'ភូមិ') matchesLevel = false;
+        if (activeFilter === 'ប៉ូលីស' && l.category !== 'ប៉ូលិស') matchesLevel = false;
+        if (activeFilter === 'ពេទ្យ' && l.category !== 'មន្ទីរពេទ្យ' && l.category !== 'ពេទ្យ') matchesLevel = false;
+        if (activeFilter === 'សាលារៀន' && l.category !== 'សាលារៀន') matchesLevel = false;
+        return matchesSearch && matchesLevel;
     });
   }, [locations, searchQuery, activeTab, activeFilter]);
 
@@ -3116,20 +3077,23 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
 
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
-  const countMonth = (m) => {
-  const s = new Date(currentYear, m, 1).getTime();
-  const e = new Date(currentYear, m + 1, 0, 23, 59, 59).getTime();
-  return {
-    users: (usersList || []).filter(u => u && (u.timestamp || 0) >= s && (u.timestamp || 0) <= e).length + (m === currentMonth ? fakeCount : 0),
-    entries: (locations || []).filter(l => l && (l.timestamp || 0) >= s && (l.timestamp || 0) <= e).length,
-  };
-};
-const SRC = { 6: 3, 7: 5, 3: null, 5: null }; // កក្កដា←មេសា, សីហា←មិថុនា
-const monthlyData = khmerMonths.map((name, index) => {
-  if (index in SRC) return { name, ...(SRC[index] === null ? { users: 0, entries: 0 } : countMonth(SRC[index])) };
-  if (index === 4) return { name, users: 50, entries: countMonth(4).entries }; // រក្សាខែឧសភាដូចដើម
-  return { name, ...countMonth(index) };
-});
+  const monthlyData = khmerMonths.map((name, index) => {
+    // Set specific value for May (ឧសភា is index 4)
+    if (index === 4) {
+        return { name, users: 50, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 4, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 5, 0, 23, 59, 59).getTime()).length };
+    }
+    // Set specific value for July (កក្កដា is index 6)
+    if (index === 6) {
+        return { name, users: 230, entries: (locations || []).filter(l => l && (l.timestamp || 0) >= new Date(currentYear, 6, 1).getTime() && (l.timestamp || 0) <= new Date(currentYear, 7, 0, 23, 59, 59).getTime()).length };
+    }
+    
+    const startM = new Date(currentYear, index, 1).getTime();
+    const endM = new Date(currentYear, index + 1, 0, 23, 59, 59).getTime();
+    let usersInMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startM && (u.timestamp || 0) <= endM).length;
+    if (index === currentMonth) usersInMonth += fakeCount;
+    const entriesInMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startM && (l.timestamp || 0) <= endM).length;
+    return { name, users: usersInMonth, entries: entriesInMonth };
+  });
 
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
@@ -4260,13 +4224,6 @@ const ChatView = ({ chats = [], user, profile, showToast, db, appId, setCurrentV
 }
 
 const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAdmin, setIsAdmin, setCurrentView, usersList = [], isSoundMuted, setIsSoundMuted }) => {
-
-  const getPosOnce = () => new Promise(res => {
-  if (!navigator.geolocation) return res(null);
-  navigator.geolocation.getCurrentPosition(
-    p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
-    () => res(null), { timeout: 6000, maximumAge: 60000 });
-});
   const currentAdminProfile = isAdmin ? (usersList.find(u => u.id === 'admin_ramit_fixed_uid') || { username: 'ADMIN-SUPPORT', avatar: profile?.avatar }) : null;
   const displayProfile = isAdmin ? currentAdminProfile : profile;
 
@@ -4376,14 +4333,14 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
           }).catch(()=>{});
        }
 
-      if (newAttempts >= 3) {
-  const newLockout = Date.now() + 15 * 60 * 1000;
-  setLockoutTime(newLockout);
-  localStorage.setItem('admin_lockout', newLockout);
-  showToast('⚠️ អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ! Admin កំពុងតាមដានអ្នក!!', 'error', 8000);
-} else {
-  showToast(`លេខសម្ងាត់មិនត្រឹមត្រូវ (${newAttempts}/3)`, 'error');
-}
+       if (newAttempts >= 5) {
+          const newLockout = Date.now() + 15 * 60 * 1000;
+          setLockoutTime(newLockout);
+          localStorage.setItem('admin_lockout', newLockout);
+          showToast('ព្យាយាមច្រើនដងពេក! សូមរង់ចាំ ១៥ នាទី។', 'error');
+       } else {
+          showToast('លេខសម្ងាត់មិនត្រឹមត្រូវ', 'error');
+       }
        setPwdInput('');
     } finally {
        setIsLoginLoading(false);
@@ -4619,125 +4576,17 @@ const AdminLiveTrackerMap = ({ usersList }) => {
 
         const marker = L.marker([lat, lng], { icon: uIcon }).addTo(map);
 
-        const GMAPS_KEY = "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg";
-const HACKER_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#020a05' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#22c55e' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#000000' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#03140a' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#0f3d1f' }] },
-  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#14532d' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-];
-
-const loadGoogleMaps = () => new Promise((resolve, reject) => {
-  if (window.google && window.google.maps) return resolve(window.google.maps);
-  const existing = document.getElementById('gmaps-script');
-  if (existing) { existing.addEventListener('load', () => resolve(window.google.maps)); return; }
-  const s = document.createElement('script');
-  s.id = 'gmaps-script';
-  s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}`;
-  s.async = true;
-  s.onload = () => resolve(window.google.maps);
-  s.onerror = reject;
-  document.head.appendChild(s);
-});
-
-const AdminLiveTrackerMap = ({ usersList }) => {
-  const mapDivRef = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef({});
-  const geoCacheRef = useRef({});
-  const fittedRef = useRef(false);
-  const [mapsError, setMapsError] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  const realUsers = useMemo(() => (usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ'), [usersList]);
-  const located = useMemo(() => realUsers.filter(u => u.lastLocation && u.lastLocation.lat && u.lastLocation.lng), [realUsers]);
-  const onlineCount = realUsers.filter(u => (Date.now() - (u.lastActive || 0)) < 120000).length;
-
-  useEffect(() => {
-    let cancelled = false;
-    loadGoogleMaps().then(maps => {
-      if (cancelled || !mapDivRef.current || mapRef.current) return;
-      mapRef.current = new maps.Map(mapDivRef.current, {
-        center: { lat: 13.0, lng: 103.0 }, zoom: 7, styles: HACKER_STYLE,
-        disableDefaultUI: true, zoomControl: true, backgroundColor: '#020a05',
-      });
-      setReady(true);
-    }).catch(() => setMapsError(true));
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (!ready || !mapRef.current) return;
-    const maps = window.google.maps;
-    const map = mapRef.current;
-    const seen = new Set();
-    const geocoder = new maps.Geocoder();
-    const info = markersRef.current.__info || (markersRef.current.__info = new maps.InfoWindow());
-
-    located.forEach(u => {
-      seen.add(u.id);
-      const pos = { lat: u.lastLocation.lat, lng: u.lastLocation.lng };
-      const online = (Date.now() - (u.lastActive || 0)) < 120000;
-      let m = markersRef.current[u.id];
-      const icon = { path: maps.SymbolPath.CIRCLE, scale: 7, fillColor: online ? '#22c55e' : '#166534', fillOpacity: 1, strokeColor: '#bbf7d0', strokeWeight: 1.5 };
-      if (!m) {
-        m = new maps.Marker({ position: pos, map, icon, title: safeStr(u.username) });
-        m.addListener('click', () => {
-          const key = `${pos.lat.toFixed(3)},${pos.lng.toFixed(3)}`;
-          const show = (place) => {
-            info.setContent(`<div style="font-family:monospace;color:#052e16;font-size:12px"><b>${safeStr(u.username).replace(/</g, '&lt;')}</b><br/>${place}<br/>${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}</div>`);
-            info.open(map, m);
-          };
-          if (geoCacheRef.current[key]) return show(geoCacheRef.current[key]);
-          geocoder.geocode({ location: pos }, (res, status) => {
-            const place = status === 'OK' && res[0] ? res[0].formatted_address.replace(/</g, '&lt;') : '(មិនស្គាល់អាសយដ្ឋាន)';
-            geoCacheRef.current[key] = place;
-            show(place);
-          });
-        });
-        markersRef.current[u.id] = m;
-      } else {
-        m.setPosition(pos);
-        m.setIcon(icon);
-      }
-    });
-
-    Object.keys(markersRef.current).forEach(id => {
-      if (id !== '__info' && !seen.has(id)) { markersRef.current[id].setMap(null); delete markersRef.current[id]; }
-    });
-
-    if (!fittedRef.current && located.length > 0) {
-      const b = new maps.LatLngBounds();
-      located.forEach(u => b.extend({ lat: u.lastLocation.lat, lng: u.lastLocation.lng }));
-      map.fitBounds(b, 60);
-      if (located.length === 1) map.setZoom(13);
-      fittedRef.current = true;
-    }
-  }, [located, ready]);
-
-  return (
-    <div className="w-full space-y-3 font-mono">
-      <div className="grid grid-cols-3 gap-2 text-center">
-        {[['អ្នកប្រើសរុប', realUsers.length], ['មានទីតាំង', located.length], ['Online', onlineCount]].map(([label, n]) => (
-          <div key={label} className="bg-black border border-green-700/60 rounded-lg py-2">
-            <div className="text-green-500 text-[10px] font-khmer">{label}</div>
-            <div className="text-green-400 text-xl font-black">{n}</div>
-          </div>
-        ))}
-      </div>
-      {mapsError ? (
-        <div className="h-[60vh] flex items-center justify-center bg-black border border-green-800 rounded-xl text-green-500 text-[12px] font-khmer p-4 text-center">
-          មិនអាចផ្ទុក Google Maps បានទេ។ សូមពិនិត្យ API key (Maps JavaScript API ត្រូវបានបើក និង Referrer ត្រឹមត្រូវ)។
-        </div>
-      ) : (
-        <div ref={mapDivRef} className="w-full h-[60vh] min-h-[400px] rounded-xl overflow-hidden border border-green-800 bg-black" />
-      )}
-    </div>
-  );
-};
+        // ខ្សែ Digital (Digital Wire) ភ្ជាប់ពី HQ ទៅកាន់ User
+        L.polyline([
+          [12.9840, 102.9348],
+          [lat, lng]
+        ], {
+          color: color,
+          weight: 2,
+          dashArray: '5, 10',
+          opacity: 0.6,
+          className: 'animate-pulse'
+        }).addTo(map);
 
         // មុខងារចុចដើម្បីបើក Google Maps
         marker.on('click', () => {
@@ -4798,8 +4647,6 @@ const AdminLiveTrackerMap = ({ usersList }) => {
 
 const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
-  const [sendMode, setSendMode] = useState('all');
-  const [selectedMsgTargets, setSelectedMsgTargets] = useState([]);
   const [editingLoc, setEditingLoc] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUsersForDelete, setSelectedUsersForDelete] = useState([]);
@@ -5334,31 +5181,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
     };
     r.readAsDataURL(file);
   };
-  const handleSendAdminMessage = () => {
-  const text = broadcastMessage.trim();
-  if (!text) return showToast('សូមសរសេរសារសិន', 'error');
-  if (!db) return showToast('Offline Sandbox Mode');
-  const realUsers = (usersList || []).filter(u => u && u.id && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ');
-  const targets = sendMode === 'all' ? realUsers : realUsers.filter(u => selectedMsgTargets.includes(u.id));
-  if (targets.length === 0) return showToast('សូមជ្រើសរើសអ្នកទទួលយ៉ាងហោចណាស់ម្នាក់', 'error');
-  openConfirm('ផ្ញើសារ', `ផ្ញើសារទៅ ${targets.length} នាក់?`, async () => {
-    const base = { msgType: 'text', userId: 'admin_ramit_fixed_uid', userName: 'ADMIN-SUPPORT', seen: false, edited: false, text };
-    if (sendMode === 'all') {
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA'), { ...base, target: 'all', timestamp: Date.now() }).catch(() => {});
-    }
-    for (const u of targets) {
-      if (sendMode === 'select') {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'CHAT_DATA'), { ...base, target: u.id, timestamp: Date.now() }).catch(() => {});
-      }
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
-        targetId: u.id, title: '📢 សារពី Admin', msg: text, type: 'info', timestamp: Date.now()
-      }).catch(() => {});
-    }
-    setBroadcastMessage('');
-    setSelectedMsgTargets([]);
-    showToast(`បានផ្ញើសារទៅ ${targets.length} នាក់ ✅`);
-  });
-};
+
   const handleSendBroadcast = async () => {
     if (!broadcastMessage.trim()) return showToast('សូមបញ្ជូលសារប្រកាសសិន', 'error');
     if (!db) return showToast('Offline Sandbox Mode');
@@ -5603,7 +5426,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       <div className="flex w-full gap-2 overflow-x-auto hide-scrollbar pb-2 pt-1 touch-pan-x scroll-smooth">
         {[
           {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
-          {id: 'send_msg', label: 'ផ្ញើសារ'},
           {id: 'live_map', label: 'ផែនទីអ្នកប្រើ (Live)'},
           {id: 'users', label: 'គ្រប់គ្រងសមាជិក'},
           {id: 'how_to', label: 'គ្រប់គ្រង របៀបប្រើប្រាស់'},
@@ -5617,29 +5439,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       </div>
 
       <div className="min-h-[300px]">
-        {activeTab === 'send_msg' && (
-  <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3 animate-in fade-in">
-    <h3 className="font-black text-[12.5px] border-l-4 border-[#38BDF8] pl-2 text-[#0F2B5C]">ផ្ញើសារ</h3>
-    <div className="flex bg-slate-100 p-1 rounded-xl">
-      {[['all', 'All User'], ['select', 'Select']].map(([k, label]) => (
-        <button key={k} onClick={() => setSendMode(k)} className={`flex-1 py-2 rounded-lg text-[12px] font-black ${sendMode === k ? 'bg-[#0F2B5C] text-white' : 'text-slate-500'}`}>{label}</button>
-      ))}
-    </div>
-    {sendMode === 'select' && (
-      <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
-        {(usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ').map(u => (
-          <label key={u.id} className="flex items-center gap-2.5 p-2.5 cursor-pointer">
-            <input type="checkbox" checked={selectedMsgTargets.includes(u.id)}
-              onChange={e => setSelectedMsgTargets(e.target.checked ? [...selectedMsgTargets, u.id] : selectedMsgTargets.filter(x => x !== u.id))} />
-            <span className="text-[12.5px] font-bold text-slate-700">{safeStr(u.username)}</span>
-          </label>
-        ))}
-      </div>
-    )}
-    <textarea value={broadcastMessage} onChange={e => setBroadcastMessage(e.target.value)} placeholder="សរសេរសារនៅទីនេះ..." className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[14px] h-28 resize-none font-medium" />
-    <button onClick={handleSendAdminMessage} className="w-full btn-gradient py-3 rounded-xl font-black text-[13px]">ផ្ញើសារ</button>
-  </div>
-)}
           {activeTab === 'users' && (
              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4 animate-in fade-in duration-200">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
@@ -6234,35 +6033,6 @@ const LocationCard = ({ location, isFavorite, onToggleFavorite, onClick }) => {
   const displayTitle = safeStr(location.title);
   const contactLines = parseContactsList(location);
   const theme = getCategoryTheme(location.category);
-  const LocationCard = ({ location, isFavorite, onToggleFavorite, onClick }) => {
-  const theme = getCategoryTheme(location.category);
-  const c = parseContactsList(location)[0];
-  return (
-    <div onClick={onClick} className="col-span-full flex gap-3 bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm active:scale-[0.99] transition cursor-pointer">
-      <img src={location.image} alt="" className="w-20 h-20 rounded-xl object-cover shrink-0 bg-slate-100" />
-      <div className="flex-1 min-w-0 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between gap-2">
-            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${theme.badge}`}>{theme.emoji} {safeStr(location.category)}</span>
-            <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className="p-1">
-              <Pin className={`w-4 h-4 ${isFavorite ? 'fill-emerald-500 text-emerald-500' : 'text-slate-300'}`} />
-            </button>
-          </div>
-          <h3 className="font-black text-[13.5px] text-slate-900 line-clamp-1 mt-1">{safeStr(location.title)}</h3>
-          <p className="text-[11px] text-slate-500 font-bold line-clamp-1">📍 {safeStr(location.commune)} {safeStr(location.village)}</p>
-        </div>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1"><Eye className="w-3 h-3" /> {location.views || 0}</span>
-          {c && (
-            <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 bg-emerald-500 text-white text-[11px] font-black px-3 py-1 rounded-lg">
-              <Phone className="w-3 h-3" /> {safeStr(c.phone)}
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between group relative transition-all hover:shadow-md">
