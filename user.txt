@@ -1,0 +1,188 @@
+/* =====================================================================
+   PATCH — កែតែ ៤ កន្លែងប៉ុណ្ណោះ (មិនប៉ះពាល់កូដផ្សេងទេ)
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   ជំហាន ១ — កែ import recharts (ដើម្បីបង្ហាញលេខលើកំពូលរបារ)
+   រកបន្ទាត់នេះនៅខាងលើគេ៖
+     LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer
+   ប្តូរទៅជា៖
+     LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList
+   --------------------------------------------------------------------- */
+
+
+/* ---------------------------------------------------------------------
+   ជំហាន ២ — កែ handleVisitorStats (រាប់អ្នកចូលតាមខែ ដោយស្វ័យប្រវត្តិ)
+   រកកូដនេះ៖
+
+          await setDoc(statsRef, { 
+              visitorCount: increment(1),
+              fakeUsers: increment(fakeInc)
+          }, { merge: true });
+
+   ជំនួសដោយកូដនេះ៖
+   --------------------------------------------------------------------- */
+
+          const _now = new Date();
+          const _monthKey = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`;
+          await setDoc(statsRef, { 
+              visitorCount: increment(1),
+              fakeUsers: increment(fakeInc),
+              monthly: { [_monthKey]: increment(1) }
+          }, { merge: true });
+
+
+/* ---------------------------------------------------------------------
+   ជំហាន ៣ — ជំនួស const BottomNav = ... ទាំងមូល ដោយកូដនេះ
+   (ពី "const BottomNav = (" ដល់ "};" មុន "const TopHeader")
+   --------------------------------------------------------------------- */
+
+const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
+  const lang = localStorage.getItem('tp_app_lang') || 'kh';
+  const L = (kh, en) => (lang === 'en' ? en : kh);
+
+  const navItems = [
+    { id: 'home',    icon: Home,       label: L('ទំព័រដើម',  'Home') },
+    { id: 'info',    icon: Info,       label: L('ព័ត៌មាន',   'Info') },
+    { id: 'reports', icon: TrendingUp, label: L('របាយការណ៍', 'Reports') },
+    { id: 'account', icon: User,       label: L('គណនី',      'Account') },
+  ];
+  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
+
+  return (
+    <div
+      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
+      <div className="flex justify-around items-center px-1" style={{ height: '56px' }}>
+        {navItems.map((item) => {
+          const isActive = currentView === item.id;
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id)}
+              className="flex-1 h-full flex flex-col items-center justify-center gap-0.5 active:scale-95 select-none transition-transform"
+            >
+              <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`} />
+              <span className={`text-[10.5px] font-bold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
+/* ---------------------------------------------------------------------
+   ជំហាន ៤ — ជំនួស const ReportsView = ... ទាំងមូល ដោយកូដនេះ
+   (ពី "const ReportsView = (" ដល់ "};" មុន "// Category Color mapping helpers")
+   --------------------------------------------------------------------- */
+
+const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
+  const fakeCount = appStats?.fakeUsers || 0;
+  const totalUsers = (usersList || []).length + fakeCount;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  const startOfMonthMs = new Date(currentYear, currentMonth, 1).getTime();
+  const startOfYearMs = new Date(currentYear, 0, 1).getTime();
+
+  const usersThisMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startOfMonthMs).length + fakeCount;
+  const usersThisYear = (usersList || []).filter(u => u && (u.timestamp || 0) >= startOfYearMs).length + fakeCount;
+
+  const locsThisMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfMonthMs).length;
+  const locsThisYear = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfYearMs).length;
+
+  const stats = [
+    { label: 'អ្នកប្រើប្រាស់សសរុប', count: totalUsers + 1, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-500', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+  ];
+
+  const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+  
+  const countMonth = (m) => {
+    const s = new Date(currentYear, m, 1).getTime();
+    const e = new Date(currentYear, m + 1, 0, 23, 59, 59).getTime();
+    return {
+      users: (usersList || []).filter(u => u && (u.timestamp || 0) >= s && (u.timestamp || 0) <= e).length + (m === currentMonth ? fakeCount : 0),
+      entries: (locations || []).filter(l => l && (l.timestamp || 0) >= s && (l.timestamp || 0) <= e).length,
+    };
+  };
+
+  // ទិន្នន័យអ្នកប្រើប្រាស់ពិតប្រាកដ (ខែចាស់) — index ខែ: មិថុនា=5, កក្កដា=6, សីហា=7, កញ្ញា=8, តុលា=9
+  // ខែផ្សេងទៀត = 0 ។ ខែថ្មីៗ (វិច្ឆិកា, ធ្នូ...) នឹងរាប់ដោយស្វ័យប្រវត្តិពីអ្នកចូលប្រើ App
+  const BASE_USERS = { 5: 5, 6: 50, 7: 203, 8: 802, 9: 12 };
+
+  // ទីតាំងបញ្ចូល (រក្សាទុកតាមតក្កដើម ដូចមុន)
+  const SRC = { 6: 3, 7: 5, 3: null, 5: null };
+  const entriesOf = (index) => {
+    if (index in SRC) return SRC[index] === null ? 0 : countMonth(SRC[index]).entries;
+    return countMonth(index).entries;
+  };
+
+  const monthlyData = khmerMonths.map((name, index) => {
+    const mm = String(index + 1).padStart(2, '0');
+    const liveThisMonth = appStats?.monthly?.[`${currentYear}-${mm}`] || 0; // អ្នកចូលថ្មីក្នុងខែនោះ (រាប់ស្វ័យប្រវត្តិ)
+    const users = (BASE_USERS[index] || 0) + liveThisMonth;
+    return { name, users, entries: entriesOf(index) };
+  });
+
+  return (
+    <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
+      <h1 className="text-[13px] md:text-[15px] font-black text-[#0F2B5C] border-l-4 border-[#0F2B5C] pl-2">របាយការណ៍ទិន្នន័យជាក់ស្ដែង</h1>
+      
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+         {stats.map((s, i) => (
+           <div key={i} className="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden flex flex-col justify-between min-h-[75px]">
+              <p className="text-[10px] md:text-[11px] font-bold text-slate-500 leading-normal mb-1">{s.label}</p>
+              <h3 className="text-xl md:text-2xl font-black mt-auto">{s.count}</h3>
+              <p className="text-[9px] text-slate-400 mt-0.5">{s.desc}</p>
+           </div>
+         ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 flex-1">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#38BDF8] pl-2">កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ</h3>
+           <div className="w-full" style={{ height: 220 }}>
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={monthlyData} margin={{ top: 18, right: 4, left: -18, bottom: 0 }}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                   <XAxis dataKey="name" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 8, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
+                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
+                   <Tooltip cursor={false} contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
+                   <Bar dataKey="users" fill="#38BDF8" radius={[3,3,0,0]} barSize={14}>
+                     <LabelList dataKey="users" position="top" formatter={(v) => (v > 0 ? v : '')} style={{ fontSize: 9, fontWeight: 800, fill: '#0F2B5C' }} />
+                   </Bar>
+                 </BarChart>
+               </ResponsiveContainer>
+            </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+           <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#0F2B5C] pl-2">ស្ថិតិទីតាំងដែលបានបញ្ចូល</h3>
+           <div className="flex-1 min-h-[160px] w-full">
+               <ResponsiveContainer width="100%" height="100%">
+                 <LineChart data={monthlyData}>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
+                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
+                   <Tooltip contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
+                   <Line type="monotone" dataKey="entries" stroke="#0F2B5C" strokeWidth={2} dot={{r: 3, fill: '#0F2B5C'}} />
+                 </LineChart>
+               </ResponsiveContainer>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};
