@@ -343,13 +343,6 @@ input, textarea, select {
     .toggle-checkbox:checked + .toggle-label { background-color: #10b981; }
 
 @keyframes bell-ring{0%,100%{transform:rotate(0)}15%{transform:rotate(14deg)}30%{transform:rotate(-12deg)}45%{transform:rotate(8deg)}60%{transform:rotate(-4deg)}}
-.skeu-admin{background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 1px,rgba(0,0,0,.025) 1px 3px),linear-gradient(180deg,#d9dce1,#aeb3bb);border:1px solid #7d828a;border-radius:18px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),inset 0 -2px 6px rgba(0,0,0,.25),0 4px 14px rgba(0,0,0,.35)}
-.skeu-admin [class~="bg-white"]{background:linear-gradient(180deg,#fff 0%,#f4f1e9 60%,#e7e2d6 100%)!important;border-color:#a9a293!important;box-shadow:inset 0 1px 0 #fff,0 1px 3px rgba(0,0,0,.35)!important}
-.skeu-admin [class~="bg-slate-50"],.skeu-admin [class~="bg-slate-100"]{background:linear-gradient(180deg,#e4dfd3,#f3f0e8)!important;border-color:#b3ac9c!important;box-shadow:inset 0 2px 4px rgba(0,0,0,.18)!important}
-.skeu-admin input:not([type=checkbox]):not([type=file]),.skeu-admin textarea,.skeu-admin select{background:#f7f5ee!important;border:1px solid #8f897a!important;box-shadow:inset 0 2px 5px rgba(0,0,0,.3)!important}
-.skeu-admin [class~="bg-[#0F2B5C]"],.skeu-admin .btn-gradient{background:linear-gradient(180deg,#5b8bd6 0%,#2a5aa8 48%,#123a7a 52%,#0F2B5C 100%)!important;border:1px solid #081a3a!important;text-shadow:0 -1px 0 rgba(0,0,0,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 4px rgba(0,0,0,.45)!important}
-.skeu-admin [class~="bg-[#10b981]"],.skeu-admin [class~="bg-emerald-600"]{background:linear-gradient(180deg,#6fdca8 0%,#22b574 48%,#0e9a5e 52%,#0b7d4c 100%)!important;border:1px solid #065a36!important;text-shadow:0 -1px 0 rgba(0,0,0,.45);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 4px rgba(0,0,0,.4)!important}
-.skeu-admin button:active{transform:translateY(1px)}
 .bell-ring{animation:bell-ring 1.2s ease-in-out infinite;transform-origin:top center}
 
   `;
@@ -2731,13 +2724,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
 
   return (
     <div
-  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
-  style={{
-    paddingBottom: 'min(env(safe-area-inset-bottom, 0px), 18px)',
-    height: 'calc(56px + min(env(safe-area-inset-bottom, 0px), 18px))'
-  }}
->
-      <div className="flex justify-around items-center px-1" style={{ height: '56px' }}>
+      className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+      style={{ height: '62px', paddingBottom: '6px', boxSizing: 'border-box' }}
+    >
+      <div className="flex justify-around items-center h-full px-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
@@ -5551,7 +5541,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
   const registeredUsers = (usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ');
   const onlineNow = registeredUsers.filter(u => (Date.now() - (u.lastActive || 0)) < 120000).length;
   return (
-    <div className="skeu-admin w-full max-w-5xl mx-auto space-y-3 pb-10 flex-1 font-khmer text-slate-800 animate-in fade-in">
+    <div className="w-full max-w-5xl mx-auto space-y-3 pb-10 flex-1 font-khmer text-slate-800 animate-in fade-in">
       <ConfirmModal isOpen={!!confirmAction} title={confirmAction?.title} message={confirmAction?.message} onConfirm={handleConfirm} onCancel={() => setConfirmAction(null)} />
 
       {/* Edit Location Modal */}
