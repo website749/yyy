@@ -2739,7 +2739,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
        right: 0,
        bottom: 0,
        zIndex: 99999,
-       height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+       height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
        boxSizing: 'border-box',
        backgroundColor: '#0F2B5C',
