@@ -278,7 +278,7 @@ const injectStyles = () => {
 
 html, body, #root { 
   overscroll-behavior-y: none; 
-  background-color: #0F2B5C;
+  background-color:  #f8fafc;
   color: #0f172a; 
   margin: 0; 
   padding: 0; 
@@ -4752,60 +4752,8 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
   );
 };
 
-const AdminLiveTrackerMap = ({ usersList }) => {
-  const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
+const GMAPS_KEY = "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg";
 
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    const initMap = () => {
-      const L = window.L;
-      if (!L) return;
-
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-      }
-
-      // បង្កើតផែនទី និងកំណត់ចំនុចកណ្តាលនៅស្រុករតនមណ្ឌល
-      const map = L.map(mapContainerRef.current, {
-        zoomControl: true,
-        attributionControl: false
-      }).setView([12.9840, 102.9348], 7); 
-      mapInstanceRef.current = map;
-
-      // ប្រើប្រាស់ Dark Mode Map ដើម្បីរំលេចខ្សែ Digital
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-      // រូបតំណាងបញ្ជាការដ្ឋានកណ្តាល (HQ)
-      const centerIcon = L.divIcon({
-        html: `<div class="w-6 h-6 bg-rose-600 rounded-full border-2 border-white animate-pulse shadow-[0_0_20px_#e11d48]"></div>`,
-        className: ''
-      });
-      L.marker([12.9840, 102.9348], { icon: centerIcon }).addTo(map).bindPopup("ទីបញ្ជាការកណ្តាល (HQ)");
-
-      const validUsers = (usersList || []).filter(u => u.lastLocation && u.lastLocation.lat && u.lastLocation.lng);
-
-      validUsers.forEach(u => {
-        const lat = u.lastLocation.lat;
-        const lng = u.lastLocation.lng;
-        // កំណត់ស្ថានភាព Online ពណ៌បៃតង, Offline ពណ៌ផ្ទៃមេឃ
-        const isOnline = (Date.now() - (u.lastActive || 0)) < 120000;
-        const color = isOnline ? '#10b981' : '#38BDF8';
-
-        // រូបតំណាង User លើផែនទី
-        const uIcon = L.divIcon({
-          html: `
-            <div style="border-color: ${color}; box-shadow: 0 0 12px ${color};" class="relative w-9 h-9 rounded-full border-2 overflow-hidden bg-slate-900 transition-transform hover:scale-110 cursor-pointer">
-              <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-full h-full object-cover"/>
-            </div>
-          `,
-          className: ''
-        });
-
-        const marker = L.marker([lat, lng], { icon: uIcon }).addTo(map);
-
-        const GMAPS_KEY = "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg";
 const HACKER_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#020a05' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#22c55e' }] },
@@ -4921,63 +4869,6 @@ const AdminLiveTrackerMap = ({ usersList }) => {
       ) : (
         <div ref={mapDivRef} className="w-full h-[60vh] min-h-[400px] rounded-xl overflow-hidden border border-green-800 bg-black" />
       )}
-    </div>
-  );
-};
-
-        // មុខងារចុចដើម្បីបើក Google Maps
-        marker.on('click', () => {
-            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
-        });
-
-        // ផ្ទាំងឈ្មោះពេលយក Mouse ទៅដាក់លើ
-        marker.bindTooltip(
-           `<div class="font-khmer font-bold text-[12px] text-white">${safeStr(u.username) || 'User'}</div><div class="text-[9px] text-slate-300 mt-1">ចុចបើក Google Maps</div>`, 
-           { permanent: false, direction: 'top', className: 'bg-slate-900/90 backdrop-blur-md border border-slate-700 shadow-xl' }
-        );
-      });
-
-      // ពង្រីកផែនទីអោយឃើញ User ទាំងអស់ដោយស្វ័យប្រវត្តិ
-      if(validUsers.length > 0) {
-          const bounds = L.latLngBounds([[12.9840, 102.9348], ...validUsers.map(u => [u.lastLocation.lat, u.lastLocation.lng])]);
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-      }
-    };
-
-    if (!window.L) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-
-      const script = document.createElement('script');
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = initMap;
-      document.head.appendChild(script);
-    } else {
-      initMap();
-    }
-
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, [usersList]);
-
-  return (
-    <div className="w-full space-y-2 font-khmer flex flex-col items-center">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full mb-3 px-1 gap-3">
-         <div>
-             <h3 className="font-black text-[16px] text-white flex items-center gap-2"><MapPin className="w-5 h-5 text-[#38BDF8] animate-bounce" /> ប្រព័ន្ធតាមដាន (Live Tracking)</h3>
-             <p className="text-[11px] text-slate-400 font-bold mt-1">ខ្សែ Digital បង្ហាញទីតាំងជាក់ស្តែងរបស់អ្នកប្រើប្រាស់ភ្ជាប់មក HQ</p>
-         </div>
-         <span className="text-[11px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-2 rounded-xl font-black shadow-sm animate-pulse flex items-center gap-1.5 cursor-default">
-            <Globe className="w-4 h-4"/> ចុចលើរូបសមាជិកដើម្បីបើក Google Maps
-         </span>
-      </div>
-      <div ref={mapContainerRef} className="w-full h-[65vh] min-h-[500px] rounded-[24px] overflow-hidden border border-slate-700 shadow-2xl z-0 relative bg-slate-900" />
     </div>
   );
 };
