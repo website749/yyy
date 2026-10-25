@@ -31,7 +31,7 @@ import {
   enableIndexedDbPersistence
 } from 'firebase/firestore';
 import { 
-   LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList
+  LineChart, Line, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer 
 } from 'recharts';
 import { Volume2, VolumeX, Megaphone, Download, Save } from 'lucide-react';
 // Safe string casting utility to prevent null-pointers
@@ -278,7 +278,7 @@ const injectStyles = () => {
 
 html, body, #root { 
   overscroll-behavior-y: none; 
-  background-color:  #f8fafc;
+  background-color: #0F2B5C;
   color: #0f172a; 
   margin: 0; 
   padding: 0; 
@@ -350,6 +350,7 @@ input, textarea, select {
 
 // EXECUTE IMMEDIATELY: ការពារកុំឲ្យបាត់ Style លោតញាក់ពេលចូលដំបូង (Prevent FOUC)
 injectStyles();
+
 // Generic system confirmation popup
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
   if (!isOpen) return null;
@@ -696,123 +697,7 @@ const TR = {
   // បន្ថែមអត្ថបទផ្សេងទៀតនៅទីនេះ
 };
 export const tr = (kh) => (localStorage.getItem('tp_app_lang') === 'en' && TR[kh]) || kh;
-const I18N = {
-  // Navigation / General
-  'ទំព័រដើម':'Home','ព័ត៌មាន':'Info','របាយការណ៍':'Reports','គណនី':'Account','អ្នកគ្រប់គ្រង':'Admin',
-  'ទាំងអស់':'All','ឃុំ':'Commune','ភូមិ':'Village','ស្រុក':'District','ស្រុករតនមណ្ឌល':'Ratanak Mondul','រតនមណ្ឌល':'Ratanak Mondul','ស្រុកផ្សេងៗ':'Other Districts','ផ្សេងៗ':'Others',
-  'ប៉ូលីស':'Police','ប៉ូលិស':'Police','ពេទ្យ':'Hospital','មន្ទីរពេទ្យ':'Hospital','សាលារៀន':'School','សង្កាត់':'Sangkat',
-  'ដង':'views','លម្អិត':'Details','គ្មានទិន្នន័យ':'No data','បន្ថែម':'Add','កែប្រែ':'Edit','រក្សាទុក':'Save','លុប':'Delete','បោះបង់':'Cancel','បិទ':'Close','ព្រម':'OK','បដិសេធ':'Decline','ចាកចេញ':'Logout','ទូរស័ព្ទ':'Call','ផែនទី':'Map','ជ្រើសរើស':'Select','ទទួល':'Accept','អត់':'Decline',
-  // Info
-  'ទីតាំងខ្ញុំ':'My Location','របៀបប្រើប្រាស់':'How to use','របៀបប្រើប្រាស់ Web App':'How to use the Web App','មើលការណែនាំ':'View Guide','មើលជា Video':'Watch Video','កំពុងអភិវឌ្ឍ':'Under development',
-  // Reports
-  'របាយការណ៍ទិន្នន័យជាក់ស្ដែង':'Live Data Report','អ្នកប្រើប្រាស់សសរុប':'Total Users','អ្នកប្រើប្រាស់ (ខែនេះ)':'Users (This Month)','អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)':'Users (This Year)','ទីតាំងសរុប':'Total Locations','ទីតាំងបញ្ចូល (ខែនេះ)':'Locations Added (This Month)','ទីតាំងបញ្ចូល (ឆ្នាំនេះ)':'Locations Added (This Year)','សរុបតាំងពីដើម':'Total since start','កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ':'Yearly User Growth','ស្ថិតិទីតាំងដែលបានបញ្ចូល':'Locations Added Statistics',
-  'មករា':'Jan','កុម្ភៈ':'Feb','មីនា':'Mar','មេសា':'Apr','ឧសភា':'May','មិថុនា':'Jun','កក្កដា':'Jul','សីហា':'Aug','កញ្ញា':'Sep','តុលា':'Oct','វិច្ឆិកា':'Nov','ធ្នូ':'Dec',
-  // Account
-  'ឈ្មោះអ្នកប្រើប្រាស់ឧបករណ៍នេះ':'Device username','ការកំណត់':'Settings','Admin Portal របស់ប្រព័ន្ធ':'System Admin Portal','សំឡេងជូនដំណឹង (Ping Sound)':'Notification Sound (Ping)','បើក ឬបិទសំឡេងរោទ៍ពេលមានសារថ្មីចូល':'Turn the new-message sound on or off','បញ្ជាក់សិទ្ធិជាអភិបាល':'Confirm Admin Access','សូមបញ្ចូលលេខសម្ងាត់ Admin':'Enter the Admin password','ចូលគណនី':'Log in','ផ្អាក...':'Locked...',
-  // Chat
-  'ទំនាក់ទំនងឆាត':'Chat Contacts','ជ្រើសរើសស្ថាប័ន ឬមិត្តភក្តិដែលអ្នកចង់ឆាតឯកជនជាមួយ។':'Choose an institution or friend to chat with privately.','Add មិត្ត':'Add Friend','ក្នុងមូលដ្ឋាន':'Local','សុំធ្វើមិត្ត':'Add friend','បានផ្ញើសំណើរ':'Request sent','ចង់ក្លាយជាមិត្តរបស់អ្នក':'wants to be your friend','បញ្ជីទំនាក់ទំនង៖':'Contact list:','មិត្តឯកជន':'Private friend','ស្ថាប័ន':'Institution','ស្វែងរកគណនីមិត្តភក្តិ':'Find friend accounts','គ្មានគណនីដែលត្រូវស្វែងរកទេ':'No matching accounts','មិន Online ⚪':'Not online ⚪','ចាប់ផ្តើមការសន្ទនា...':'Start the conversation...','ចម្លងអត្ថបទ':'Copy text','កែប្រែ (Edit)':'Edit','លុបចោល (Delete)':'Delete','Online • ឆ្លើយតបរហ័ស':'Online • Fast reply','កំពុងកែប្រែសារ':'Editing message','ប្រកាសទូទៅ':'Announcement','ប្រលែងដៃដើម្បីផ្ញើ 📤':'Release to send 📤','ផ្ញើររូបភាព':'Send photo','ផ្ញើទីតាំង (GPS)':'Send location (GPS)','🗺️ បើកផែនទី Google Maps':'🗺️ Open Google Maps','តម្រូវឲ្យមានឈ្មោះគណនី':'Account name required','កំណត់ឈ្មោះឥឡូវនេះ':'Set your name now','មុខងារឆាតត្រូវបានបិទ':'Chat is turned off','អភិបាលប្រព័ន្ធបានបិទមុខងារនេះជាបណ្តោះអាសន្ន។':'The admin has temporarily disabled this feature.','Admin Support':'Admin Support','អ្នកគ្រប់គ្រងប្រព័ន្ធ':'System Administrator','📍 គណនាចម្ងាយសរុប (A → B)':'📍 Total distance (A → B)',
-  // Location modal / card
-  'អាសយដ្ឋាន':'Address','ព័ត៌មានលម្អិត':'Details','គ្មានការពណ៌នាព័ត៌មានបន្ថែមទេ។':'No additional description.','ជ្រើសរើសលេខទូរស័ព្ទ':'Choose a phone number',
-  // Add form
-  'បន្ថែមទិន្នន័យ៖ ស្រុករតនមណ្ឌល':'Add Data: Ratanak Mondul District','បន្ថែមទិន្នន័យ៖ ស្រុកផ្សេងៗ':'Add Data: Other Districts','ចំណងជើង / ឈ្មោះទីតាំង *':'Title / Location name *','ប្រភេទ Category *':'Category *','ព័ត៌មានទំនាក់ទំនង (Contacts) *':'Contacts *','ថែមឈ្មោះ/តួនាទីថ្មី':'Add name/role','ឈ្មោះ ឬ តួនាទី':'Name or role','លេខទូរស័ព្ទរបស់គាត់':'Phone numbers','ថែមលេខឲ្យគាត់':'Add number','កំណត់ទីតាំង':'Set location','ទីតាំង (GPS)':'Location (GPS)','កំពុងចាប់ទីតាំង...':'Getting location...','✓ ចាប់បានទីតាំងជោគជ័យ':'✓ Location captured','ចុចដើម្បីទាញយក GPS':'Tap to get GPS','រូបភាព (Upload Picture) *':'Picture (Upload) *','ប្តូររូបភាព':'Change picture','ចុចដើម្បី Upload រូបភាព':'Tap to upload a picture','ការពណ៌នា':'Description','កំពុងផ្ញើរ...':'Sending...','✓ បញ្ចូលទិន្នន័យ (Auto Approve)':'✓ Add data (Auto Approve)','📤 ផ្ញើរសំណើរទៅកាន់ Admin':'📤 Send request to Admin',
-  'ឈ្មោះទីតាំង...':'Location name...','ឧ: លោក មេឃុំ...':'e.g. Commune chief...','ឧ: 012 345 678...':'e.g. 012 345 678...','ខេត្ត...':'Province...','ស្រុក...':'District...','សរសេរការពណ៌នាខ្លីៗ...':'Write a short description...','សរសេរសារ...':'Write a message...','កំណត់ឈ្មោះរបស់អ្នក...':'Set your name...','លេខសម្ងាត់...':'Password...','ស្វែងរកឈ្មោះសមាជិក...':'Search member name...','ស្វែងរកតាមឈ្មោះ ឬ UID...':'Search by name or UID...','បញ្ចូលឈ្មោះគណនីឧបករណ៍នេះ...':'Enter this device account name...',
-  // Admin
-  'ទិន្នន័យ & ទីតាំង':'Data & Locations','ផ្ញើសារ':'Send Message','ផែនទីអ្នកប្រើ (Live)':'User Map (Live)','គ្រប់គ្រងសមាជិក':'Manage Members','គ្រប់គ្រង របៀបប្រើប្រាស់':'Manage How-to','សំណើសម្រុះសម្រួល':'Appeals','អនុម័តសំណើរ':'Approvals','ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យផ្លូវការ':'Official Data Management System',
-  'ការគ្រប់គ្រងគណនី និងអ្នកប្រើប្រាស់':'Account & User Management','រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក':'Actions such as block, delete or warn members','Download ទិន្នន័យ':'Download data','បញ្ចូលទៅ Flash USB':'Save to Flash USB','លុប User ទាំងអស់ចោល':'Delete all users','សមាជិក':'Member','ស្ថានភាព':'Status','សកម្មភាព (Actions)':'Actions','ធម្មតា ✅':'Normal ✅','Blocked 🚫':'Blocked 🚫','សកម្មភាព:':'Actions:',
-  'សមាជិកដែលបានចុះឈ្មោះ:':'Registered members:','នាក់':'people','កំពុង Online:':'Online now:',
-  'ផ្ញើសារ ':'Send ','សរសេរសារនៅទីនេះ...':'Write your message here...','គ្រប់គ្រង របៀបប្រើប្រាស់ Web App':'Manage Web App How-to','ផ្នែកទី១: ការណែនាំ (Guides)':'Part 1: Guides','ផ្នែកទី២: Video ការណែនាំ':'Part 2: Guide Video','រក្សាទុក (Save)':'Save',
-  'សម្អាត Logs ទាំងអស់':'Clear all logs','គ្មានសកម្មភាពគួរឱ្យសង្ស័យឡើយ ✅':'No suspicious activity ✅','ការកំណត់ចលនាទំព័រដើម & UI':'Home animation & UI settings','មុខងារឆាត និងផ្ញើសារ':'Chat & messaging','ចលនាគ្រាប់ផ្កាយ Cosmic Theme':'Cosmic Theme star animation',
-  'សំណើររង់ចាំ (Pending:':'Pending requests (','គ្មានសំណើរថ្មីទេ':'No new requests','ព្រម ':'Approve ','មិនព្រម':'Reject','យល់ព្រម':'Approve','សំណើសម្រុះសម្រួលទណ្ឌកម្ម (Appeals List)':'Penalty Appeals List','គ្មានសំណើរសុំសម្រុះសម្រួលថ្មីទេ':'No new appeals',
-  'រចនាសម្ព័ន្ធទីតាំង (រតនមណ្ឌល)':'Location structure (Ratanak Mondul)','បន្ថែមឃុំថ្មី':'Add new commune','បន្ថែមភូមិថ្មី':'Add new village','ឈ្មោះឃុំ...':'Commune name...','ឈ្មោះភូមិ...':'Village name...','ជ្រើសរើសឃុំ...':'Select commune...','គ្មានភូមិ':'No villages','ស្រុករតនមណ្ឌល ':'Ratanak Mondul ','១. ស្រុករតនមណ្ឌល':'1. Ratanak Mondul District','២. ស្រុកផ្សេងៗ':'2. Other Districts',
-  'កែប្រែទិន្នន័យទីតាំង':'Edit location data','ព័ត៌មានទំនាក់ទំនង (JSON Editor)':'Contacts (JSON Editor)','ប្រភេទ Category *':'Category *',
-  // Ban / appeal / call
-  'កំពុងរង់ចាំការត្រួតពិនិត្យ':'Waiting for review','ត្រឡប់ក្រោយ':'Back','ផ្ញើសំណើ':'Submit request','គណនីត្រូវបានបិទ! (Device Blocked)':'Account blocked! (Device Blocked)','វីដេអូខល (Video Call)':'Video Call','ហៅសំឡេង (Voice Call)':'Voice Call','កំពុងហៅ (Calling)...':'Calling...',
-};
 
-// ប្រយោគ/បំណែកសម្រាប់ Toast និងអត្ថបទមានអថេរ (ជំនួសបំណែក)
-const I18N_PART = {
-  'ក្នុងខែទី':'In month','ក្នុងឆ្នាំ':'In year','បញ្ជីខ្សែទូរស័ព្ទទាក់ទង':'Phone lines','ចម្ងាយពីអ្នក:':'Distance from you:','ម៉ែត្រ (m)':'m','គីឡូម៉ែត្រ (KM)':'KM',
-  'សំណើរសុំធ្វើមិត្ត':'Friend requests','អ្នកកំពុងស្ថិតនៅ ឃុំ:':'You are in Commune:','ភូមិ:':'Village:','ឃុំ:':'Commune:',
-  'សូមបញ្ចូលចំណងជើង ឬឈ្មោះទីតាំង':'Please enter a title or location name','សូមបញ្ចូលរូបភាព':'Please add a picture','សូមបញ្ចូលឈ្មោះ និងលេខទូរស័ព្ទទំនាក់ទំនងយ៉ាងហោចណាស់ ១ ខ្សែ!':'Enter at least 1 contact name and phone number!',
-  'ទិន្នន័យត្រូវបានបញ្ចូលជោគជ័យ ✅':'Data added successfully ✅','សំណើររបស់អ្នកកំពុងរង់ចាំការត្រួតពិនិត្យពី Admin':'Your request is waiting for Admin review','បរាជ័យក្នុងការបញ្ជូន:':'Failed to submit:','សូមបើក Location ឧបករណ៍របស់អ្នក':'Please turn on your device Location','ឧបករណ៍របស់អ្នកមិនគាំទ្រ GPS ទេ':'Your device does not support GPS',
-  'សូមអនុញ្ញាតសិទ្ធិប្រើប្រាស់ Location ឧបករណ៍របស់អ្នកជាមុនសិន':'Please allow Location access first','មិនអាចកំណត់ទីតាំងភូមិ/ឃុំបានទេ ដោយសារខ្វះទិន្នន័យ GPS ក្នុងប្រព័ន្ធ។':'Cannot determine the village/commune: not enough GPS data.',
-  'សូមកំណត់ឈ្មោះគណនីជាមុនសិន ដើម្បីអាចបញ្ចូលទិន្នន័យបាន':'Please set your account name first to add data','សូមចុះឈ្មោះគណនីជាមុនសិន មុននឹងអាចឆាតបាន':'Please register an account before chatting','សូមកំណត់ឈ្មោះគណនីសិន':'Please set your account name first',
-  'ចុះឈ្មោះគណនីបានជោគជ័យ!':'Account registered successfully!','សូមបញ្ជាក់ឈ្មោះគណនីរបស់អ្នក':'Please enter your account name','ឈ្មោះមិនត្រឹមត្រូវ!':'Invalid name!',
-  'បានបិទសំឡេង (Muted)':'Sound muted','បានបើកសំឡេង (Unmuted)':'Sound on','សូមបំពេញលេខសម្ងាត់':'Please enter the password','ចូលប្រើជាគណនី ADMIN ជោគជ័យ ✅':'Logged in as ADMIN ✅','លេខសម្ងាត់មិនត្រឹមត្រូវ':'Incorrect password',
-  'រក្សាទុកឈ្មោះនិង Bio បានជោគជ័យ ✅':'Name and Bio saved ✅','បានប្តូររូបភាព Profile និងរក្សាទុកចូល Database ជោគជ័យ ✅':'Profile picture updated ✅','ឈ្មោះមិនអាចទទេ ឬដាក់ថាភ្ញៀវទេ':'Name cannot be empty or "Guest"',
-  'បានផ្ញើទីតាំង GPS ទៅកាន់ម្ចាស់ទិន្នន័យជោគជ័យ ✅':'GPS location sent to the owner ✅','ផ្ញើទីតាំងជោគជ័យ':'Location sent','ផ្ញើររូបភាពជោគជ័យ':'Photo sent','បានចម្លង (Copied)':'Copied',
-  'អនុម័តជោគជ័យ ✅':'Approved ✅','បានបដិសេធសំណើរ':'Request rejected','លុបទិន្នន័យបានជោគជ័យ':'Data deleted','សម្អាតបានជោគជ័យ':'Cleared','បានចាកចេញពី Admin':'Logged out of Admin','រក្សាទុករួចរាល់ ✅':'Saved ✅','លុបជោគជ័យ ✅':'Deleted ✅',
-  'បានយល់ព្រមបើកគណនីឡើងវិញ':'Account re-enabled','បានបដិសេធសំណើរសម្រុះសម្រួល':'Appeal rejected','បន្ថែមទំនាក់ទំនងឆាតថ្មីជោគជ័យ ✅':'Chat contact added ✅','ទាញយកទិន្នន័យជោគជ័យ ✅':'Data downloaded ✅','សូមសរសេរសារសិន':'Please write a message first','សូមជ្រើសរើសអ្នកទទួលយ៉ាងហោចណាស់ម្នាក់':'Select at least one recipient',
-  'បញ្ជាក់ការលុប':'Confirm deletion','បញ្ជាក់ការបដិសេធ':'Confirm rejection','តើអ្នកពិតជាចង់លុបទិន្នន័យទីតាំងនេះមែនទេ?':'Do you really want to delete this location?',
-};
-
-const _i18nOrig = new WeakMap();
-const _i18nIsEn = () => localStorage.getItem('tp_app_lang') === 'en';
-const _i18nPartList = Object.entries(I18N_PART).sort((a, b) => b[0].length - a[0].length);
-const _i18nTr = (s) => {
-  const t = s.trim();
-  if (!t) return s;
-  if (I18N[t]) return s.replace(t, I18N[t]);
-  let out = s;
-  for (const [k, v] of _i18nPartList) if (out.includes(k)) out = out.split(k).join(v);
-  return out;
-};
-const _i18nNode = (n) => {
-  if (!n || n.nodeType !== 3) return;
-  const p = n.parentNode && n.parentNode.nodeName;
-  if (p === 'SCRIPT' || p === 'STYLE') return;
-  const rec = _i18nOrig.get(n);
-  if (rec && n.nodeValue === rec.shown) {
-    if (!_i18nIsEn()) { n.nodeValue = rec.orig; _i18nOrig.delete(n); }
-    return;
-  }
-  if (!_i18nIsEn()) return;
-  const src = n.nodeValue;
-  const out = _i18nTr(src);
-  if (out !== src) { _i18nOrig.set(n, { orig: src, shown: out }); n.nodeValue = out; }
-  else if (rec) _i18nOrig.delete(n);
-};
-const _i18nAttrs = (el) => {
-  if (!el || !el.getAttribute) return;
-  ['placeholder', 'title'].forEach(a => {
-    const v = el.getAttribute(a);
-    if (v == null) return;
-    const key = '__i18n_' + a;
-    const rec = el[key];
-    if (rec && v === rec.shown) { if (!_i18nIsEn()) { el.setAttribute(a, rec.orig); el[key] = null; } return; }
-    if (!_i18nIsEn()) return;
-    const out = _i18nTr(v);
-    if (out !== v) { el[key] = { orig: v, shown: out }; el.setAttribute(a, out); }
-  });
-};
-const _i18nWalk = (root) => {
-  if (!root) return;
-  if (root.nodeType === 3) return _i18nNode(root);
-  if (root.nodeType !== 1) return;
-  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let n;
-  while ((n = w.nextNode())) _i18nNode(n);
-  _i18nAttrs(root);
-  root.querySelectorAll('[placeholder],[title]').forEach(_i18nAttrs);
-};
-let _i18nObs = null;
-const applyAppLanguage = (l) => {
-  localStorage.setItem('tp_app_lang', l);
-  document.documentElement.lang = l === 'en' ? 'en' : 'km';
-  _i18nWalk(document.body);
-};
-const startAutoTranslate = () => {
-  if (_i18nObs) return;
-  _i18nObs = new MutationObserver(muts => {
-    for (const m of muts) {
-      if (m.type === 'characterData') _i18nNode(m.target);
-      else if (m.type === 'attributes') _i18nAttrs(m.target);
-      else m.addedNodes.forEach(_i18nWalk);
-    }
-  });
-  _i18nObs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder', 'title'] });
-  _i18nWalk(document.body);
-};
 export default function App() {
   // Streamlining initial state load from local storage for 0ms render delay (Offline-First)
   // FIXED: Using a permanent device ID with Cookie Fallback to prevent profile loss on refresh or storage clear
@@ -839,8 +724,7 @@ export default function App() {
 
   const [user, setUser] = useState(getInitialUser);
   
-  const [language, setLanguage] = useState(() => localStorage.getItem('tp_app_lang') || 'kh');
-
+  const [language, setLanguage] = useState('kh');
   const [currentPage, setCurrentPage] = useState(() => {
       const u = getInitialUser();
       const isGuest = localStorage.getItem('tp_is_guest') === 'true'; // កែប្រែទៅប្រើ localStorage ដើម្បីកុំឲ្យលោតសួររាល់ពេលចូល PWA
@@ -1025,14 +909,13 @@ export default function App() {
       setTimeout(() => setToast(null), duration); 
   };
 
-useEffect(() => { 
+  useEffect(() => { 
     let meta = document.querySelector('meta[name="viewport"]');
     if (!meta) { 
       meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); 
     }
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover';
     injectStyles(); 
-    startAutoTranslate();
   }, []);
 
   useEffect(() => {
@@ -1052,12 +935,9 @@ useEffect(() => {
           // ពេលបើកមុខងារ Boost នឹងលោតម្តង ១២ ទៅ ១៥នាក់។ តែបើបិទ គឺលោត ០ (បូក ១ ធម្មតា)
           let fakeInc = isBoost ? (Math.floor(Math.random() * 4) + 12) : 0; 
           
-          const _now = new Date();
-          const _monthKey = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`;
           await setDoc(statsRef, { 
               visitorCount: increment(1),
-              fakeUsers: increment(fakeInc),
-              monthly: { [_monthKey]: increment(1) }
+              fakeUsers: increment(fakeInc)
           }, { merge: true });
           sessionStorage.setItem('tp_visitor_counted_session', 'true');
         }
@@ -2166,8 +2046,8 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         {cosmicTheme && <StarryGalaxyCanvas />}
 
         <div className="absolute top-[70px] right-5 z-[200] flex gap-1 bg-white/40 backdrop-blur-md p-1.5 rounded-xl border border-white/50 shadow-sm pointer-events-auto">
-            <button onClick={() => { setLanguage('kh'); applyAppLanguage('kh'); }} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'kh' ? 'bg-[#0F2B5C] text-white shadow-md' : 'text-[#0F2B5C] hover:bg-white/60'}`}>KH</button>
-            <button onClick={() => { setLanguage('en'); applyAppLanguage('en'); }} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'en' ? 'bg-[#0F2B5C] text-white shadow-md' : 'text-[#0F2B5C] hover:bg-white/60'}`}>EN</button>
+            <button onClick={() => setLanguage('kh')} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'kh' ? 'bg-[#0F2B5C] text-white shadow-md' : 'text-[#0F2B5C] hover:bg-white/60'}`}>KH</button>
+            <button onClick={() => setLanguage('en')} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'en' ? 'bg-[#0F2B5C] text-white shadow-md' : 'text-[#0F2B5C] hover:bg-white/60'}`}>EN</button>
         </div>
 
         <div 
@@ -2690,7 +2570,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិ.ស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2700,7 +2580,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
         {navItems.map(item => (
           <button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 ${currentView === item.id ? 'bg-[#0F2B5C] text-white font-bold shadow-md' : 'text-slate-500 hover:bg-slate-50 font-medium hover:text-[#0F2B5C]'}`}>
             <item.icon className="w-5 h-5" />
-            <div className="texFt-[13.5px]">{item.label}</div>
+            <div className="text-[13.5px]">{item.label}</div>
           </button>
         ))}
       </div>
@@ -2710,103 +2590,57 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
 
 // 💡 Component Navigation Bar ខាងក្រោមដែលបានសម្រួលឱ្យទាបល្មម និងចុចរលូន (Smooth Touch)
 
-
 const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled }) => {
   const lang = localStorage.getItem('tp_app_lang') || 'kh';
+  const [language, setLanguageState] = useState(() => localStorage.getItem('tp_app_lang') || 'kh');
+const setLanguage = (l) => { localStorage.setItem('tp_app_lang', l); setLanguageState(l); };
   const L = (kh, en) => (lang === 'en' ? en : kh);
 
   const navItems = [
-    { id: 'home', icon: Home, label: L('ទំព័រដើម', 'Home') },
-    { id: 'info', icon: Info, label: L('ព័ត៌មាន', 'Info') },
-    { id: 'reports', icon: TrendingUp, label: L('របាយការណ៍', 'Reports') },
-    { id: 'account', icon: User, label: L('គណនី', 'Account') },
+    { id: 'home',    icon: Home,        label: L('ទំព័រដើម',   'Home') },
+    { id: 'info',    icon: Info,        label: L('ព័ត៌មាន',    'Info') },
+    { id: 'reports', icon: TrendingUp,  label: L('របាយការណ៍',  'Reports') },
+    { id: 'account', icon: User,        label: L('គណនី',       'Account') },
   ];
-
-  if (isAdmin) {
-    navItems.push({
-      id: 'admin',
-      icon: ShieldCheck,
-      label: 'Admin',
-    });
-  }
+  if (isAdmin) navItems.push({ id: 'admin', icon: ShieldCheck, label: 'Admin' });
 
   return (
-    <div
-      className="md:hidden"
-      style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
+  <div
+  className="md:hidden fixed left-0 right-0 bottom-0 z-[9999] bg-[#0F2B5C] border-t border-white/10"
+  style={{ bottom: '-4px', paddingBottom: 0, marginBottom: 0 }}
+>
+  
+<div
+  className="flex justify-around items-end px-1"
+  style={{
+    height: 'calc(40px + env(safe-area-inset-bottom, 0px) * 0.5)',
+    paddingBottom: '3px'
+  }}
+>
 
-        height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
-        padding: 0,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxSizing: 'border-box',
+    {navItems.map((item) => {
+      const isActive = currentView === item.id;
+      const Icon = item.icon;
+      return (
+        <button
+          key={item.id}
+          onClick={() => setCurrentView(item.id)}
+          className="flex-1 h-11 flex flex-row items-center justify-center gap-1.5 px-1 rounded-xl active:scale-95 select-none ${
+          isActive ? 'bg-white/10' : ''
+          }"
 
-        backgroundColor: '#0F2B5C',
-        borderTop: '1px solid rgba(255,255,255,0.15)',
-        isolation: 'isolate',
-      }}
-    >
-      <div
-        className="flex justify-around items-center w-full"
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          height: '62px',
-        }}
-      >
-        {navItems.map((item) => {
-          const isActive = currentView === item.id;
-          const Icon = item.icon;
-
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setCurrentView(item.id)}
-              aria-label={item.label}
-              aria-current={isActive ? 'page' : undefined}
-              className="flex-1 h-full flex flex-col items-center justify-center gap-1 !bg-transparent !border-0 !shadow-none !rounded-none active:scale-95 select-none transition-transform"
-              style={{
-                minWidth: 0,
-                color: isActive ? '#38BDF8' : '#FFFFFF',
-                opacity: 1,
-                padding: '4px 0',
-                cursor: 'pointer',
-                WebkitTapHighlightColor: 'transparent',
-              }}
-            >
-              <Icon
-                className="w-6 h-6 shrink-0"
-                style={{
-                  color: isActive ? '#38BDF8' : '#FFFFFF',
-                  stroke: isActive ? '#38BDF8' : '#FFFFFF',
-                  opacity: 1,
-                }}
-                aria-hidden="true"
-              />
-
-              <span
-                className="text-[10.5px] font-bold leading-tight whitespace-nowrap"
-                style={{
-                  color: isActive ? '#38BDF8' : '#FFFFFF',
-                  opacity: 1,
-                }}
-              >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+        >
+          <Icon className={`w-4 h-4 shrink-0 transition-colors {isActice ? 'text-[#FFFFFFF]' : 'text-slate-300'}`}/>
+          <span className={`text-[11px] font-hold leading-none whitespace-nowrap transition-colors ${isActive ? 'text-[#38BDF8]' : 'text-slate-300'}`}>
+            {item.label}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+</div>
   );
 };
-
-
 const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotificationsOpen, searchQuery, setSearchQuery, db, appId, user, appLogo, currentView }) => {
     const lang = localStorage.getItem('tp_app_lang') || 'kh';
     const L = (kh, en) => (lang === 'en' ? en : kh);
@@ -3054,7 +2888,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
+const Infoview = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
@@ -3283,39 +3117,19 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
   
   const countMonth = (m) => {
-    const s = new Date(currentYear, m, 1).getTime();
-    const e = new Date(currentYear, m + 1, 0, 23, 59, 59).getTime();
-    return {
-      users: (usersList || []).filter(u => u && (u.timestamp || 0) >= s && (u.timestamp || 0) <= e).length + (m === currentMonth ? fakeCount : 0),
-      entries: (locations || []).filter(l => l && (l.timestamp || 0) >= s && (l.timestamp || 0) <= e).length,
-    };
+  const s = new Date(currentYear, m, 1).getTime();
+  const e = new Date(currentYear, m + 1, 0, 23, 59, 59).getTime();
+  return {
+    users: (usersList || []).filter(u => u && (u.timestamp || 0) >= s && (u.timestamp || 0) <= e).length + (m === currentMonth ? fakeCount : 0),
+    entries: (locations || []).filter(l => l && (l.timestamp || 0) >= s && (l.timestamp || 0) <= e).length,
   };
-
-  // ទិន្នន័យអ្នកប្រើប្រាស់ពិតប្រាកដ (ខែចាស់) — index ខែ: មិថុនា=5, កក្កដា=6, សីហា=7, កញ្ញា=8, តុលា=9
-  // ខែផ្សេងទៀត = 0 ។ ខែថ្មីៗ (វិច្ឆិកា, ធ្នូ...) នឹងរាប់ដោយស្វ័យប្រវត្តិពីអ្នកចូលប្រើ App
-  const BASE_USERS = { 5: 5, 6: 50, 7: 203, 8: 802, 9: 12 };
-
-  // ទីតាំងបញ្ចូល (រក្សាទុកតាមតក្កដើម ដូចមុន)
-  const tsMs = (t) => {
-    if (!t) return 0;
-    if (typeof t === 'object') { if (t.toMillis) return t.toMillis(); if (t.seconds) return t.seconds * 1000; }
-    let n = Number(t);
-    if (!n) n = new Date(t).getTime();
-    if (n && n < 1e11) n *= 1000;
-    return n || 0;
-  };
-  const entriesOf = (index) => (locations || []).filter(l => {
-    if (!l) return false;
-    const d = new Date(tsMs(l.timestamp));
-    return d.getFullYear() === currentYear && d.getMonth() === index;
-  }).length;
-
-  const monthlyData = khmerMonths.map((name, index) => {
-    const mm = String(index + 1).padStart(2, '0');
-    const liveThisMonth = appStats?.monthly?.[`${currentYear}-${mm}`] || 0; // អ្នកចូលថ្មីក្នុងខែនោះ (រាប់ស្វ័យប្រវត្តិ)
-    const users = (BASE_USERS[index] || 0) + liveThisMonth;
-    return { name, users, entries: entriesOf(index) };
-  });
+};
+const SRC = { 6: 3, 7: 5, 3: null, 5: null }; // កក្កដា←មេសា, សីហា←មិថុនា
+const monthlyData = khmerMonths.map((name, index) => {
+  if (index in SRC) return { name, ...(SRC[index] === null ? { users: 0, entries: 0 } : countMonth(SRC[index])) };
+  if (index === 4) return { name, users: 50, entries: countMonth(4).entries }; // រក្សាខែឧសភាដូចដើម
+  return { name, ...countMonth(index) };
+});
 
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
@@ -3334,16 +3148,14 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1 flex-1">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
            <h3 className="text-[11.5px] md:text-[12px] font-bold text-slate-800 mb-3 border-l-2 border-[#38BDF8] pl-2">កំណើនអ្នកប្រើប្រាស់ប្រចាំឆ្នាំ</h3>
-           <div className="w-full" style={{ height: 220 }}>
+           <div className="flex-1 min-h-[160px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={monthlyData} margin={{ top: 18, right: 4, left: -18, bottom: 0 }}>
+                 <BarChart data={monthlyData}>
                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                   <XAxis dataKey="name" interval={0} axisLine={false} tickLine={false} tick={{fontSize: 8, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
                    <Tooltip cursor={false} contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
-                   <Bar dataKey="users" fill="#38BDF8" radius={[3,3,0,0]} barSize={14}>
-                     <LabelList dataKey="users" position="top" formatter={(v) => (v > 0 ? v : '')} style={{ fontSize: 9, fontWeight: 800, fill: '#0F2B5C' }} />
-                   </Bar>
+                   <Bar dataKey="users" fill="#38BDF8" radius={[2,2,0,0]} barSize={12} />
                  </BarChart>
                </ResponsiveContainer>
             </div>
@@ -3358,9 +3170,7 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b', fontFamily: 'Noto Sans Khmer'}} />
                    <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fill: '#64748b'}} />
                    <Tooltip contentStyle={{fontSize: '11px', borderRadius: '8px'}} />
-                    <Line type="monotone" dataKey="entries" stroke="#0F2B5C" strokeWidth={2} dot={{r: 3, fill: '#0F2B5C'}}>
-                     <LabelList dataKey="entries" position="top" formatter={(v) => (v > 0 ? v : '')} style={{ fontSize: 9, fontWeight: 800, fill: '#0F2B5C' }} />
-                   </Line>
+                   <Line type="monotone" dataKey="entries" stroke="#0F2B5C" strokeWidth={2} dot={{r: 3, fill: '#0F2B5C'}} />
                  </LineChart>
                </ResponsiveContainer>
             </div>
@@ -3369,7 +3179,6 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
     </div>
   );
 };
-
 
 // Category Color mapping helpers - Khmer Traditional Mixed Palette
 const getCategoryTheme = (category) => {
@@ -4757,8 +4566,60 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
   );
 };
 
-const GMAPS_KEY = "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg";
+const AdminLiveTrackerMap = ({ usersList }) => {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
 
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    const initMap = () => {
+      const L = window.L;
+      if (!L) return;
+
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
+
+      // បង្កើតផែនទី និងកំណត់ចំនុចកណ្តាលនៅស្រុករតនមណ្ឌល
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([12.9840, 102.9348], 7); 
+      mapInstanceRef.current = map;
+
+      // ប្រើប្រាស់ Dark Mode Map ដើម្បីរំលេចខ្សែ Digital
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+      // រូបតំណាងបញ្ជាការដ្ឋានកណ្តាល (HQ)
+      const centerIcon = L.divIcon({
+        html: `<div class="w-6 h-6 bg-rose-600 rounded-full border-2 border-white animate-pulse shadow-[0_0_20px_#e11d48]"></div>`,
+        className: ''
+      });
+      L.marker([12.9840, 102.9348], { icon: centerIcon }).addTo(map).bindPopup("ទីបញ្ជាការកណ្តាល (HQ)");
+
+      const validUsers = (usersList || []).filter(u => u.lastLocation && u.lastLocation.lat && u.lastLocation.lng);
+
+      validUsers.forEach(u => {
+        const lat = u.lastLocation.lat;
+        const lng = u.lastLocation.lng;
+        // កំណត់ស្ថានភាព Online ពណ៌បៃតង, Offline ពណ៌ផ្ទៃមេឃ
+        const isOnline = (Date.now() - (u.lastActive || 0)) < 120000;
+        const color = isOnline ? '#10b981' : '#38BDF8';
+
+        // រូបតំណាង User លើផែនទី
+        const uIcon = L.divIcon({
+          html: `
+            <div style="border-color: ${color}; box-shadow: 0 0 12px ${color};" class="relative w-9 h-9 rounded-full border-2 overflow-hidden bg-slate-900 transition-transform hover:scale-110 cursor-pointer">
+              <img src="${u.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="w-full h-full object-cover"/>
+            </div>
+          `,
+          className: ''
+        });
+
+        const marker = L.marker([lat, lng], { icon: uIcon }).addTo(map);
+
+        const GMAPS_KEY = "AIzaSyCYPYMqUNC3FYAuDoTBiJtCCzjZtQd7oCg";
 const HACKER_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#020a05' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#22c55e' }] },
@@ -4874,6 +4735,63 @@ const AdminLiveTrackerMap = ({ usersList }) => {
       ) : (
         <div ref={mapDivRef} className="w-full h-[60vh] min-h-[400px] rounded-xl overflow-hidden border border-green-800 bg-black" />
       )}
+    </div>
+  );
+};
+
+        // មុខងារចុចដើម្បីបើក Google Maps
+        marker.on('click', () => {
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        });
+
+        // ផ្ទាំងឈ្មោះពេលយក Mouse ទៅដាក់លើ
+        marker.bindTooltip(
+           `<div class="font-khmer font-bold text-[12px] text-white">${safeStr(u.username) || 'User'}</div><div class="text-[9px] text-slate-300 mt-1">ចុចបើក Google Maps</div>`, 
+           { permanent: false, direction: 'top', className: 'bg-slate-900/90 backdrop-blur-md border border-slate-700 shadow-xl' }
+        );
+      });
+
+      // ពង្រីកផែនទីអោយឃើញ User ទាំងអស់ដោយស្វ័យប្រវត្តិ
+      if(validUsers.length > 0) {
+          const bounds = L.latLngBounds([[12.9840, 102.9348], ...validUsers.map(u => [u.lastLocation.lat, u.lastLocation.lng])]);
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
+    };
+
+    if (!window.L) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = initMap;
+      document.head.appendChild(script);
+    } else {
+      initMap();
+    }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [usersList]);
+
+  return (
+    <div className="w-full space-y-2 font-khmer flex flex-col items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full mb-3 px-1 gap-3">
+         <div>
+             <h3 className="font-black text-[16px] text-white flex items-center gap-2"><MapPin className="w-5 h-5 text-[#38BDF8] animate-bounce" /> ប្រព័ន្ធតាមដាន (Live Tracking)</h3>
+             <p className="text-[11px] text-slate-400 font-bold mt-1">ខ្សែ Digital បង្ហាញទីតាំងជាក់ស្តែងរបស់អ្នកប្រើប្រាស់ភ្ជាប់មក HQ</p>
+         </div>
+         <span className="text-[11px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-2 rounded-xl font-black shadow-sm animate-pulse flex items-center gap-1.5 cursor-default">
+            <Globe className="w-4 h-4"/> ចុចលើរូបសមាជិកដើម្បីបើក Google Maps
+         </span>
+      </div>
+      <div ref={mapContainerRef} className="w-full h-[65vh] min-h-[500px] rounded-[24px] overflow-hidden border border-slate-700 shadow-2xl z-0 relative bg-slate-900" />
     </div>
   );
 };
@@ -5488,8 +5406,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
      });
   }, [usersList, userSearchQuery]);
 
-  const registeredUsers = (usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ');
-  const onlineNow = registeredUsers.filter(u => (Date.now() - (u.lastActive || 0)) < 120000).length;
   return (
     <div className="w-full max-w-5xl mx-auto space-y-3 pb-10 flex-1 font-khmer text-slate-800 animate-in fade-in">
       <ConfirmModal isOpen={!!confirmAction} title={confirmAction?.title} message={confirmAction?.message} onConfirm={handleConfirm} onCancel={() => setConfirmAction(null)} />
@@ -5730,11 +5646,6 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                      <div>
                         <h3 className="font-black text-[13px] text-[#0F2B5C] flex items-center gap-1.5"><User className="w-4.5 h-4.5 text-[#38BDF8]"/> ការគ្រប់គ្រងគណនី និងអ្នកប្រើប្រាស់</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">រាល់សកម្មភាពមានដូចជា ប្លុក លុប ឬព្រមានសមាជិក</p>
-   <div className="flex flex-wrap gap-2 mt-2">
-      <span className="text-[11px] font-black text-[#0F2B5C] bg-white border border-slate-200 px-2.5 py-1 rounded-lg">👥 សមាជិកដែលបានចុះឈ្មោះ: {registeredUsers.length} នាក់</span>
-      <span className="text-[11px] font-black text-emerald-700 bg-white border border-slate-200 px-2.5 py-1 rounded-lg">🟢 កំពុង Online: {onlineNow} នាក់</span>
-   </div>
-
                      </div>
                      <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                         <button onClick={handleDownloadData} className="flex-1 sm:flex-none text-[10px] bg-[#0F2B5C] hover:bg-[#1e3a8a] text-white border border-[#0F2B5C] px-3 py-2 rounded-lg font-black flex justify-center items-center gap-1 shadow-sm transition-colors">
