@@ -1036,7 +1036,7 @@ useEffect(() => {
     injectStyles(); 
     startAutoTranslate();
     document.documentElement.style.backgroundColor = '#0F2B5C';
-​​​​    document.body.style.backgroundColor = '#0F2B5C';
+    document.body.style.backgroungColor = '#0F2B5C';
   }, []);
 
   useEffect(() => {
