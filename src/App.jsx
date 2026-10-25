@@ -278,7 +278,6 @@ const injectStyles = () => {
 
 html, body, #root { 
   overscroll-behavior-y: none; 
-  background-color:  #f8fafc;
   color: #0f172a; 
   margin: 0; 
   padding: 0; 
@@ -286,6 +285,9 @@ html, body, #root {
   height: 100%;
   touch-action: manipulation; 
 }
+
+html, body { background-color: #0F2B5C; }
+#root { background-color: #f8fafc; }
 
 body {
   position: fixed;
@@ -1033,6 +1035,8 @@ useEffect(() => {
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover';
     injectStyles(); 
     startAutoTranslate();
+    document.documentElement.style.backgroundColor = '#0F2B5C';
+​​​​    document.body.style.backgroundColor = '#0F2B5C';
   }, []);
 
   useEffect(() => {
@@ -2733,22 +2737,22 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   return (
     <div
       className="md:hidden"
-        style={{
+              style={{
         position: 'fixed',
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 1000,
 
-        height: 'calc(62px + max(env(safe-area-inset-bottom, 0px) - 16px, 0px))',
+        height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
         padding: 0,
-        paddingBottom: 'max(env(safe-area-inset-bottom, 0px) - 16px, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         boxSizing: 'border-box',
 
         backgroundColor: '#0F2B5C',
         borderTop: '1px solid rgba(255,255,255,0.15)',
-        boxShadow: '0 80px 0 0 #0F2B5C',
         isolation: 'isolate',
+        transform: 'translateY(0)',
       }}
     >
       <div
