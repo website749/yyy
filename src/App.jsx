@@ -2733,21 +2733,19 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   return (
     <div
       className="md:hidden"
-      style={{
-      position: 'fixed',
-      left: 0,
-      right: 0,
-      bottom: 0,
-      zIndex: 1000,
-
-      height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
-      paddingBottom: 0,
-      boxSizing: 'border-box',
-
-      backgroundColor: '#0F2B5C',
-      borderTop: '1px solid rgba(255,255,255,0.15)',
-      isolation: 'isolate',
-    }}
+  style={{
+  position: 'fixed',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 1000,
+  height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
+  padding: 0,
+  boxSizing: 'border-box',
+  backgroundColor: '#0F2B5C',
+  borderTop: '1px solid rgba(255,255,255,0.15)',
+  isolation: 'isolate',
+}}
 >
       <div
         className="flex justify-around items-center w-full h-full"
