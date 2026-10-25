@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Home, MessageCircle, ShieldCheck, User, Bell, 
@@ -276,22 +277,33 @@ const injectStyles = () => {
   box-sizing: border-box; 
 }
 
-html, body, #root { 
-  overscroll-behavior-y: none; 
-  color: #0f172a; 
-  margin: 0; 
-  padding: 0; 
-  width: 100%; 
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
   height: 100%;
-  touch-action: manipulation; 
+  background-color: #0F2B5C; /* Dark blue so overscroll / safe-area at bottom is never white */
+  overscroll-behavior-y: none;
 }
 
-html, body { background-color: #0F2B5C; }
-#root { background-color: #f8fafc; }
-
 body {
-  position: fixed;
-  inset: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: #f8fafc;
+  color: #0f172a;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -391,7 +403,7 @@ const containsAbuse = (text) => {
 const StarryGalaxyCanvas = () => {
   const canvasRef = useRef(null);
 
-  usfecteEf(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -1035,8 +1047,6 @@ useEffect(() => {
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover';
     injectStyles(); 
     startAutoTranslate();
-    document.documentElement.style.backgroundColor = '#0F2B5C';
-    document.body.style.backgroungColor = '#0F2B5C';
   }, []);
 
   useEffect(() => {
@@ -2704,7 +2714,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
         {navItems.map(item => (
           <button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 ${currentView === item.id ? 'bg-[#0F2B5C] text-white font-bold shadow-md' : 'text-slate-500 hover:bg-slate-50 font-medium hover:text-[#0F2B5C]'}`}>
             <item.icon className="w-5 h-5" />
-            <div className="texFt-[13.5px]">{item.label}</div>
+            <div className="text-[13.5px]">{item.label}</div>
           </button>
         ))}
       </div>
@@ -2737,22 +2747,17 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   return (
     <div
       className="md:hidden"
-              style={{
+      style={{
         position: 'fixed',
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 1000,
-
-        height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
-        padding: 0,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxSizing: 'border-box',
-
         backgroundColor: '#0F2B5C',
         borderTop: '1px solid rgba(255,255,255,0.15)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        boxSizing: 'border-box',
         isolation: 'isolate',
-        transform: 'translateY(0)',
       }}
     >
       <div
@@ -2760,7 +2765,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
         style={{
           position: 'relative',
           zIndex: 1,
-          height: '62px',
+          height: '58px',
         }}
       >
         {navItems.map((item) => {
@@ -6334,35 +6339,6 @@ const LocationCard = ({ location, isFavorite, onToggleFavorite, onClick }) => {
   const displayTitle = safeStr(location.title);
   const contactLines = parseContactsList(location);
   const theme = getCategoryTheme(location.category);
-  const LocationCard = ({ location, isFavorite, onToggleFavorite, onClick }) => {
-  const theme = getCategoryTheme(location.category);
-  const c = parseContactsList(location)[0];
-  return (
-    <div onClick={onClick} className="col-span-full flex gap-3 bg-white rounded-2xl border border-slate-200 p-2.5 shadow-sm active:scale-[0.99] transition cursor-pointer">
-      <img src={location.image} alt="" className="w-20 h-20 rounded-xl object-cover shrink-0 bg-slate-100" />
-      <div className="flex-1 min-w-0 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between gap-2">
-            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${theme.badge}`}>{theme.emoji} {safeStr(location.category)}</span>
-            <button onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }} className="p-1">
-              <Pin className={`w-4 h-4 ${isFavorite ? 'fill-emerald-500 text-emerald-500' : 'text-slate-300'}`} />
-            </button>
-          </div>
-          <h3 className="font-black text-[13.5px] text-slate-900 line-clamp-1 mt-1">{safeStr(location.title)}</h3>
-          <p className="text-[11px] text-slate-500 font-bold line-clamp-1">📍 {safeStr(location.commune)} {safeStr(location.village)}</p>
-        </div>
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1"><Eye className="w-3 h-3" /> {location.views || 0}</span>
-          {c && (
-            <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()} className="flex items-center gap-1 bg-emerald-500 text-white text-[11px] font-black px-3 py-1 rounded-lg">
-              <Phone className="w-3 h-3" /> {safeStr(c.phone)}
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between group relative transition-all hover:shadow-md">

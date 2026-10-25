@@ -277,20 +277,33 @@ const injectStyles = () => {
   box-sizing: border-box; 
 }
 
-html, body, #root { 
-  overscroll-behavior-y: none; 
-  background-color:  #f8fafc;
-  color: #0f172a; 
-  margin: 0; 
-  padding: 0; 
-  width: 100%; 
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
   height: 100%;
-  touch-action: manipulation; 
+  background-color: #0F2B5C; /* Dark blue so overscroll / safe-area at bottom is never white */
+  overscroll-behavior-y: none;
 }
 
 body {
-  position: fixed;
-  inset: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: #f8fafc;
+  color: #0f172a;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -2740,13 +2753,10 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
         right: 0,
         bottom: 0,
         zIndex: 1000,
-
-        margin: 0,
-        padding: 0,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxSizing: 'border-box',
         backgroundColor: '#0F2B5C',
         borderTop: '1px solid rgba(255,255,255,0.15)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        boxSizing: 'border-box',
         isolation: 'isolate',
       }}
     >
@@ -2755,7 +2765,7 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
         style={{
           position: 'relative',
           zIndex: 1,
-          height: '56px',
+          height: '58px',
         }}
       >
         {navItems.map((item) => {
@@ -2834,7 +2844,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                     )}
                  </div>
                  <div>
-                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិស្តៅសន្តិភាព</h1>
+                    <h1 className="font-khmer-muol text-[14px] leading-tight text-[#0F2B5C] tracking-wide mt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
                     {!isOnline && <span className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded mt-0.5 inline-block"> Offline Mode ⚠️</span>}
                  </div>
               </div>
@@ -4514,73 +4524,79 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
      }
   }, [lockoutTime]);
 
-  const handleAdminLogin = async () => {
+    const handleAdminLogin = async () => {
     if (Date.now() < lockoutTime) return showToast('គណនីរបស់អ្នកត្រូវបានផ្អាកបណ្តោះអាសន្ន។ សូមរង់ចាំ។', 'error', 5000);
     if (!pwdInput.trim()) return showToast('សូមបំពេញលេខសម្ងាត់', 'error');
 
     setIsLoginLoading(true);
+
+    let isMatch = false;
     try {
-      const isMatch = await verifyAdminPassword(pwdInput.trim());
-      
-      if (isMatch) {
-         setIsAdmin(true); 
-         localStorage.setItem('tp_admin_session', 'true');
-         
-         const existingAdmin = (usersList || []).find(u => u.id === 'admin_ramit_fixed_uid');
-         let adminAvatar = existingAdmin?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+      isMatch = await verifyAdminPassword(pwdInput.trim());
+    } catch (e) {
+      isMatch = false;
+    }
 
-         if (db) {
-             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', 'admin_ramit_fixed_uid'), {
-                username: 'ADMIN-SUPPORT',
-                role: 'admin',
-                avatar: adminAvatar, 
-                timestamp: Date.now(),
-                lastActive: Date.now(),
-                status: 'online',
-                id: 'admin_ramit_fixed_uid'
-             }, { merge: true }).catch(()=>{});
-         }
+    if (isMatch) {
+      const existingAdmin = (usersList || []).find(u => u.id === 'admin_ramit_fixed_uid');
+      const adminAvatar = existingAdmin?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-         setLocalName('ADMIN-SUPPORT');
-         showToast('ចូលប្រើជាគណនី ADMIN ជោគជ័យ ✅');
-         setShowAdminLogin(false);
-         setPwdInput('');
-         setAttempts(0);
-         localStorage.removeItem('admin_attempts');
-         setCurrentView('admin');
-      } else {
-         throw new Error("Password mismatch");
+      // ចូលទំព័រ Admin ភ្លាមៗ មិនរង់ចាំ Firebase
+      setIsAdmin(true);
+      localStorage.setItem('tp_admin_session', 'true');
+      setLocalName('ADMIN-SUPPORT');
+      setShowAdminLogin(false);
+      setPwdInput('');
+      setAttempts(0);
+      localStorage.removeItem('admin_attempts');
+      setIsLoginLoading(false);
+      setCurrentView('admin');
+      showToast('ចូលប្រើជាគណនី ADMIN ជោគជ័យ ✅');
+
+      // បញ្ជូនទៅ Firebase នៅពីក្រោយ (គ្មាន await)
+      if (db) {
+        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', 'admin_ramit_fixed_uid'), {
+          username: 'ADMIN-SUPPORT',
+          role: 'admin',
+          avatar: adminAvatar,
+          timestamp: Date.now(),
+          lastActive: Date.now(),
+          status: 'online',
+          id: 'admin_ramit_fixed_uid'
+        }, { merge: true }).catch(() => {});
       }
-    } catch (err) {
-       const newAttempts = attempts + 1;
-       setAttempts(newAttempts);
-       localStorage.setItem('admin_attempts', newAttempts);
-       
-       if (db) {
-          const ip = await getClientIP();
-          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
-             type: 'Unauthorized security breach attempt to admin panel',
-             username: profile?.username || 'Anonymous Password Entry',
-             ip: ip,
-             device: getDeviceInfo(),
-             timestamp: Date.now()
-          }).catch(()=>{});
-       }
+      return;
+    }
 
-      if (newAttempts >= 3) {
-  const newLockout = Date.now() + 15 * 60 * 1000;
-  setLockoutTime(newLockout);
-  localStorage.setItem('admin_lockout', newLockout);
-  showToast('⚠️ អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ! Admin កំពុងតាមដានអ្នក!!', 'error', 8000);
-} else {
-  showToast(`លេខសម្ងាត់មិនត្រឹមត្រូវ (${newAttempts}/3)`, 'error');
-}
-       setPwdInput('');
-    } finally {
-       setIsLoginLoading(false);
+    // ករណីលេខសម្ងាត់ខុស
+    const newAttempts = attempts + 1;
+    setAttempts(newAttempts);
+    localStorage.setItem('admin_attempts', newAttempts);
+    setPwdInput('');
+    setIsLoginLoading(false);
+
+    if (db) {
+      (async () => {
+        const ip = await getClientIP();
+        addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
+          type: 'Unauthorized security breach attempt to admin panel',
+          username: profile?.username || 'Anonymous Password Entry',
+          ip: ip,
+          device: getDeviceInfo(),
+          timestamp: Date.now()
+        }).catch(() => {});
+      })();
+    }
+
+    if (newAttempts >= 3) {
+      const newLockout = Date.now() + 15 * 60 * 1000;
+      setLockoutTime(newLockout);
+      localStorage.setItem('admin_lockout', newLockout);
+      showToast('⚠️ អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ! Admin កំពុងតាមដានអ្នក!!', 'error', 8000);
+    } else {
+      showToast(`លេខសម្ងាត់មិនត្រឹមត្រូវ (${newAttempts}/3)`, 'error');
     }
   };
-
   const handleSaveName = async () => {
       if (isAdmin) return showToast('មិនអាចប្តូរឈ្មោះ ADMIN បានទេ', 'error');
       
@@ -6323,6 +6339,7 @@ const LocationCard = ({ location, isFavorite, onToggleFavorite, onClick }) => {
   const displayTitle = safeStr(location.title);
   const contactLines = parseContactsList(location);
   const theme = getCategoryTheme(location.category);
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between group relative transition-all hover:shadow-md">
       <div className="absolute top-2 right-2 z-10">
