@@ -2739,12 +2739,11 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   right: 0,
   bottom: 0,
   zIndex: 1000,
-  height: 'calc(62px + env(safe-area-inset-bottom, -6px))',
-  padding: 0,
+  height: 'calc(86px + env(safe-area-inset-bottom, 0px))',
+  ​​​​paddingBottom: 'env(safe-area-inset-bottom, 0px)',
   boxSizing: 'border-box',
-  backgroundColor: '#0F2B5C',
-  borderTop: '1px solid rgba(255,255,255,0.15)',
-  isolation: 'isolate',
+  backgroundColor: '#102F63',
+  borderTop: 'none',
 }}
 >
       <div
