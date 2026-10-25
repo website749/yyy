@@ -2733,28 +2733,31 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   return (
     <div
       className="md:hidden"
-      style={{
+style={{
   position: 'fixed',
   left: 0,
   right: 0,
   bottom: 0,
   zIndex: 99999,
-  height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-  maxheight: '90px',
-  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  height: '56px',
+  paddingBottom: 0,
   boxSizing: 'border-box',
   backgroundColor: '#0F2B5C',
   borderTop: '1px solid rgba(255,255,255,0.15)',
   isolation: 'isolate',
 }}
+
     >
       <div
-        className="flex justify-around items-center w-full h-full"
-        style={{
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
+      className="md:hidden shrink-0 w-full"
+      style={{
+        height: '64px',
+        paddingBottom: '8px',
+        boxSizing: 'border-box',
+        backgroundColor: '#0F2B5C',
+        borderTop: '1px solid rgba(255,255,255,0.15)',
+      }}
+    >
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
