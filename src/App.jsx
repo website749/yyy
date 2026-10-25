@@ -2700,7 +2700,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
         {navItems.map(item => (
           <button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 ${currentView === item.id ? 'bg-[#0F2B5C] text-white font-bold shadow-md' : 'text-slate-500 hover:bg-slate-50 font-medium hover:text-[#0F2B5C]'}`}>
             <item.icon className="w-5 h-5" />
-            <div className="text-[13.5px]">{item.label}</div>
+            <div className="texFt-[13.5px]">{item.label}</div>
           </button>
         ))}
       </div>
@@ -2734,17 +2734,18 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
     <div
       className="md:hidden"
       style={{
-       position: 'fixed',
-       left: 0,
-       right: 0,
-       bottom: 0,
-       zIndex: 99999,
-       height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-       paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-       boxSizing: 'border-box',
-       backgroundColor: '#0F2B5C',
-       borderTop: '1px solid rgba(255,255,255,0.15)',
-       isolation: 'isolate',
+  position: 'fixed',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 99999,
+  height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
+  maxheight: '90px',
+  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  boxSizing: 'border-box',
+  backgroundColor: '#0F2B5C',
+  borderTop: '1px solid rgba(255,255,255,0.15)',
+  isolation: 'isolate',
 }}
     >
       <div
