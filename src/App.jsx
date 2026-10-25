@@ -2262,7 +2262,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
   return (
     <div 
-      className="fixed inset-0 font-khmer flex flex-col md:flex-row overflow-hidden " 
+      className="w-full h-full min-h-[100dvh] font-khmer flex flex-col md:flex-row overflow-hidden relative" 
       style={{ backgroundColor: customBg }}
     >
       
@@ -2753,19 +2753,19 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
         right: 0,
         bottom: 0,
         zIndex: 1000,
+        height: '56px',
+        margin: 0,
+        padding: 0,
         backgroundColor: '#0F2B5C',
         borderTop: '1px solid rgba(255,255,255,0.15)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         boxSizing: 'border-box',
-        isolation: 'isolate',
       }}
     >
       <div
-        className="flex justify-around items-center w-full"
+        className="flex justify-around items-center w-full h-full"
         style={{
-          position: 'relative',
-          zIndex: 1,
-          height: '58px',
+          margin: 0,
+          padding: 0,
         }}
       >
         {navItems.map((item) => {
