@@ -2690,7 +2690,7 @@ const Sidebar = ({ currentView, setCurrentView, isAdmin, appLogo, chatFeatureEna
            )}
         </div>
         <div className="min-w-0">
-          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិទ្យាល័យស្តៅសន្តិភាព</h1>
+          <h1 className="font-khmer-muol text-[13px] text-[#0F2B5C] leading-none tracking-wide truncate pt-1">វិស្តៅសន្តិភាព</h1>
           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Portal</p>
         </div>
       </div>
@@ -2734,18 +2734,18 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
     <div
       className="md:hidden"
   style={{
-    position: 'fixed',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 99999,
-    height: '56px',
-    margin: 0,
-    padding: 0,
-    boxSizing: 'border-box',
-    backgroundColor: '#0F2B5C',
-    borderTop: '1px solid rgba(255,255,255,0.15)',
-    isolation: 'isolate',
+      position: 'fixed',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 99999,
+  height: 'calc(45px + env(safe-area-inset-bottom, 0px))',
+  padding: 0,
+  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+  boxSizing: 'border-box',
+  backgroundColor: '#0F2B5C',
+  borderTop: '1px solid rgba(255,255,255,0.15)',
+  isolation: 'isolate',
   }}
 >
       <div
