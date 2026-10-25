@@ -2733,20 +2733,21 @@ const BottomNav = ({ currentView, setCurrentView, isAdmin, chatFeatureEnabled })
   return (
     <div
       className="md:hidden"
-      style={{
+        style={{
         position: 'fixed',
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 1000,
 
-        height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
+        height: 'calc(62px + max(env(safe-area-inset-bottom, 0px) - 16px, 0px))',
         padding: 0,
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px) - 16px, 0px)',
         boxSizing: 'border-box',
 
         backgroundColor: '#0F2B5C',
         borderTop: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 80px 0 0 #0F2B5C',
         isolation: 'isolate',
       }}
     >
@@ -4514,73 +4515,79 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
      }
   }, [lockoutTime]);
 
-  const handleAdminLogin = async () => {
+    const handleAdminLogin = async () => {
     if (Date.now() < lockoutTime) return showToast('គណនីរបស់អ្នកត្រូវបានផ្អាកបណ្តោះអាសន្ន។ សូមរង់ចាំ។', 'error', 5000);
     if (!pwdInput.trim()) return showToast('សូមបំពេញលេខសម្ងាត់', 'error');
 
     setIsLoginLoading(true);
+
+    let isMatch = false;
     try {
-      const isMatch = await verifyAdminPassword(pwdInput.trim());
-      
-      if (isMatch) {
-         setIsAdmin(true); 
-         localStorage.setItem('tp_admin_session', 'true');
-         
-         const existingAdmin = (usersList || []).find(u => u.id === 'admin_ramit_fixed_uid');
-         let adminAvatar = existingAdmin?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+      isMatch = await verifyAdminPassword(pwdInput.trim());
+    } catch (e) {
+      isMatch = false;
+    }
 
-         if (db) {
-             await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', 'admin_ramit_fixed_uid'), {
-                username: 'ADMIN-SUPPORT',
-                role: 'admin',
-                avatar: adminAvatar, 
-                timestamp: Date.now(),
-                lastActive: Date.now(),
-                status: 'online',
-                id: 'admin_ramit_fixed_uid'
-             }, { merge: true }).catch(()=>{});
-         }
+    if (isMatch) {
+      const existingAdmin = (usersList || []).find(u => u.id === 'admin_ramit_fixed_uid');
+      const adminAvatar = existingAdmin?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-         setLocalName('ADMIN-SUPPORT');
-         showToast('ចូលប្រើជាគណនី ADMIN ជោគជ័យ ✅');
-         setShowAdminLogin(false);
-         setPwdInput('');
-         setAttempts(0);
-         localStorage.removeItem('admin_attempts');
-         setCurrentView('admin');
-      } else {
-         throw new Error("Password mismatch");
+      // ចូលទំព័រ Admin ភ្លាមៗ មិនរង់ចាំ Firebase
+      setIsAdmin(true);
+      localStorage.setItem('tp_admin_session', 'true');
+      setLocalName('ADMIN-SUPPORT');
+      setShowAdminLogin(false);
+      setPwdInput('');
+      setAttempts(0);
+      localStorage.removeItem('admin_attempts');
+      setIsLoginLoading(false);
+      setCurrentView('admin');
+      showToast('ចូលប្រើជាគណនី ADMIN ជោគជ័យ ✅');
+
+      // បញ្ជូនទៅ Firebase នៅពីក្រោយ (គ្មាន await)
+      if (db) {
+        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', 'admin_ramit_fixed_uid'), {
+          username: 'ADMIN-SUPPORT',
+          role: 'admin',
+          avatar: adminAvatar,
+          timestamp: Date.now(),
+          lastActive: Date.now(),
+          status: 'online',
+          id: 'admin_ramit_fixed_uid'
+        }, { merge: true }).catch(() => {});
       }
-    } catch (err) {
-       const newAttempts = attempts + 1;
-       setAttempts(newAttempts);
-       localStorage.setItem('admin_attempts', newAttempts);
-       
-       if (db) {
-          const ip = await getClientIP();
-          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
-             type: 'Unauthorized security breach attempt to admin panel',
-             username: profile?.username || 'Anonymous Password Entry',
-             ip: ip,
-             device: getDeviceInfo(),
-             timestamp: Date.now()
-          }).catch(()=>{});
-       }
+      return;
+    }
 
-      if (newAttempts >= 3) {
-  const newLockout = Date.now() + 15 * 60 * 1000;
-  setLockoutTime(newLockout);
-  localStorage.setItem('admin_lockout', newLockout);
-  showToast('⚠️ អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ! Admin កំពុងតាមដានអ្នក!!', 'error', 8000);
-} else {
-  showToast(`លេខសម្ងាត់មិនត្រឹមត្រូវ (${newAttempts}/3)`, 'error');
-}
-       setPwdInput('');
-    } finally {
-       setIsLoginLoading(false);
+    // ករណីលេខសម្ងាត់ខុស
+    const newAttempts = attempts + 1;
+    setAttempts(newAttempts);
+    localStorage.setItem('admin_attempts', newAttempts);
+    setPwdInput('');
+    setIsLoginLoading(false);
+
+    if (db) {
+      (async () => {
+        const ip = await getClientIP();
+        addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
+          type: 'Unauthorized security breach attempt to admin panel',
+          username: profile?.username || 'Anonymous Password Entry',
+          ip: ip,
+          device: getDeviceInfo(),
+          timestamp: Date.now()
+        }).catch(() => {});
+      })();
+    }
+
+    if (newAttempts >= 3) {
+      const newLockout = Date.now() + 15 * 60 * 1000;
+      setLockoutTime(newLockout);
+      localStorage.setItem('admin_lockout', newLockout);
+      showToast('⚠️ អ្នកកំពុងព្យាយាមធ្វើសកម្មភាពព្យាបាទ! Admin កំពុងតាមដានអ្នក!!', 'error', 8000);
+    } else {
+      showToast(`លេខសម្ងាត់មិនត្រឹមត្រូវ (${newAttempts}/3)`, 'error');
     }
   };
-
   const handleSaveName = async () => {
       if (isAdmin) return showToast('មិនអាចប្តូរឈ្មោះ ADMIN បានទេ', 'error');
       
