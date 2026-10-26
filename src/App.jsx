@@ -3257,46 +3257,22 @@ return matchesLevel;
 };
 
 const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
-  const fakeCount = appStats?.fakeUsers || 0;
-  const totalUsers = (usersList || []).length + fakeCount;
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  
+  const currentMonth = now.getMonth(); // 0-11 (តុលា = 9, វិច្ឆិកា = 10)
+
   const startOfMonthMs = new Date(currentYear, currentMonth, 1).getTime();
   const startOfYearMs = new Date(currentYear, 0, 1).getTime();
-
-  const usersThisMonth = (usersList || []).filter(u => u && (u.timestamp || 0) >= startOfMonthMs).length + fakeCount;
-  const usersThisYear = (usersList || []).filter(u => u && (u.timestamp || 0) >= startOfYearMs).length + fakeCount;
-
   const locsThisMonth = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfMonthMs).length;
   const locsThisYear = (locations || []).filter(l => l && (l.timestamp || 0) >= startOfYearMs).length;
 
-  const stats = [
-    { label: 'អ្នកប្រើប្រាស់សសរុប', count: totalUsers + 1, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
-    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-500', desc: `ក្នុងខែទី ${currentMonth + 1}` },
-    { label: 'អ្នកប្រើប្រាស់ (ឆ្នាំនេះ)', count: usersThisYear, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}` },
-    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
-    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}` },
-    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}` },
-  ];
-
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
-  
-  const countMonth = (m) => {
-    const s = new Date(currentYear, m, 1).getTime();
-    const e = new Date(currentYear, m + 1, 0, 23, 59, 59).getTime();
-    return {
-      users: (usersList || []).filter(u => u && (u.timestamp || 0) >= s && (u.timestamp || 0) <= e).length + (m === currentMonth ? fakeCount : 0),
-      entries: (locations || []).filter(l => l && (l.timestamp || 0) >= s && (l.timestamp || 0) <= e).length,
-    };
-  };
 
-  // ទិន្នន័យអ្នកប្រើប្រាស់ពិតប្រាកដ (ខែចាស់) — index ខែ: មិថុនា=5, កក្កដា=6, សីហា=7, កញ្ញា=8, តុលា=9
-  // ខែផ្សេងទៀត = 0 ។ ខែថ្មីៗ (វិច្ឆិកា, ធ្នូ...) នឹងរាប់ដោយស្វ័យប្រវត្តិពីអ្នកចូលប្រើ App
+  // ទិន្នន័យពិតខែចាស់ (index: មិថុនា=5 ... តុលា=9)
   const BASE_USERS = { 5: 5, 6: 50, 7: 203, 8: 802, 9: 12 };
+  // ចំនួនអ្នកចុះឈ្មោះប្រើប្រាស់សរុបតាំងពីដើម
+  const BASE_REGISTERED_TOTAL = 1214;
 
-  // ទីតាំងបញ្ចូល (រក្សាទុកតាមតក្កដើម ដូចមុន)
   const tsMs = (t) => {
     if (!t) return 0;
     if (typeof t === 'object') { if (t.toMillis) return t.toMillis(); if (t.seconds) return t.seconds * 1000; }
@@ -3311,12 +3287,30 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
     return d.getFullYear() === currentYear && d.getMonth() === index;
   }).length;
 
-  const monthlyData = khmerMonths.map((name, index) => {
-    const mm = String(index + 1).padStart(2, '0');
-    const liveThisMonth = appStats?.monthly?.[`${currentYear}-${mm}`] || 0; // អ្នកចូលថ្មីក្នុងខែនោះ (រាប់ស្វ័យប្រវត្តិ)
-    const users = (BASE_USERS[index] || 0) + liveThisMonth;
-    return { name, users, entries: entriesOf(index) };
-  });
+  // អ្នកប្រើជាក់ស្តែងត្រូវរាប់ចូលខែបច្ចុប្បន្នដោយស្វ័យប្រវត្តិ (វិច្ឆិកា → ខែ ១១, ធ្នូ → ខែ ១២ ...)
+  const liveOf = (index) => appStats?.monthly?.[`${currentYear}-${String(index + 1).padStart(2, '0')}`] || 0;
+
+  const monthlyData = khmerMonths.map((name, index) => ({
+    name,
+    users: (BASE_USERS[index] || 0) + liveOf(index),
+    entries: entriesOf(index),
+  }));
+
+  const liveTotal = khmerMonths.reduce((sum, _, i) => sum + liveOf(i), 0);
+  const registeredTotal = BASE_REGISTERED_TOTAL + liveTotal;
+  const usersThisMonth = monthlyData[currentMonth].users;
+  const usersJuneToNow = monthlyData.slice(5, currentMonth + 1).reduce((s, m) => s + m.users, 0);
+
+  const stats = [
+    { label: 'អ្នកចុះឈ្មោះប្រើប្រាស់', count: registeredTotal, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'អ្នកប្រើប្រាស់ (ខែនេះ)', count: usersThisMonth, color: 'text-sky-500', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: `អ្នកប្រើប្រាស់ទាំងអស់ (មិថុនា-${khmerMonths[currentMonth]})`, count: usersJuneToNow, color: 'text-indigo-600', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+    { label: 'ទីតាំងសរុប', count: (locations || []).length, color: 'text-slate-800', desc: 'សរុបតាំងពីដើម' },
+    { label: 'ទីតាំងបញ្ចូល (ខែនេះ)', count: locsThisMonth, color: 'text-[#10b981]', desc: `ក្នុងខែទី ${currentMonth + 1}` },
+    { label: 'ទីតាំងបញ្ចូល (ឆ្នាំនេះ)', count: locsThisYear, color: 'text-rose-500', desc: `ក្នុងឆ្នាំ ${currentYear}` },
+  ];
+
+  // ... ទុក return (...) ខាងក្រោមដូចដើម
 
   return (
     <div className="space-y-4 pt-1 w-full flex-1 font-khmer flex flex-col h-full">
