@@ -2741,24 +2741,24 @@ const BottomNav = ({
   }
 
   return (
-    <div
-  className="md:hidden"
-  style={{
-    position: 'fixed',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 99999,
-    height: 'calc(58px + env(safe-area-inset-bottom, 0px) * 0.45)',
-    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.45)',
-    boxSizing: 'border-box',
-    backgroundColor: '#12285a',
-    borderTop: '1px solid rgba(255,255,255,0.15)',
-  }}
->
   <div
-    className="flex justify-around items-center w-full"
-    style={{ height: '58px', margin: 0, padding: 0 }}
+    className="md:hidden"
+    style={{
+      position: 'fixed',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 99999,
+      height: '56px',                 // ← ទាបជាងមុន (ពី 58px + 15px)
+      paddingBottom: 0,               // ← លុប safe-area padding
+      boxSizing: 'border-box',
+      backgroundColor: '#12285a',
+      borderTop: '1px solid rgba(255,255,255,0.15)',
+    }}
+  >
+    <div
+      className="flex justify-around items-center w-full"
+      style={{ height: '58px', margin: 0, padding: 0 }}
     >
         {navItems.map((item) => {
           const isActive = currentView === item.id;
