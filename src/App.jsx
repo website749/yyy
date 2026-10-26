@@ -273,7 +273,7 @@ const injectStyles = () => {
   --theme-blue: #0ea5e9; 
 }
 * { 
-  -webkit-tap-highlight-color: transparent; 
+  -webkit-tap-highlight-color: tFransparent; 
   box-sizing: border-box; 
 }
 

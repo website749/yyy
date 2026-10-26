@@ -11,3 +11,13 @@
   padding: 10px !important;
   border-radius: 12px !important;
 }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: #12285a; /* ពណ៌ដូច Menu */
+}
+/* ធ្វើឲ្យ Menu ខាងក្រោមមិនមានចន្លោះ */
+nav, [class*="bottom-0"] {
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
