@@ -2776,7 +2776,7 @@ const BottomNav = ({
                 minWidth: 0,
                 color: isActive ? '#38BDF8' : '#FFFFFF',
                 opacity: 1,
-                padding: '10px 0 4px 0',
+                padding: '10px 04px 0',
                 cursor: 'pointer',
                 WebkitTapHighlightColor: 'transparent',
               }}
@@ -2827,7 +2827,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
         <div className="bg-white border-b border-slate-200 pt-[calc(env(safe-area-inset-top,8px)+12px)] px-4 pb-4 shadow-sm relative z-40 shrink-0 w-full">
            <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
-                 <div className="flex-1 h-full flex flex-col items-center justify-start gap-1 !bg-transparent !border-0 !shadow-none !rounded-none active:scale-95 select-none transition-transform">
+                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden p-0.5 border border-slate-100">
                     {appLogo ? (
                        <img src={appLogo} className="w-full h-full object-cover rounded-full" alt="Logo" />
                     ) : (
