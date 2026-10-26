@@ -2305,7 +2305,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
                />
              </div>
            )}
-           {currentView === 'reports' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><ReportsView locations={approvedLocations} usersList={usersList} appStats={appStats} /></div>}
+           {currentView === 'reports' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><ReportsView locations={approvedLocations} usersList={usersList} appStats={appStats} db={db} appId={appId} /></div>}
            {currentView === 'chat' && (chatFeatureEnabled || isAdmin) && <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-0"><ChatView chats={chats} user={user} profile={profile} showToast={showToast} db={db} appId={appId} setCurrentView={setCurrentView} isAdmin={isAdmin} chatTargets={chatTargets} myContacts={myContacts} friendRequests={friendRequests} dbRegions={dbRegions} gpsStatus={gpsStatus} captureGps={handleGPS} gpsCoords={gpsCoords} usersList={usersList} activeChatUser={activeChatUser} setActiveChatUser={setActiveChatUser} isSoundMuted={isSoundMuted} setIsSoundMuted={setIsSoundMuted} startRealCall={startRealCall} /></div>}
            {currentView === 'chat' && !chatFeatureEnabled && !isAdmin && (
              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center pb-[calc(90px+env(safe-area-inset-bottom,20px))]">
@@ -3256,7 +3256,16 @@ return matchesLevel;
   );
 };
 
-const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
+const ReportsView = ({ locations = [], usersList = [], appStats = {}, db, appId }) => {
+  const [adj, setAdj] = useState({ registeredBase: null, months: {} });
+  useEffect(() => {
+    if (!db || !appId) return;
+    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'report_adjust'), snap => {
+      if (snap.exists()) setAdj({ registeredBase: null, months: {}, ...snap.data() });
+    }, () => {});
+    return () => unsub();
+  }, [db, appId]);
+  
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth(); // 0-11 (តុលា = 9, វិច្ឆិកា = 10)
@@ -3269,9 +3278,11 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const khmerMonths = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
 
   // ទិន្នន័យពិតខែចាស់ (index: មិថុនា=5 ... តុលា=9)
-  const BASE_USERS = { 5: 5, 6: 50, 7: 203, 8: 802, 9: 12 };
-  // ចំនួនអ្នកចុះឈ្មោះប្រើប្រាស់សរុបតាំងពីដើម
-  const BASE_REGISTERED_TOTAL = 1214;
+  const DEFAULT_BASE_USERS = { 5: 5, 6: 50, 7: 203, 8: 802, 9: 12 };
+const baseOf = (i) => (adj.months && adj.months[i] !== undefined && adj.months[i] !== '')
+  ? Number(adj.months[i]) : (DEFAULT_BASE_USERS[i] || 0);
+const BASE_REGISTERED_TOTAL = (adj.registeredBase !== null && adj.registeredBase !== undefined)
+  ? Number(adj.registeredBase) : 1093;
 
   const tsMs = (t) => {
     if (!t) return 0;
@@ -3291,10 +3302,10 @@ const ReportsView = ({ locations = [], usersList = [], appStats = {} }) => {
   const liveOf = (index) => appStats?.monthly?.[`${currentYear}-${String(index + 1).padStart(2, '0')}`] || 0;
 
   const monthlyData = khmerMonths.map((name, index) => ({
-    name,
-    users: (BASE_USERS[index] || 0) + liveOf(index),
-    entries: entriesOf(index),
-  }));
+  name,
+  users: baseOf(index) + liveOf(index),
+  entries: entriesOf(index),
+}));
 
   const liveTotal = khmerMonths.reduce((sum, _, i) => sum + liveOf(i), 0);
   const registeredTotal = BASE_REGISTERED_TOTAL + liveTotal;
@@ -4879,6 +4890,115 @@ const AdminLiveTrackerMap = ({ usersList }) => {
   );
 };
 
+const ReportEditor = ({ db, appId, showToast }) => {
+  const khmerMonths = ['មករា','កុម្ភៈ','មីនា','មេសា','ឧសភា','មិថុនា','កក្កដា','សីហា','កញ្ញា','តុលា','វិច្ឆិកា','ធ្នូ'];
+  const DEFAULTS = { 5: 5, 6: 50, 7: 203, 8: 802, 9: 12 };
+  const year = new Date().getFullYear();
+  const [stats, setStats] = useState({});
+  const [regBase, setRegBase] = useState('1093');
+  const [months, setMonths] = useState({});
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    if (!db) return;
+    const u1 = onSnapshot(doc(db, 'artifacts', appId, 'public', 'stats'), s => { if (s.exists()) setStats(s.data()); }, () => {});
+    const u2 = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'report_adjust'), s => {
+      if (s.exists()) {
+        const d = s.data();
+        if (d.registeredBase !== undefined && d.registeredBase !== null) setRegBase(String(d.registeredBase));
+        setMonths(d.months || {});
+        setHidden(!!d.tableHidden);
+      }
+    }, () => {});
+    return () => { u1(); u2(); };
+  }, [db, appId]);
+
+  const liveOf = (i) => stats?.monthly?.[`${year}-${String(i + 1).padStart(2, '0')}`] || 0;
+  const baseOf = (i) => (months[i] !== undefined && months[i] !== '') ? Number(months[i]) : (DEFAULTS[i] || 0);
+  const liveTotal = khmerMonths.reduce((s, _, i) => s + liveOf(i), 0);
+  const registeredTotal = Number(regBase || 0) + liveTotal;
+
+  const toggleHidden = async () => {
+    const next = !hidden;
+    setHidden(next);
+    if (!db) return;
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'report_adjust'), { tableHidden: next }, { merge: true });
+      showToast(next ? 'បានលាក់តារាង' : 'បានបង្ហាញតារាងវិញ ✅');
+    } catch (e) { showToast('មានបញ្ហា: ' + e.message, 'error'); }
+  };
+
+  const save = async () => {
+    if (!db) return;
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'report_adjust'), {
+        registeredBase: Number(regBase || 0),
+        months,
+      }, { merge: true });
+      showToast('រក្សាទុករបាយការណ៍រួចរាល់ ✅');
+    } catch (e) { showToast('រក្សាទុកមិនបាន: ' + e.message, 'error'); }
+  };
+
+  return (
+    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4 animate-in fade-in">
+      <div className="flex justify-between items-center border-l-4 border-emerald-500 pl-2 gap-2">
+        <h3 className="font-black text-[12.5px] text-[#0F2B5C]">កែចំនួនទិន្នន័យរបាយការណ៍</h3>
+        <div className="flex gap-1.5">
+          <button onClick={toggleHidden} className={`px-3 py-1.5 rounded-lg text-[11px] font-black border ${hidden ? 'bg-sky-50 text-sky-600 border-sky-200' : 'bg-white text-rose-500 border-slate-200'}`}>
+            {hidden ? '👁 បង្ហាញតារាងវិញ' : '🙈 លាក់តារាង (Remove)'}
+          </button>
+          {!hidden && <button onClick={save} className="bg-[#10b981] text-white px-4 py-1.5 rounded-lg text-[11px] font-black">រក្សាទុក</button>}
+        </div>
+      </div>
+
+      {hidden ? (
+        <p className="text-center text-[11px] font-bold text-slate-400 py-6 border border-dashed border-slate-200 rounded-xl">
+          តារាងត្រូវបានលាក់ · ចុច "បង្ហាញតារាងវិញ" ដើម្បីកែបន្ត
+        </p>
+      ) : (
+        <>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+            <label className="text-[11px] font-bold text-slate-600 block">អ្នកចុះឈ្មោះប្រើប្រាស់ (លេខមូលដ្ឋាន)</label>
+            <input type="number" value={regBase} onChange={e => setRegBase(e.target.value)} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-[14px] font-bold" />
+            <p className="text-[11px] text-slate-500 font-bold">
+              អ្នកចូលពិតដែលរាប់ហើយ (ឆ្នាំនេះ): <span className="text-sky-600">{liveTotal}</span> &nbsp;|&nbsp;
+              បង្ហាញក្នុងរបាយការណ៍: <span className="text-emerald-600">{registeredTotal}</span>
+            </p>
+            <p className="text-[10px] text-slate-400">បើចង់ឱ្យបង្ហាញ 1214 = លេខមូលដ្ឋាន + {liveTotal} → ដាក់ {1214 - liveTotal}</p>
+          </div>
+
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-[12px] text-left">
+              <thead className="bg-[#0F2B5C] text-white">
+                <tr>
+                  <th className="p-2.5">ខែ</th>
+                  <th className="p-2.5">មូលដ្ឋាន (កែបាន)</th>
+                  <th className="p-2.5">ពិត (ស្វ័យប្រវត្តិ)</th>
+                  <th className="p-2.5">បង្ហាញ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {khmerMonths.map((m, i) => (
+                  <tr key={i}>
+                    <td className="p-2.5 font-bold text-slate-700">{m}</td>
+                    <td className="p-2">
+                      <input type="number" value={months[i] !== undefined ? months[i] : (DEFAULTS[i] || 0)}
+                        onChange={e => setMonths({ ...months, [i]: e.target.value })}
+                        className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-bold" />
+                    </td>
+                    <td className="p-2.5 text-sky-600 font-bold">{liveOf(i)}</td>
+                    <td className="p-2.5 font-black text-emerald-600">{baseOf(i) + liveOf(i)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
   const [sendMode, setSendMode] = useState('all');
@@ -5687,6 +5807,8 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
 
       <div className="flex w-full gap-2 overflow-x-auto hide-scrollbar pb-2 pt-1 touch-pan-x scroll-smooth">
         {[
+          {id: 'settings', label: 'Settings'},
+          {id: 'report_edit', label: 'កែរបាយការណ៍'},
           {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
           {id: 'send_msg', label: 'ផ្ញើសារ'},
           {id: 'live_map', label: 'ផែនទីអ្នកប្រើ (Live)'},
@@ -5886,6 +6008,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
              </div>
           )}
 
+          {activeTab === 'report_edit' && <ReportEditor db={db} appId={appId} showToast={showToast} />}
           {activeTab === 'live_map' && (
              <div className="bg-slate-900 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.1)] border border-slate-800 animate-in fade-in duration-200">
                  <AdminLiveTrackerMap usersList={usersList} />
