@@ -282,17 +282,17 @@ html {
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #0F2B5C; /* Dark blue so overscroll / safe-area at bottom is never white */
+  background-color: #12285a; /* ដូចពណ៌ BottomNav */
   overscroll-behavior-y: none;
 }
 
 body {
   margin: 0;
   padding: 0;
+  position: fixed;
+  inset: 0;
   width: 100%;
-  height: 100%;
-  min-height: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
   overflow: hidden;
   background-color: #f8fafc;
   color: #0f172a;
@@ -302,11 +302,9 @@ body {
 
 #root {
   width: 100%;
-  height: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
   overflow: hidden;
 }
-
 .font-khmer { 
   font-family: var(--font-khmer); 
   line-height: 1.65;
@@ -2751,28 +2749,23 @@ const BottomNav = ({
 
   return (
     <div
-      className="md:hidden"
-      style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 99999,
-
-        height: '62px',
-        paddingBottom: 0,
-        boxSizing: 'border-box',
-
-        backgroundColor: '#12285a',
-        borderTop: '1px solid rgba(255,255,255,0.15)',
-      }}
-    >
-      <div
-        className="flex justify-around items-center w-full h-full"
-        style={{
-          margin: 0,
-          padding: 0,
-        }}
+  className="md:hidden"
+  style={{
+    position: 'fixed',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 99999,
+    height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+    boxSizing: 'border-box',
+    backgroundColor: '#12285a',
+    borderTop: '1px solid rgba(255,255,255,0.15)',
+  }}
+>
+  <div
+    className="flex justify-around items-center w-full"
+    style={{ height: '62px', margin: 0, padding: 0 }}
       >
         {navItems.map((item) => {
           const isActive = currentView === item.id;
