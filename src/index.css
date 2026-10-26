@@ -12,12 +12,28 @@
   border-radius: 12px !important;
 }
 
-html, body, #root {
-  height: 100%;
+html,
+body,
+#root {
+  min-height: 100%;
   margin: 0;
-  background: #12285a; /* ពណ៌ដូច Menu */
+  background-color: #12285a;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100dvh;
 }
 /* ធ្វើឲ្យ Menu ខាងក្រោមមិនមានចន្លោះ */
 nav, [class*="bottom-0"] {
   padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+.page-content {
+  padding-bottom: calc(
+    62px + env(safe-area-inset-bottom, 0px) + 12px
+  );
 }
