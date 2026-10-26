@@ -285,21 +285,14 @@ html {
   background-color: #12285a; /* ដូចពណ៌ BottomNav */
   overscroll-behavior-y: none;
 }
-
 body {
-  margin: 0;
-  padding: 0;
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100dvh;
   overflow: hidden;
   background-color: #f8fafc;
-  color: #0f172a;
-  overscroll-behavior-y: none;
-  touch-action: manipulation;
 }
-
 #root {
   width: 100%;
   height: 100dvh;
