@@ -2765,8 +2765,9 @@ const BottomNav = ({
 >
   <div
     className="flex justify-around items-center w-full"
-    style={{ height: '62px', margin: 0, padding: 0 }}
-      >
+    className="flex justify-around items-center w-full"
+    style={{ height: '62px' }}
+    >
         {navItems.map((item) => {
           const isActive = currentView === item.id;
           const Icon = item.icon;
