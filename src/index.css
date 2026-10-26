@@ -12,12 +12,10 @@
   border-radius: 12px !important;
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
+html, body, #root {
   margin: 0;
-  background-color: #12285a;
+  min-height: 100dvh;
+  background: #12285a;
 }
 
 html {
