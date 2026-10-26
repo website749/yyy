@@ -2749,8 +2749,8 @@ const BottomNav = ({
     right: 0,
     bottom: 0,
     zIndex: 99999,
-    height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
-    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+    height: 'calc(58px + env(safe-area-inset-bottom, 0px) * 0.45)',
+    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) * 0.45)',
     boxSizing: 'border-box',
     backgroundColor: '#12285a',
     borderTop: '1px solid rgba(255,255,255,0.15)',
@@ -2758,8 +2758,7 @@ const BottomNav = ({
 >
   <div
     className="flex justify-around items-center w-full"
-    className="flex justify-around items-center w-full"
-    style={{ height: '62px' }}
+    style={{ height: '58px', margin: 0, padding: 0 }}
     >
         {navItems.map((item) => {
           const isActive = currentView === item.id;
@@ -2777,7 +2776,7 @@ const BottomNav = ({
                 minWidth: 0,
                 color: isActive ? '#38BDF8' : '#FFFFFF',
                 opacity: 1,
-                padding: '4px 0',
+                padding: '10px 0 4px 0',
                 cursor: 'pointer',
                 WebkitTapHighlightColor: 'transparent',
               }}
@@ -2828,7 +2827,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
         <div className="bg-white border-b border-slate-200 pt-[calc(env(safe-area-inset-top,8px)+12px)] px-4 pb-4 shadow-sm relative z-40 shrink-0 w-full">
            <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
-                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden p-0.5 border border-slate-100">
+                 <div className="flex-1 h-full flex flex-col items-center justify-start gap-1 !bg-transparent !border-0 !shadow-none !rounded-none active:scale-95 select-none transition-transform">
                     {appLogo ? (
                        <img src={appLogo} className="w-full h-full object-cover rounded-full" alt="Logo" />
                     ) : (
