@@ -9,7 +9,7 @@ const API_BASE = "/api";
 | DATA
 |--------------------------------------------------------------------------
 */
-
+const ADMIN_PASSWORD = "ictmit";
 let users = [];
 let locations = [];
 let reports = [];
