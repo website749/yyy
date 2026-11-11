@@ -27,5 +27,6 @@ dist-ssr
 .env.local
 
 # Ignore a specific file inside src
-/src/ramit.txt
-/src/user.txt
+ramit.txt
+user.txt
+/firebase.js

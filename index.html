@@ -6,6 +6,7 @@
     <!-- Responsive -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#12285a" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
@@ -23,7 +24,23 @@
     <!-- Title -->
     <title>CV-VMC2026-វិទ្យាល័យស្តៅសន្តិភាព</title>
 </head>
-
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        // ពេលឃើញ SW ថ្មី បង្ខំឲ្យ update ភ្លាម
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          nw && nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              nw.postMessage({ action: 'skipWaiting' });
+            }
+          });
+        });
+      })
+      .catch(err => console.log('SW register failed:', err));
+  }
+</script>
 <body>
      <style>
         html, body {
