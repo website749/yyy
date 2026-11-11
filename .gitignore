@@ -28,3 +28,4 @@ dist-ssr
 
 # Ignore a specific file inside src
 /src/ramit.txt
+/src/user.txt
