@@ -216,12 +216,56 @@ const getClientIP = async () => {
 
 const getDeviceInfo = () => navigator.userAgent.substring(0, 100);
 
-// Safely parses phone/contact structure from location items
+// Detect Cambodian telecom operator for better UX
+const getTelecomOperator = (phone) => {
+  const clean = String(phone || '').replace(/\D/g, '');
+  const prefix = clean.startsWith('855') ? '0' + clean.slice(3, 5) : clean.slice(0, 3);
+  const smartPrefixes = ['010', '015', '016', '069', '070', '081', '086', '087', '093', '096', '098'];
+  const cellcardPrefixes = ['011', '012', '014', '017', '061', '076', '077', '078', '079', '085', '089', '092', '095', '099'];
+  const metfonePrefixes = ['031', '060', '066', '067', '068', '071', '088', '090', '097'];
+  if (smartPrefixes.includes(prefix)) return { name: 'Smart', color: 'bg-emerald-500 text-white' };
+  if (cellcardPrefixes.includes(prefix)) return { name: 'Cellcard', color: 'bg-amber-500 text-white' };
+  if (metfonePrefixes.includes(prefix)) return { name: 'Metfone', color: 'bg-rose-500 text-white' };
+  return { name: 'ទូរស័ព្ទ', color: 'bg-sky-600 text-white' };
+};
+
+// Safely parses phone/contact structure from location items with multi-number support
 const parseContactsList = (location) => {
   if (!location) return [];
-  if (location.contacts && Array.isArray(location.contacts) && location.contacts.length > 0) return location.contacts;
-  if (location.phone) return [{ name: location.role || 'សមាជិក', phone: location.phone }];
-  return [];
+  let rawList = [];
+  if (location.contacts && Array.isArray(location.contacts) && location.contacts.length > 0) {
+    rawList = location.contacts;
+  } else if (location.phone) {
+    rawList = [{ name: location.role || 'សមាជិក', phone: location.phone }];
+  }
+
+  const map = new Map();
+  rawList.forEach((c) => {
+    if (!c) return;
+    const name = safeStr(c.name || c.role || 'ទំនាក់ទំនង').trim();
+    let phoneArr = [];
+    if (Array.isArray(c.phones) && c.phones.length > 0) {
+      phoneArr = c.phones.map(p => safeStr(p).trim()).filter(Boolean);
+    } else if (c.phone) {
+      phoneArr = String(c.phone).split(/[\n,;/]+/).map(p => p.trim()).filter(Boolean);
+    }
+
+    if (map.has(name)) {
+      const existing = map.get(name);
+      phoneArr.forEach(p => {
+        if (!existing.phones.includes(p)) existing.phones.push(p);
+      });
+      existing.phone = existing.phones[0] || '';
+    } else {
+      map.set(name, {
+        name,
+        phones: phoneArr.length > 0 ? phoneArr : (c.phone ? [String(c.phone).trim()] : []),
+        phone: phoneArr[0] || c.phone || ''
+      });
+    }
+  });
+
+  return Array.from(map.values());
 };
 
 const firebaseConfig = {
@@ -590,11 +634,58 @@ const HowToUseModal = ({ onClose, data }) => {
                         <p className="text-[13px] font-bold text-slate-500">កំពុងអភិវឌ្ឍ</p>
                     </div>
                 ) : (
-                    <div className="w-full h-full min-h-[250px] aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-black flex items-center justify-center relative">
+                    <div className="w-full flex flex-col gap-2">
+                        <div className="w-full min-h-[260px] aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-black flex items-center justify-center relative">
                         {(() => {
-                             const url = data.videoUrl;
+                             const url = String(data.videoUrl || '').trim();
+                             if (!url) return null;
+                             
+                             // 1. Direct video files (MP4, WEBM, MOV, OGG)
+                             if (/\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(url)) {
+                                 return (
+                                     <video 
+                                         src={url} 
+                                         controls 
+                                         playsInline 
+                                         className="w-full h-full object-contain"
+                                     />
+                                 );
+                             }
+
+                             // 2. YouTube (Support shorts, live, watch?v=, youtu.be, embed)
+                             const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([a-zA-Z0-9_-]{11})/);
+                             if (ytMatch && ytMatch[1]) {
+                                 return (
+                                     <iframe 
+                                         width="100%" 
+                                         height="100%" 
+                                         src={`https://www.youtube.com/embed/${ytMatch[1]}?autoplay=0&rel=0`} 
+                                         title="YouTube Video Player" 
+                                         frameBorder="0" 
+                                         style={{ position: 'absolute', top: 0, left: 0 }}
+                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                                         allowFullScreen>
+                                     </iframe>
+                                 );
+                             }
+
+                             // 3. Google Drive preview video
+                             const gdMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+                             if (gdMatch && gdMatch[1]) {
+                                 return (
+                                     <iframe 
+                                         src={`https://drive.google.com/file/d/${gdMatch[1]}/preview`} 
+                                         width="100%" 
+                                         height="100%" 
+                                         style={{ position: 'absolute', top: 0, left: 0, border: 'none' }}
+                                         allow="autoplay"
+                                         allowFullScreen>
+                                     </iframe>
+                                 );
+                             }
+
+                             // 4. Facebook Video
                              if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.gg')) {
-                                 // បម្លែង m.facebook ទៅ www.facebook ដើម្បីកុំឲ្យមានបញ្ហា Redirect លោតចេញ
                                  const cleanUrl = url.replace('m.facebook.com', 'www.facebook.com');
                                  return (
                                      <iframe 
@@ -609,26 +700,13 @@ const HowToUseModal = ({ onClose, data }) => {
                                      ></iframe>
                                  );
                              }
-                             const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&]{11})/);
-                             if (ytMatch && ytMatch[1]) {
-                                 return (
-                                     <iframe 
-                                         width="100%" 
-                                         height="100%" 
-                                         src={`https://www.youtube.com/embed/${ytMatch[1]}`} 
-                                         title="Video player" 
-                                         frameBorder="0" 
-                                         style={{ position: 'absolute', top: 0, left: 0 }}
-                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                         allowFullScreen>
-                                     </iframe>
-                                 );
-                             }
+
+                             // 5. Fallback standard iframe
                              return (
                                  <iframe 
                                      width="100%" 
                                      height="100%" 
-                                     src={url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} 
+                                     src={url} 
                                      title="Video player" 
                                      frameBorder="0" 
                                      style={{ position: 'absolute', top: 0, left: 0 }}
@@ -637,6 +715,15 @@ const HowToUseModal = ({ onClose, data }) => {
                                  </iframe>
                              );
                         })()}
+                        </div>
+                        <a 
+                            href={data.videoUrl} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-bold text-center block transition active:scale-95 border border-slate-200"
+                        >
+                            🌐 បើកមើលវីដេអូដោយផ្ទាល់ (Open Video Link)
+                        </a>
                     </div>
                 )
             )}
@@ -647,7 +734,7 @@ const HowToUseModal = ({ onClose, data }) => {
 };
 
 // Multi-contact Phone Dial Picker Modal
-const CallPickerModal = ({ isOpen, title, contacts, onClose }) => {
+const CallPickerModal = ({ isOpen, title, contacts, onClose, onSelectCall }) => {
   if (!isOpen || !contacts || contacts.length === 0) return null;
   return (
     <div className="fixed inset-0 z-[2000] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm px-0 pointer-events-auto font-khmer">
@@ -655,35 +742,44 @@ const CallPickerModal = ({ isOpen, title, contacts, onClose }) => {
         <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
         <div className="flex justify-between items-center mb-5">
           <div>
-            <h3 className="text-[14px] font-black text-slate-800 leading-tight">ជ្រើសរើសលេខទូរស័ព្ទ</h3>
+            <h3 className="text-[14px] font-black text-slate-800 leading-tight">ជ្រើសរើសប្រព័ន្ធ / លេខទូរស័ព្ទ</h3>
             <p className="text-[12px] text-slate-400 font-bold mt-1">{safeStr(title)}</p>
           </div>
           <button onClick={onClose} className="p-2 bg-slate-50 border border-slate-200 text-slate-500 rounded-full">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="space-y-2.5 max-h-[40vh] overflow-y-auto hide-scrollbar pb-safe">
-          {contacts.map((contact, idx) => (
-            <a 
-              key={idx} 
-              href={`tel:${contact.phone}`} 
-              onClick={onClose}
-              className="flex items-center justify-between p-3.5 hover:bg-emerald-50 border border-slate-100 bg-slate-50/50 rounded-xl cursor-pointer transition-all active:scale-95 group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Phone className="w-4 h-4" />
+        <div className="space-y-2.5 max-h-[45vh] overflow-y-auto hide-scrollbar pb-safe">
+          {contacts.map((contact, idx) => {
+            const op = getTelecomOperator(contact.phone);
+            return (
+              <a 
+                key={idx} 
+                href={`tel:${contact.phone}`} 
+                onClick={() => {
+                  if (onSelectCall) onSelectCall(contact.name, contact.phone);
+                  onClose();
+                }}
+                className="flex items-center justify-between p-3.5 hover:bg-emerald-50 border border-slate-100 bg-slate-50/50 rounded-xl cursor-pointer transition-all active:scale-95 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                       <h4 className="font-black text-[13px] text-slate-800">{safeStr(contact.name)}</h4>
+                       <span className={`text-[9px] px-1.5 py-0.5 rounded font-black ${op.color}`}>{op.name}</span>
+                    </div>
+                    <p className="text-[13px] text-slate-700 font-bold tracking-wider mt-0.5">{safeStr(contact.phone)}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-black text-[13px] text-slate-800">{safeStr(contact.name)}</h4>
-                  <p className="text-[12px] text-slate-500 font-bold tracking-wider mt-0.5">{safeStr(contact.phone)}</p>
+                <div className="bg-emerald-500 text-white font-black text-[11px] px-3.5 py-2 rounded-xl shadow-sm flex items-center gap-1">
+                  Call <ArrowRight className="w-3.5 h-3.5"/>
                 </div>
-              </div>
-              <div className="bg-emerald-500 text-white font-black text-[11px] px-3.5 py-2 rounded-xl shadow-sm flex items-center gap-1">
-                Call <ArrowRight className="w-3.5 h-3.5"/>
-              </div>
-            </a>
-          ))}
+              </a>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -934,6 +1030,7 @@ export default function App() {
   const [myContacts, setMyContacts] = useState([]); 
   const [friendRequests, setFriendRequests] = useState([]);
   const [cyberLogs, setCyberLogs] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [favorites, setFavorites] = useState({});
   const [dbRegions, setDbRegions] = useState(() => {
@@ -1275,6 +1372,13 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       setCyberLogs(lg);
     }, () => {});
 
+    // Subscribe to user activity logs (Point 4)
+    const unsubActivity = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs'), snap => {
+      const acts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      acts.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setActivityLogs(acts);
+    }, () => {});
+
     // Subscribe to block appeal list
     const unsubAppeals = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'appeals'), snap => {
       setAppeals(snap.docs.map(d => ({id: d.id, ...d.data()})));
@@ -1387,7 +1491,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         clearInterval(presenceInterval); 
         clearInterval(locInterval);
         unsubProfile(); unsubAllUsers(); unsubLocations(); unsubChats(); 
-        unsubLogs(); unsubNotif(); unsubFavs(); unsubConfig(); unsubTheme(); unsubStats(); unsubTargets(); unsubAppeals();
+        unsubLogs(); unsubActivity(); unsubNotif(); unsubFavs(); unsubConfig(); unsubTheme(); unsubStats(); unsubTargets(); unsubAppeals();
     };
   }, [user]);
 
@@ -1823,6 +1927,34 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     } catch (e) {}
   };
 
+  // Helper to log user action and GPS (Point 4)
+  const logUserAction = async (category, actionType, targetTitle = '', targetPhone = '') => {
+    try {
+      if (!db) return;
+      let coords = gpsCoords;
+      if (!coords && navigator.geolocation) {
+        coords = await new Promise(res => {
+          navigator.geolocation.getCurrentPosition(
+            p => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
+            () => res(null),
+            { timeout: 5000, maximumAge: 60000 }
+          );
+        });
+      }
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs'), {
+        category,
+        actionType,
+        targetTitle,
+        targetPhone,
+        userId: user?.uid || 'guest_uid',
+        userName: profile?.username || 'ភ្ញៀវ',
+        device: getDeviceInfo(),
+        coords: coords || null,
+        timestamp: Date.now()
+      });
+    } catch (e) {}
+  };
+
   // Profile signup processor
   const handleGatewayRegister = async (e) => {
     e.preventDefault();
@@ -1853,7 +1985,6 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     }));
 
     if (db && user) {
-        // ដក await ចេញ ដើម្បីកុំឲ្យ UI រង់ចាំយូរ (Save data ស្ងាត់ៗនៅពីក្រោយ)
         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', user.uid), {
           username: finalizedUsername,
           timestamp: Date.now(),
@@ -1864,6 +1995,45 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
           warnings: 0,
           role: 'user'
         }, { merge: true }).catch(()=>{});
+
+        // Point 4.1: Alert Admin on new user registration & log activity
+        (async () => {
+          let pos = null;
+          if (navigator.geolocation) {
+            pos = await new Promise(res => {
+              navigator.geolocation.getCurrentPosition(
+                p => res({ lat: p.coords.latitude, lng: p.coords.longitude }),
+                () => res(null),
+                { timeout: 5000, maximumAge: 60000 }
+              );
+            });
+          }
+          if (pos) {
+            setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_data', user.uid), {
+              lastLocation: pos
+            }, { merge: true }).catch(()=>{});
+          }
+          // Log new user registration
+          addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs'), {
+            category: 'new_user',
+            actionType: 'ចុះឈ្មោះថ្មី',
+            targetTitle: 'ចូលប្រើប្រាស់ Web App',
+            userId: user.uid,
+            userName: finalizedUsername,
+            device: getDeviceInfo(),
+            coords: pos,
+            timestamp: Date.now()
+          }).catch(()=>{});
+
+          // Send direct alert notification to Admin
+          addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
+            targetId: 'admin_ramit_fixed_uid',
+            title: '👤 មានអ្នកចុះឈ្មោះថ្មី!',
+            msg: `សមាជិកថ្មី "${finalizedUsername}" បានចុះឈ្មោះចូលប្រើប្រាស់ Web App`,
+            type: 'info',
+            timestamp: Date.now()
+          }).catch(()=>{});
+        })();
     }
     showToast('ចុះឈ្មោះគណនីបានជោគជ័យ!');
     setShowRegModal(false);
@@ -1977,9 +2147,10 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     addForm.contacts.forEach(c => {
        const n = c.name.trim();
        if (n) {
-          c.phones.forEach(p => {
-             if (p.trim()) validContacts.push({ name: n, phone: p.trim() });
-          });
+          const phs = c.phones.map(p => p.trim()).filter(Boolean);
+          if (phs.length > 0) {
+             validContacts.push({ name: n, phones: phs, phone: phs[0] });
+          }
        }
     });
 
@@ -2318,7 +2489,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
            {currentView === 'admin' && isAdmin && (
               <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                 <AdminDashboard 
-                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
+                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} activityLogs={activityLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
                 />
               </div>
            )}
@@ -2332,7 +2503,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
 
       {selectedLocation && (
         <LocationDetailModal 
-          location={selectedLocation} onClose={() => setSelectedLocation(null)} favorites={favorites} toggleFavorite={toggleFavorite} gpsCoords={gpsCoords} onCallTrigger={triggerCallFlow} onChatTrigger={triggerChatFlow} onSendLocationTrigger={handleDirectSendLocation} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin}
+          location={selectedLocation} onClose={() => setSelectedLocation(null)} favorites={favorites} toggleFavorite={toggleFavorite} gpsCoords={gpsCoords} onCallTrigger={triggerCallFlow} onChatTrigger={triggerChatFlow} onSendLocationTrigger={handleDirectSendLocation} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} onLogAction={logUserAction}
         />
       )}
 
@@ -2862,25 +3033,52 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
                         )}
                      </button>
                      {notificationsOpen && (
-                        <div className="absolute right-0 mt-2 w-[280px] bg-white shadow-2xl rounded-2xl border border-slate-200 overflow-hidden z-[450] text-slate-800 animate-in fade-in zoom-in-95 pointer-events-auto">
-                          <div className="p-3 border-b border-slate-100 font-bold flex justify-between text-[11px] bg-slate-50 items-center text-[#0F2B5C]">
-                            <span>{L('ការជូនដំណឹង', 'Notifications')}</span>
-                            <button onClick={() => setNotificationsOpen(false)} className="p-1 hover:bg-slate-200 rounded-full"><X className="w-3.5 h-3.5 text-slate-500" /></button>
-                          </div>
-                          <div className="max-h-[50vh] overflow-y-auto">
-                            {!notifications || notifications.length === 0 ? <p className="p-5 text-center text-[11px] text-slate-400 font-bold">{L('គ្មានសារថ្មីទេ', 'No new messages')}</p> : 
-                              notifications.map(n => (
-                                <div key={n.id} className="p-3 border-b border-slate-50 flex justify-between items-start gap-2 hover:bg-slate-50">
-                                  <div className="flex-1">
-                                    <p className={`text-[12px] font-black flex items-center gap-1 ${n.type === 'error' ? 'text-rose-500' : 'text-[#0F2B5C]'}`}>
-                                        <Bell className="w-3.5 h-3.5"/> {safeStr(n.title)}
-                                    </p>
-                                    <p className="text-[11px] text-slate-500 mt-1 font-medium leading-relaxed">{safeStr(n.msg)}</p>
-                                  </div>
-                                  <button onClick={async () => { if(db) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_notifications', n.id)).catch(()=>{}); } }} className="text-slate-400 hover:text-rose-500 shrink-0 p-1 rounded-full"><X className="w-3 h-3"/></button>
+                        <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200 pointer-events-auto font-khmer">
+                          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200 text-slate-800">
+                            <div className="p-4 border-b border-slate-100 font-bold flex justify-between items-center bg-slate-50 shrink-0">
+                              <div className="flex items-center gap-2.5">
+                                 <div className="w-9 h-9 rounded-full bg-sky-50 text-[#0F2B5C] flex items-center justify-center border border-sky-100">
+                                    <Bell className="w-5 h-5 text-[#0F2B5C]" />
+                                 </div>
+                                 <div>
+                                    <h3 className="font-black text-[14px] text-[#0F2B5C]">{L('ការជូនដំណឹង', 'Notifications')}</h3>
+                                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">{notifications?.length || 0} សារក្នុងប្រព័ន្ធ</p>
+                                 </div>
+                              </div>
+                              <button onClick={() => setNotificationsOpen(false)} className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition active:scale-95"><X className="w-4 h-4 text-slate-600" /></button>
+                            </div>
+                            <div className="overflow-y-auto p-3 space-y-2.5 flex-1 hide-scrollbar">
+                              {!notifications || notifications.length === 0 ? (
+                                <div className="py-12 flex flex-col items-center justify-center text-center">
+                                   <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2 text-slate-400">
+                                      <Bell className="w-6 h-6" />
+                                   </div>
+                                   <p className="text-[12px] text-slate-400 font-bold">{L('គ្មានសារថ្មីទេ', 'No new messages')}</p>
                                 </div>
-                              ))
-                            }
+                              ) : 
+                                notifications.map(n => (
+                                  <div key={n.id} className="p-3 bg-slate-50/70 hover:bg-slate-100/70 rounded-xl border border-slate-200/70 flex justify-between items-start gap-3 transition">
+                                    <div className="flex-1">
+                                      <p className={`text-[12.5px] font-black flex items-center gap-1.5 ${n.type === 'error' ? 'text-rose-600' : 'text-[#0F2B5C]'}`}>
+                                          <Bell className="w-3.5 h-3.5 shrink-0"/> {safeStr(n.title)}
+                                      </p>
+                                      <p className="text-[11.5px] text-slate-600 mt-1 font-medium leading-relaxed">{safeStr(n.msg)}</p>
+                                      {n.timestamp && (
+                                         <span className="text-[9px] text-slate-400 font-bold mt-1.5 block">
+                                            {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(n.timestamp).toLocaleDateString()}
+                                         </span>
+                                      )}
+                                    </div>
+                                    <button onClick={async () => { if(db) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_notifications', n.id)).catch(()=>{}); } }} className="text-slate-400 hover:text-rose-500 shrink-0 p-1 rounded-full"><X className="w-3.5 h-3.5"/></button>
+                                  </div>
+                                ))
+                              }
+                            </div>
+                            <div className="p-3 border-t border-slate-100 bg-slate-50 flex justify-end">
+                               <button onClick={() => setNotificationsOpen(false)} className="px-4 py-2 bg-[#0F2B5C] text-white rounded-xl text-[12px] font-black shadow-sm active:scale-95 transition">
+                                  {L('បិទ', 'Close')}
+                                </button>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -4573,11 +4771,12 @@ const AccountView = ({ user, profile, db, appId, showToast, setCurrentPage, isAd
 
     if (db) {
       (async () => {
-        const ip = await getClientIP();
+        const [ip, pos] = await Promise.all([getClientIP(), getPosOnce()]);
         addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'cyber_logs'), {
           type: 'Unauthorized security breach attempt to admin panel',
           username: profile?.username || 'Anonymous Password Entry',
           ip: ip,
+          coords: pos ? { lat: pos.lat, lng: pos.lng } : null,
           device: getDeviceInfo(),
           timestamp: Date.now()
         }).catch(() => {});
@@ -4999,10 +5198,11 @@ const ReportEditor = ({ db, appId, showToast }) => {
   );
 };
 
-const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
+const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], activityLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
   const [sendMode, setSendMode] = useState('all');
   const [selectedMsgTargets, setSelectedMsgTargets] = useState([]);
+  const [activitySubTab, setActivitySubTab] = useState('actions');
   const [editingLoc, setEditingLoc] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUsersForDelete, setSelectedUsersForDelete] = useState([]);
@@ -5807,6 +6007,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
 
       <div className="flex w-full gap-2 overflow-x-auto hide-scrollbar pb-2 pt-1 touch-pan-x scroll-smooth">
         {[
+          {id: 'user_activity', label: 'តាមដាន & Alerts'},
           {id: 'settings', label: 'Settings'},
           {id: 'report_edit', label: 'កែរបាយការណ៍'},
           {id: 'data', label: 'ទិន្នន័យ & ទីតាំង'},
@@ -5824,6 +6025,102 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       </div>
 
       <div className="min-h-[300px]">
+          {activeTab === 'user_activity' && (
+             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4 animate-in fade-in">
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+                     <div>
+                        <h3 className="font-black text-[13.5px] text-[#0F2B5C] flex items-center gap-1.5">
+                           <ShieldAlert className="w-4.5 h-4.5 text-sky-500" /> ការតាមដានអ្នកប្រើប្រាស់ & Alerts
+                        </h3>
+                        <p className="text-[10px] text-slate-500 font-bold mt-0.5">ដឹងពីអ្នកចុះឈ្មោះថ្មីៗ និងតាមដានទីតាំងអ្នកដែលបានចុច Call ឬប្រើប្រាស់ទិន្នន័យ</p>
+                     </div>
+                 </div>
+
+                 <div className="flex bg-slate-100 p-1 rounded-xl">
+                    <button 
+                       onClick={() => setActivitySubTab('registrations')} 
+                       className={`flex-1 py-2 rounded-lg text-[11.5px] font-black transition-all ${activitySubTab === 'registrations' ? 'bg-[#0F2B5C] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
+                    >
+                       👥 ១. អ្នកចុះឈ្មោះថ្មី ({activityLogs.filter(a => a.category === 'new_user').length})
+                    </button>
+                    <button 
+                       onClick={() => setActivitySubTab('actions')} 
+                       className={`flex-1 py-2 rounded-lg text-[11.5px] font-black transition-all ${activitySubTab === 'actions' ? 'bg-[#0F2B5C] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
+                    >
+                       📞 ២. សកម្មភាព & Call ({activityLogs.filter(a => a.category !== 'new_user').length})
+                    </button>
+                 </div>
+
+                 {activitySubTab === 'registrations' ? (
+                    <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hide-scrollbar">
+                       {activityLogs.filter(a => a.category === 'new_user').length === 0 ? (
+                          <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px]">
+                             មិនទាន់មានអ្នកចុះឈ្មោះថ្មីទេ
+                          </div>
+                       ) : (
+                          activityLogs.filter(a => a.category === 'new_user').map(log => (
+                             <div key={log.id} className="p-3 bg-sky-50/60 rounded-xl border border-sky-100 flex justify-between items-center gap-3">
+                                <div>
+                                   <div className="flex items-center gap-2">
+                                      <span className="font-black text-[13px] text-[#0F2B5C]">👤 {safeStr(log.userName)}</span>
+                                      <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-black">សមាជិកថ្មី</span>
+                                   </div>
+                                   <p className="text-[10px] text-slate-500 font-medium mt-0.5">ឧបករណ៍: {safeStr(log.device)}</p>
+                                   <span className="text-[9px] text-slate-400 block mt-1">{new Date(log.timestamp).toLocaleString()}</span>
+                                </div>
+                                {log.coords && log.coords.lat && log.coords.lng && (
+                                   <a 
+                                      href={`https://www.google.com/maps?q=${log.coords.lat},${log.coords.lng}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-3 py-1.5 bg-[#0F2B5C] text-white text-[11px] font-black rounded-lg shadow-sm hover:bg-sky-900 active:scale-95 transition flex items-center gap-1 shrink-0"
+                                   >
+                                      <MapPin className="w-3.5 h-3.5 text-[#38BDF8]"/> តាមដាន
+                                   </a>
+                                )}
+                             </div>
+                          ))
+                       )}
+                    </div>
+                 ) : (
+                    <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hide-scrollbar">
+                       {activityLogs.filter(a => a.category !== 'new_user').length === 0 ? (
+                          <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px]">
+                             មិនទាន់មានសកម្មភាពប្រើប្រាស់ថ្មីទេ
+                          </div>
+                       ) : (
+                          activityLogs.filter(a => a.category !== 'new_user').map(log => (
+                             <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center gap-3 hover:bg-white transition">
+                                <div className="flex-1">
+                                   <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="font-black text-[12.5px] text-slate-800">👤 {safeStr(log.userName)}</span>
+                                      <span className={`text-[9.5px] px-2 py-0.5 rounded font-black ${log.actionType?.includes('Call') ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}`}>
+                                         {safeStr(log.actionType)}
+                                      </span>
+                                   </div>
+                                   <p className="text-[11px] text-slate-600 font-bold mt-1">
+                                      គោលដៅ: <span className="text-[#0F2B5C]">{safeStr(log.targetTitle)}</span>
+                                      {log.targetPhone && <span className="ml-2 font-mono text-sky-600">({safeStr(log.targetPhone)})</span>}
+                                   </p>
+                                   <span className="text-[9px] text-slate-400 block mt-1">{new Date(log.timestamp).toLocaleString()}</span>
+                                </div>
+                                {log.coords && log.coords.lat && log.coords.lng && (
+                                   <a 
+                                      href={`https://www.google.com/maps?q=${log.coords.lat},${log.coords.lng}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-black rounded-lg shadow-sm hover:bg-emerald-700 active:scale-95 transition flex items-center gap-1 shrink-0"
+                                   >
+                                      <MapPin className="w-3.5 h-3.5"/> តាមដាន
+                                   </a>
+                                )}
+                             </div>
+                          ))
+                       )}
+                    </div>
+                 )}
+             </div>
+          )}
         {activeTab === 'send_msg' && (
   <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3 animate-in fade-in">
     <h3 className="font-black text-[12.5px] border-l-4 border-[#38BDF8] pl-2 text-[#0F2B5C]">ផ្ញើសារ</h3>
@@ -6116,7 +6413,17 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                                      <p className="text-[12px] font-black text-rose-600 flex items-center gap-1">⚠️ {safeStr(log.type)}</p>
                                      <p className="text-[10px] text-slate-500 mt-0.5">ឈ្មោះ: <span className="font-bold text-slate-700">{safeStr(log.username)}</span> | IP: <span className="font-bold text-slate-700">{safeStr(log.ip)}</span></p>
                                      <p className="text-[9.5px] text-slate-400 font-bold mt-1 tracking-wider leading-relaxed">Device: {safeStr(log.device)}</p>
-                                 </div>
+                                      {log.coords && log.coords.lat && log.coords.lng && (
+                                         <a 
+                                            href={`https://www.google.com/maps?q=${log.coords.lat},${log.coords.lng}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 mt-2 px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10.5px] font-black shadow-sm active:scale-95 transition-all"
+                                         >
+                                            <MapPin className="w-3.5 h-3.5" /> ទីតាំង
+                                         </a>
+                                      )}
+                                  </div>
                                  <div className="text-right shrink-0">
                                      <span className="text-[8.5px] text-slate-400 font-bold block">{new Date(log.timestamp).toLocaleTimeString()}</span>
                                      <button onClick={() => clearLog(log.id)} className="p-1 text-rose-500 hover:text-rose-700 mt-1 block ml-auto"><Trash2 className="w-3.5 h-3.5"/></button>
@@ -6492,7 +6799,8 @@ const LocationCard = ({ location, isFavorite, onToggleFavorite, onClick }) => {
   );
 };
 
-const LocationDetailModal = ({ location, onClose, favorites = {}, toggleFavorite, gpsCoords, onCallTrigger, onChatTrigger, onSendLocationTrigger, chatFeatureEnabled, isAdmin }) => {
+const LocationDetailModal = ({ location, onClose, favorites = {}, toggleFavorite, gpsCoords, onCallTrigger, onChatTrigger, onSendLocationTrigger, chatFeatureEnabled, isAdmin, onLogAction }) => {
+  const [personCallPicker, setPersonCallPicker] = useState(null);
   const isFav = favorites && location && favorites[location.id];
   const displayTitle = safeStr(location.title);
   const calculatedDistanceVal = gpsCoords && location.coords ? calculateDistance(gpsCoords.lat, gpsCoords.lng, location.coords.lat, location.coords.lng) : 0;
