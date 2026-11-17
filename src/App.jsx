@@ -6,7 +6,7 @@ import {
   Send, LogOut, Settings, Pin,
   LayoutGrid, ShieldAlert, TrendingUp, Phone, CheckCircle, ArrowLeft, 
   Globe, ArrowRight, Loader2, MapPin, Mic, Camera, X, Play, AlertOctagon, 
-  CheckCheck, Hexagon, GraduationCap, Pause, Copy, Check, Radio, Eye, Shield, Info
+  CheckCheck, Hexagon, GraduationCap, Pause, Copy, Check, Radio, Eye, Shield, Info, RefreshCw
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -2706,7 +2706,7 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
            {currentView === 'admin' && isAdmin && (
               <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                 <AdminDashboard 
-                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} activityLogs={activityLogs} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
+                  locations={locations} setLocations={setLocations} pendingLocations={pendingLocations} usersList={usersList} cyberLogs={cyberLogs} activityLogs={activityLogs} notifications={notifications} chats={chats} dbRegions={dbRegions} setDbRegions={setDbRegions} db={db} appId={appId} showToast={showToast} setCurrentView={setCurrentView} setIsAdmin={setIsAdmin} chatTargets={chatTargets} setChatTargets={setChatTargets} appeals={appeals} setAppeals={setAppeals} cosmicTheme={cosmicTheme} setCosmicTheme={setCosmicTheme} customBg={customBg} setCustomBg={setCustomBg} appLogo={appLogo} setAppLogo={setAppLogo} gatewayBg={gatewayBg} setGatewayBg={setGatewayBg} chatFeatureEnabled={chatFeatureEnabled} setChatFeatureEnabled={setChatFeatureEnabled} boostModeEnabled={boostModeEnabled} setBoostModeEnabled={setBoostModeEnabled} boostFeatureRemoved={boostFeatureRemoved} setBoostFeatureRemoved={setBoostFeatureRemoved} homeBannerIcon={homeBannerIcon} setHomeBannerIcon={setHomeBannerIcon}
                 />
               </div>
            )}
@@ -5423,13 +5423,14 @@ const ReportEditor = ({ db, appId, showToast }) => {
   );
 };
 
-const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], activityLogs = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
+const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], usersList = [], cyberLogs = [], activityLogs = [], notifications = [], chats = [], dbRegions, setDbRegions, db, appId, showToast, setCurrentView, setIsAdmin, chatTargets = [], setChatTargets, appeals = [], setAppeals, cosmicTheme, setCosmicTheme, customBg, setCustomBg, appLogo, setAppLogo, gatewayBg, setGatewayBg, chatFeatureEnabled, setChatFeatureEnabled, boostModeEnabled, setBoostModeEnabled, boostFeatureRemoved, setBoostFeatureRemoved, homeBannerIcon, setHomeBannerIcon }) => {
   const [activeTab, setActiveTab] = useState('data'); 
   const [sendMode, setSendMode] = useState('all');
   const [selectedMsgTargets, setSelectedMsgTargets] = useState([]);
   const [msgUserSearch, setMsgUserSearch] = useState('');
   const [activitySubTab, setActivitySubTab] = useState('actions');
   const [activityFilter, setActivityFilter] = useState('all');
+  const [isRestoringActivity, setIsRestoringActivity] = useState(false);
   const [editingLoc, setEditingLoc] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUsersForDelete, setSelectedUsersForDelete] = useState([]);
@@ -6252,7 +6253,87 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
       </div>
 
       <div className="min-h-[300px]">
-          {activeTab === 'user_activity' && (
+          {activeTab === 'user_activity' && (() => {
+             const visibleActivities = (activityLogs || []).filter(a => a && !a.archived);
+             const archivedActivities = (activityLogs || []).filter(a => a && a.archived);
+
+             const handleRestoreActivityLogs = async () => {
+                if (!db) return showToast('Offline Sandbox Mode', 'error');
+                setIsRestoringActivity(true);
+                let restoredCount = 0;
+                try {
+                   // 1. ស្តារ Logs ដែលត្រូវបានលាក់ (archived) មកវិញ
+                   for (const arch of archivedActivities) {
+                      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs', arch.id), { archived: false }).catch(() => {});
+                      restoredCount++;
+                   }
+
+                   // 2. ស្តារឈ្មោះសមាជិកដែលបានចុះឈ្មោះ និងទីតាំងចុងក្រោយពី user_data (usersList)
+                   const existingNewUserIds = new Set(
+                      (activityLogs || []).filter(a => a && a.category === 'new_user' && !a.archived).map(a => a.userId)
+                   );
+                   const registeredMembers = (usersList || []).filter(u => u && u.id && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ');
+                   for (const u of registeredMembers) {
+                      if (!existingNewUserIds.has(u.id)) {
+                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs'), {
+                            category: 'new_user',
+                            actionType: 'ចុះឈ្មោះថ្មី',
+                            targetTitle: 'ចូលប្រើប្រាស់ Web App (បានស្តារមកវិញ)',
+                            userId: u.id,
+                            userName: u.username,
+                            device: 'Saved Profile',
+                            coords: u.lastLocation || null,
+                            timestamp: u.timestamp || u.lastActive || Date.now(),
+                            archived: false
+                         }).catch(() => {});
+                         restoredCount++;
+                      }
+                   }
+
+                   // 3. ស្តារសារ Alert ដែលនៅសល់ក្នុងប្រអប់កណ្តឹង (user_notifications)
+                   const existingKeys = new Set(
+                      (activityLogs || []).filter(a => a && !a.archived).map(a => `${a.timestamp}_${a.userName}`)
+                   );
+                   const adminAlerts = (notifications || []).filter(n => n && n.targetId === 'admin_ramit_fixed_uid' && safeStr(n.title).startsWith('🔔'));
+                   for (const n of adminAlerts) {
+                      const rawTitle = safeStr(n.title).replace(/^🔔\s*/, '');
+                      const parts = rawTitle.split(':');
+                      const uName = (parts[0] || 'សមាជិក').trim();
+                      const actType = (parts.slice(1).join(':') || 'សកម្មភាព').trim();
+                      const key = `${n.timestamp}_${uName}`;
+                      if (!existingKeys.has(key)) {
+                         let cat = 'view_nav';
+                         if (actType.includes('Call')) cat = 'action_call';
+                         else if (actType.includes('មើលទិន្នន័យ')) cat = 'action_view';
+                         else if (actType.includes('ផែនទី') || actType.includes('ទីតាំងខ្ញុំ')) cat = 'action_map';
+                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs'), {
+                            category: cat,
+                            actionType: actType,
+                            targetTitle: safeStr(n.msg),
+                            userId: 'restored_from_notif',
+                            userName: uName,
+                            device: 'ស្តារពីប្រអប់សារកណ្តឹង',
+                            coords: null,
+                            timestamp: n.timestamp || Date.now(),
+                            archived: false
+                         }).catch(() => {});
+                         existingKeys.add(key);
+                         restoredCount++;
+                      }
+                   }
+
+                   if (restoredCount > 0) {
+                      showToast(`បានស្តារទិន្នន័យចំនួន ${restoredCount} ត្រឡប់មកវិញជោគជ័យ ✅`, 'success', 4500);
+                   } else {
+                      showToast('គ្មានទិន្នន័យបន្ថែមសម្រាប់ស្តារទេ (ទិន្នន័យដែលនៅសល់មានពេញអស់ហើយ)', 'info', 4000);
+                   }
+                } catch (e) {
+                   showToast('មានបញ្ហាក្នុងការស្តារទិន្នន័យ', 'error');
+                }
+                setIsRestoringActivity(false);
+             };
+
+             return (
              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4 animate-in fade-in">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
                      <div>
@@ -6261,20 +6342,29 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                         </h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-0.5">តាមដាន និង Alert រាល់សកម្មភាពទាំងអស់របស់ User (ចូលកម្មវិធី, Call, ចុចមើលទិន្នន័យ, មើលផែនទី, ស្វែងរក, Pin ។ល។)</p>
                      </div>
-                     {activityLogs.length > 0 && (
+                     <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                         <button
-                           onClick={() => openConfirm('សម្អាត Logs', 'តើអ្នកចង់លុបកំណត់ត្រាសកម្មភាពទាំងអស់មែនទេ?', async () => {
-                              if (!db) return;
-                              for (const lg of activityLogs) {
-                                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs', lg.id)).catch(() => {});
-                              }
-                              showToast('បានសម្អាតកំណត់ត្រាសកម្មភាពរួចរាល់ ✅');
-                           })}
-                           className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-lg font-black flex items-center gap-1 shrink-0"
+                           onClick={handleRestoreActivityLogs}
+                           disabled={isRestoringActivity}
+                           className="text-[10px] bg-sky-50 hover:bg-sky-100 text-[#0F2B5C] border border-sky-200 px-2.5 py-1.5 rounded-lg font-black flex items-center gap-1 shrink-0 active:scale-95 transition"
                         >
-                           <Trash2 className="w-3.5 h-3.5"/> សម្អាត Logs
+                           {isRestoringActivity ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <RefreshCw className="w-3.5 h-3.5 text-sky-600"/>} ស្តារទិន្នន័យមកវិញ
                         </button>
-                     )}
+                        {visibleActivities.length > 0 && (
+                           <button
+                              onClick={() => openConfirm('សម្អាត Logs', 'កំណត់ត្រានឹងត្រូវរក្សាទុកក្នុងប្រព័ន្ធ (អាចចុច "ស្តារទិន្នន័យមកវិញ" ពេលក្រោយបាន)។ តើអ្នកចង់សម្អាតមែនទេ?', async () => {
+                                 if (!db) return;
+                                 for (const lg of visibleActivities) {
+                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs', lg.id), { archived: true }).catch(() => {});
+                                 }
+                                 showToast('បានសម្អាតកំណត់ត្រាសកម្មភាពរួចរាល់ (អាចស្តារមកវិញបាន) ✅');
+                              })}
+                              className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-lg font-black flex items-center gap-1 shrink-0"
+                           >
+                              <Trash2 className="w-3.5 h-3.5"/> សម្អាត Logs
+                           </button>
+                        )}
+                     </div>
                  </div>
 
                  <div className="flex bg-slate-100 p-1 rounded-xl">
@@ -6282,24 +6372,27 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                        onClick={() => setActivitySubTab('registrations')} 
                        className={`flex-1 py-2 rounded-lg text-[11.5px] font-black transition-all ${activitySubTab === 'registrations' ? 'bg-[#0F2B5C] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
                     >
-                       👥 ១. អ្នកចុះឈ្មោះថ្មី ({activityLogs.filter(a => a.category === 'new_user').length})
+                       👥 ១. អ្នកចុះឈ្មោះថ្មី ({visibleActivities.filter(a => a.category === 'new_user').length})
                     </button>
                     <button 
                        onClick={() => setActivitySubTab('actions')} 
                        className={`flex-1 py-2 rounded-lg text-[11.5px] font-black transition-all ${activitySubTab === 'actions' ? 'bg-[#0F2B5C] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
                     >
-                       🔔 ២. សកម្មភាពទាំងអស់ ({activityLogs.filter(a => a.category !== 'new_user').length})
+                       🔔 ២. សកម្មភាពទាំងអស់ ({visibleActivities.filter(a => a.category !== 'new_user').length})
                     </button>
                  </div>
 
                  {activitySubTab === 'registrations' ? (
                     <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hide-scrollbar">
-                       {activityLogs.filter(a => a.category === 'new_user').length === 0 ? (
-                          <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px]">
-                             មិនទាន់មានអ្នកចុះឈ្មោះថ្មីទេ
+                       {visibleActivities.filter(a => a.category === 'new_user').length === 0 ? (
+                          <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px] space-y-2">
+                             <p>មិនទាន់មានអ្នកចុះឈ្មោះថ្មីទេ</p>
+                             <button onClick={handleRestoreActivityLogs} className="px-3 py-1.5 bg-[#0F2B5C] text-white rounded-lg text-[10.5px] font-black inline-flex items-center gap-1">
+                                <RefreshCw className="w-3 h-3"/> ទាញឈ្មោះសមាជិកមកវិញ
+                             </button>
                           </div>
                        ) : (
-                          activityLogs.filter(a => a.category === 'new_user').map(log => (
+                          visibleActivities.filter(a => a.category === 'new_user').map(log => (
                              <div key={log.id} className="p-3 bg-sky-50/60 rounded-xl border border-sky-100 flex justify-between items-center gap-3">
                                 <div>
                                    <div className="flex items-center gap-2">
@@ -6344,7 +6437,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                        </div>
                        <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hide-scrollbar">
                           {(() => {
-                             const nonRegLogs = activityLogs.filter(a => a.category !== 'new_user');
+                             const nonRegLogs = visibleActivities.filter(a => a.category !== 'new_user');
                              const filteredLogs = nonRegLogs.filter(a => {
                                 if (activityFilter === 'all') return true;
                                 if (activityFilter === 'other') return !['action_call', 'action_view', 'action_map'].includes(a.category);
@@ -6352,8 +6445,13 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                              });
                              if (filteredLogs.length === 0) {
                                 return (
-                                   <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px]">
-                                      មិនទាន់មានសកម្មភាពប្រើប្រាស់ក្នុងប្រភេទនេះទេ
+                                   <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px] space-y-2">
+                                      <p>មិនទាន់មានសកម្មភាពប្រើប្រាស់ក្នុងប្រភេទនេះទេ</p>
+                                      {archivedActivities.length > 0 && (
+                                        <button onClick={handleRestoreActivityLogs} className="px-3 py-1.5 bg-[#0F2B5C] text-white rounded-lg text-[10.5px] font-black inline-flex items-center gap-1">
+                                           <RefreshCw className="w-3 h-3"/> ស្តារទិន្នន័យដែលបានលុប ({archivedActivities.length})
+                                        </button>
+                                      )}
                                    </div>
                                 );
                              }
@@ -6389,7 +6487,8 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                     </div>
                  )}
              </div>
-          )}
+             );
+          })()}
         {activeTab === 'send_msg' && (
   <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3 animate-in fade-in">
     <h3 className="font-black text-[12.5px] border-l-4 border-[#38BDF8] pl-2 text-[#0F2B5C]">ផ្ញើសារ</h3>
