@@ -61,48 +61,176 @@ const ImageSvgIcon = (props) => (
   </svg>
 );
 
+// Shared unlocked AudioContext and Messenger-style Web App Icon badge helpers
+let sharedAudioCtx = null;
+let lastPingTimestamp = 0;
+const getUnlockedAudioCtx = () => {
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return null;
+  if (!sharedAudioCtx) sharedAudioCtx = new C();
+  if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume().catch(() => {});
+  return sharedAudioCtx;
+};
+if (typeof window !== 'undefined') {
+  ['touchstart', 'click', 'keydown'].forEach(ev =>
+    window.addEventListener(ev, () => getUnlockedAudioCtx(), { once: true, passive: true })
+  );
+}
+
 // High-fidelity standard audio context notifier ("Ping" sound)
 const playPingSound = () => {
   try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    let sharedCtx = null;
-const getCtx = () => {
-  const C = window.AudioContext || window.webkitAudioContext;
-  if (!C) return null;
-  if (!sharedCtx) sharedCtx = new C();
-  if (sharedCtx.state === 'suspended') sharedCtx.resume().catch(() => {});
-  return sharedCtx;
+    const nowMs = Date.now();
+    if (nowMs - lastPingTimestamp < 350) return;
+    lastPingTimestamp = nowMs;
+
+    const ctx = getUnlockedAudioCtx();
+    if (!ctx) return;
+
+    const triggerTones = () => {
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(880, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.08);
+      gain1.gain.setValueAtTime(0.22, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+      osc1.start();
+      osc1.stop(ctx.currentTime + 0.16);
+
+      setTimeout(() => {
+        try {
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(1150, ctx.currentTime);
+          osc2.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.09);
+          gain2.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+          osc2.start();
+          osc2.stop(ctx.currentTime + 0.22);
+        } catch (e) {}
+      }, 100);
+    };
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(triggerTones).catch(() => {});
+    } else {
+      triggerTones();
+    }
+  } catch (e) {}
 };
-['touchstart', 'click'].forEach(ev => window.addEventListener(ev, () => getCtx(), { once: true, passive: true }));
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(880, ctx.currentTime);
-    osc1.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.08);
-    gain1.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-    osc1.start();
-    osc1.stop(ctx.currentTime + 0.15);
 
-    setTimeout(() => {
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1150, ctx.currentTime);
-      osc2.frequency.exponentialRampToValueAtTime(1300, ctx.currentTime + 0.08);
-      gain2.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-      osc2.start();
-      osc2.stop(ctx.currentTime + 0.2);
-    }, 100);
+// Draw Messenger-style red notification badge onto Web App icon (favicon / apple-touch-icon) & title
+const BASE_APP_TITLE = 'វិទ្យាល័យស្តៅសន្តិភាព - ប្រព័ន្ធទិន្នន័យភូមិ-ឃុំ';
+const updateWebAppIconBadge = (count, logoUrl) => {
+  try {
+    document.title = count > 0 ? `(${count}) ${BASE_APP_TITLE}` : BASE_APP_TITLE;
 
-  } catch(e) {}
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const applyFavicon = (dataUrl) => {
+      ['icon', 'shortcut icon', 'apple-touch-icon'].forEach(relType => {
+        let link = document.querySelector(`link[rel="${relType}"]`);
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = relType;
+          document.head.appendChild(link);
+        }
+        link.type = 'image/png';
+        link.href = dataUrl;
+      });
+    };
+
+    const drawRoundedRectPath = (x, y, w, h, r) => {
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x, y, w, h, r);
+      } else {
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+    };
+
+    const drawBadgeOverlay = (allowFallback = true) => {
+      if (count > 0) {
+        const label = count > 99 ? '99+' : String(count);
+        const radius = label.length > 2 ? 17 : 15;
+        const cx = 64 - radius - 1;
+        const cy = radius + 1;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#EF4444';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = `900 ${label.length > 2 ? '13px' : label.length > 1 ? '16px' : '18px'} sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, cx, cy + 1);
+      }
+      try {
+        applyFavicon(canvas.toDataURL('image/png'));
+      } catch (secErr) {
+        if (allowFallback) drawFallbackBase();
+      }
+    };
+
+    const drawFallbackBase = () => {
+      ctx.clearRect(0, 0, 64, 64);
+      ctx.fillStyle = '#0F2B5C';
+      drawRoundedRectPath(2, 2, 60, 60, 14);
+      ctx.fill();
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ស', 32, 34);
+      drawBadgeOverlay(false);
+    };
+
+    if (logoUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          ctx.clearRect(0, 0, 64, 64);
+          ctx.save();
+          drawRoundedRectPath(2, 2, 60, 60, 14);
+          ctx.clip();
+          ctx.drawImage(img, 2, 2, 60, 60);
+          ctx.restore();
+          drawBadgeOverlay(true);
+        } catch (err) {
+          drawFallbackBase();
+        }
+      };
+      img.onerror = drawFallbackBase;
+      img.src = logoUrl;
+    } else {
+      drawFallbackBase();
+    }
+  } catch (e) {}
 };
 
 // Calculate geodesic distance between coordinates using the Haversine formula
@@ -1049,6 +1177,9 @@ export default function App() {
   
   const handleOpenLocation = async (loc) => {
     setSelectedLocation(loc);
+    if (loc) {
+      logUserAction('action_view', 'ចុចមើលទិន្នន័យ', `${safeStr(loc.title)}${loc.commune ? ` (${safeStr(loc.commune)})` : ''}`);
+    }
     // បង្កើនចំនួនអ្នកចូលមើលនៅក្នុង Database
     if (db && loc.id) {
        try {
@@ -1116,6 +1247,7 @@ export default function App() {
     const parsed = parseContactsList(location);
     if (parsed.length === 0) return showToast('គ្មានលេខទូរស័ព្ទសម្រាប់ទំនាក់ទំនងឡើយ', 'error');
     if (parsed.length === 1) {
+      logUserAction('action_call', 'Call ទូរស័ព្ទ', location.title || parsed[0].name, parsed[0].phone);
       window.location.href = `tel:${parsed[0].phone}`;
     } else {
       setCallPickerState({ isOpen: true, title: location.title || 'ស្ថាប័ន', contacts: parsed });
@@ -1516,18 +1648,68 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     if (!user) return [];
     return (notifications || []).filter(n => {
         if (n.targetId === user.uid) return true;
+        if (isAdmin && n.targetId === 'admin_ramit_fixed_uid') return true;
         if (isAdmin && (chatTargets || []).some(t => t.id === n.targetId)) return true;
         return false;
     });
   }, [notifications, user, isAdmin, chatTargets]);
-  
+
+  const knownNotifIdsRef = useRef(null);
+  const knownActivityIdsRef = useRef(null);
+
+  // Play notification sound + toast + vibrate when a new message/notification arrives (when NOT muted)
   useEffect(() => {
-  try {
-    if ('setAppBadge' in navigator) {
-      myNotifications.length > 0 ? navigator.setAppBadge(myNotifications.length) : navigator.clearAppBadge();
+    if (!myNotifications) return;
+    if (knownNotifIdsRef.current === null) {
+      knownNotifIdsRef.current = new Set(myNotifications.map(n => n.id));
+      return;
     }
-  } catch (e) {}
-}, [myNotifications]);
+    const newlyArrived = myNotifications.filter(n => !knownNotifIdsRef.current.has(n.id));
+    if (newlyArrived.length > 0) {
+      newlyArrived.forEach(n => knownNotifIdsRef.current.add(n.id));
+      const latest = newlyArrived[0];
+      const muted = isSoundMuted || localStorage.getItem('tp_sound_muted') === 'true';
+      if (!muted) {
+        playPingSound();
+        try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+      }
+      if (latest) {
+        showToast(`📩 ${safeStr(latest.title)}: ${safeStr(latest.msg)}`, 'info', 4500);
+      }
+    }
+  }, [myNotifications, isSoundMuted]);
+
+  // Real-time Admin alert for ANY user activity inside the app
+  useEffect(() => {
+    if (!activityLogs) return;
+    if (knownActivityIdsRef.current === null) {
+      knownActivityIdsRef.current = new Set(activityLogs.map(a => a.id));
+      return;
+    }
+    const newlyLogged = activityLogs.filter(a => !knownActivityIdsRef.current.has(a.id));
+    if (newlyLogged.length > 0) {
+      newlyLogged.forEach(a => knownActivityIdsRef.current.add(a.id));
+      if (isAdmin) {
+        const latest = newlyLogged[0];
+        const muted = isSoundMuted || localStorage.getItem('tp_sound_muted') === 'true';
+        if (!muted) {
+          playPingSound();
+        }
+        showToast(`🔔 ${safeStr(latest.userName)}: ${safeStr(latest.actionType)}${latest.targetTitle ? ' — ' + safeStr(latest.targetTitle) : ''}`, 'info', 4000);
+      }
+    }
+  }, [activityLogs, isAdmin, isSoundMuted]);
+
+  // Update Messenger-style red badge on Web App icon (PWA Badge + Favicon + Title)
+  useEffect(() => {
+    try {
+      const count = myNotifications.length;
+      if ('setAppBadge' in navigator) {
+        count > 0 ? navigator.setAppBadge(count) : navigator.clearAppBadge();
+      }
+      updateWebAppIconBadge(count, appLogo);
+    } catch (e) {}
+  }, [myNotifications, appLogo]);
   const myChatId = isAdmin ? 'admin_ramit_fixed_uid' : (user?.uid || 'guest_uid');
   const myChatName = isAdmin ? 'ADMIN-PAGE' : profile?.username;
   const myChatAvatar = isAdmin ? (usersList.find(u => u.id === 'admin_ramit_fixed_uid')?.avatar || profile?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png') : profile?.avatar;
@@ -1916,21 +2098,25 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
     if (!user || !db) return;
     const favDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'favorites', locationId);
     const locRef = doc(db, 'artifacts', appId, 'public', 'data', 'user_admin_data', locationId);
+    const targetLoc = (locations || []).find(l => l && l.id === locationId);
+    const wasFav = !!favorites[locationId];
     try {
-      if (favorites[locationId]) {
+      if (wasFav) {
          await deleteDoc(favDocRef);
          await updateDoc(locRef, { likes: increment(-1) });
       } else {
          await setDoc(favDocRef, { timestamp: Date.now() });
          await updateDoc(locRef, { likes: increment(1) });
       }
+      logUserAction('action_pin', wasFav ? 'ដក Pin ទីតាំង' : 'Pin រក្សាទុកទីតាំង', safeStr(targetLoc?.title || locationId));
     } catch (e) {}
   };
 
-  // Helper to log user action and GPS (Point 4)
+  // Helper to log user action, GPS, and notify Admin (Point 1)
   const logUserAction = async (category, actionType, targetTitle = '', targetPhone = '') => {
     try {
       if (!db) return;
+      if (isAdmin || localStorage.getItem('tp_admin_session') === 'true') return;
       let coords = gpsCoords;
       if (!coords && navigator.geolocation) {
         coords = await new Promise(res => {
@@ -1941,19 +2127,50 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
           );
         });
       }
+      const actorName = profile?.username || (user?.uid ? localStorage.getItem(`tp_username_${user.uid}`) : '') || 'ភ្ញៀវ';
+      const now = Date.now();
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs'), {
         category,
         actionType,
         targetTitle,
         targetPhone,
         userId: user?.uid || 'guest_uid',
-        userName: profile?.username || 'ភ្ញៀវ',
+        userName: actorName,
         device: getDeviceInfo(),
         coords: coords || null,
-        timestamp: Date.now()
+        timestamp: now
       });
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'user_notifications'), {
+        targetId: 'admin_ramit_fixed_uid',
+        title: `🔔 ${actorName}: ${actionType}`,
+        msg: `${targetTitle ? targetTitle : 'សកម្មភាពក្នុងកម្មវិធី'}${targetPhone ? ` (${targetPhone})` : ''}`,
+        type: 'info',
+        timestamp: now
+      }).catch(() => {});
     } catch (e) {}
   };
+
+  // Automatically log when a user enters the app and when navigating across views
+  const appEnteredRef = useRef(false);
+  const lastViewLoggedRef = useRef(null);
+  useEffect(() => {
+    if (!db || currentPage !== 'app' || isAdmin || localStorage.getItem('tp_admin_session') === 'true') return;
+    if (!appEnteredRef.current) {
+      appEnteredRef.current = true;
+      lastViewLoggedRef.current = currentView;
+      logUserAction('app_enter', 'ចូលប្រើកម្មវិធី', 'បានចូលទៅក្នុងកម្មវិធី Web App');
+    } else if (lastViewLoggedRef.current !== currentView) {
+      lastViewLoggedRef.current = currentView;
+      const viewLabels = {
+        home: 'ទំព័រដើម',
+        info: 'ព័ត៌មាន',
+        reports: 'របាយការណ៍',
+        chat: 'ឆាត',
+        account: 'គណនី'
+      };
+      logUserAction('view_nav', 'ចូលមើលទំព័រ', viewLabels[currentView] || currentView);
+    }
+  }, [currentPage, currentView, db, isAdmin]);
 
   // Profile signup processor
   const handleGatewayRegister = async (e) => {
@@ -2449,14 +2666,14 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
         )}
 
         <div className="flex-1 flex flex-col min-h-0 relative w-full max-w-7xl mx-auto overflow-hidden">
-           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} isFetchingData={isFetchingData} /></div>}
+           {currentView === 'home' && <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2"><HomeView locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} onOpenLocation={handleOpenLocation} setCurrentView={setCurrentView} profile={profile} showToast={showToast} chatFeatureEnabled={chatFeatureEnabled} isAdmin={isAdmin} homeBannerIcon={homeBannerIcon} isFetchingData={isFetchingData} onLogAction={logUserAction} /></div>}
            {currentView === 'info' && (
              <div className="flex-1 overflow-y-auto px-3.5 md:px-6 pb-[calc(90px+env(safe-area-inset-bottom,20px))] hide-scrollbar pt-2">
                <InfoView 
                  locations={approvedLocations} searchQuery={searchQuery} favorites={favorites} toggleFavorite={toggleFavorite} 
                  onOpenLocation={handleOpenLocation} user={user} profile={profile} isAdmin={isAdmin} showToast={showToast} 
                  db={db} appId={appId} setCurrentView={setCurrentView} dbRegions={dbRegions} gpsCoords={gpsCoords} 
-                 captureGps={handleGPS} setSearchQuery={setSearchQuery} isFetchingData={isFetchingData}
+                 captureGps={handleGPS} setSearchQuery={setSearchQuery} isFetchingData={isFetchingData} onLogAction={logUserAction}
                  onOpenAddModal={() => {
                    setAddForm({ 
                      title: '', 
@@ -2508,7 +2725,13 @@ const unsubLocations = onSnapshot(collection(db, 'artifacts', appId, 'public', '
       )}
 
       {callPickerState.isOpen && (
-        <CallPickerModal isOpen={callPickerState.isOpen} title={callPickerState.title} contacts={callPickerState.contacts} onClose={() => setCallPickerState({ isOpen: false, title: '', contacts: [] })} />
+        <CallPickerModal
+          isOpen={callPickerState.isOpen}
+          title={callPickerState.title}
+          contacts={callPickerState.contacts}
+          onClose={() => setCallPickerState({ isOpen: false, title: '', contacts: [] })}
+          onSelectCall={(name, phone) => logUserAction('action_call', 'Call ទូរស័ព្ទ', `${callPickerState.title} - ${name}`, phone)}
+        />
       )}
 
       {/* 
@@ -3111,7 +3334,7 @@ const TopHeader = ({ setCurrentPage, notifications, notificationsOpen, setNotifi
           </div>
         );
       };
-const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData }) => {
+const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, setCurrentView, profile, showToast, chatFeatureEnabled, isAdmin, homeBannerIcon, isFetchingData, onLogAction }) => {
   const lang = localStorage.getItem('tp_app_lang') || 'kh';
   const L = (kh, en) => (lang === 'en' ? en : kh);
   const [activeHomeFilter, setActiveHomeFilter] = useState('All');
@@ -3197,7 +3420,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
             <h2 className="font-black text-[12.5px] text-slate-800 leading-none">{L('ជម្រើសទីតាំង', 'Location Options')}</h2>
          </div>
          <div className="grid grid-cols-2 gap-2.5">
-            <button onClick={() => setActiveHomeFilter(activeHomeFilter==='រតនមណ្ឌល'?'All':'រតនមណ្ឌល')} className={`p-2 flex flex-col justify-center items-center transition-all rounded-[14px] shadow-sm border ${activeHomeFilter==='រតនមណ្ឌល' ? 'border-[#0F2B5C] bg-[#0F2B5C] text-white' : 'border-slate-200 bg-white text-[#0F2B5C]'}`}>
+            <button onClick={() => { const next = activeHomeFilter==='រតនមណ្ឌល'?'All':'រតនមណ្ឌល'; setActiveHomeFilter(next); if (next === 'រតនមណ្ឌល' && onLogAction) onLogAction('action_filter', 'ចុចមើលស្រុក', 'រតនមណ្ឌល'); }} className={`p-2 flex flex-col justify-center items-center transition-all rounded-[14px] shadow-sm border ${activeHomeFilter==='រតនមណ្ឌល' ? 'border-[#0F2B5C] bg-[#0F2B5C] text-white' : 'border-slate-200 bg-white text-[#0F2B5C]'}`}>
                <div className={`p-1.5 rounded-lg mb-1 ${activeHomeFilter==='រតនមណ្ឌល' ? 'bg-white/20 text-white' : 'bg-slate-50 text-[#0F2B5C]'}`}><MapSvgIcon /></div>
                <span className="font-black text-[11.5px]">{L('រតនមណ្ឌល', 'Ratanak Mondul')}</span>
             </button>
@@ -3253,7 +3476,7 @@ const HomeView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite,
     </div>
   );
 };
-const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData }) => {
+const InfoView = ({ locations = [], searchQuery, favorites = {}, toggleFavorite, onOpenLocation, user, profile, isAdmin, showToast, db, appId, setCurrentView, dbRegions, gpsCoords, captureGps, onOpenAddModal, setSearchQuery, isFetchingData, onLogAction }) => {
   const [activeTab, setActiveTab] = useState('រតនមណ្ឌល');
   const [activeFilter, setActiveFilter] = useState('ទាំងអស់');
 
@@ -3335,10 +3558,12 @@ return matchesLevel;
        setCurrentView('account');
        return;
     }
+    if (onLogAction) onLogAction('action_add', 'ចុចបន្ថែមទិន្នន័យ', 'បើកផ្ទាំងបន្ថែមទិន្នន័យ');
     onOpenAddModal();
   };
 
   const handleFindMyLocation = () => {
+      if (onLogAction) onLogAction('action_map', 'ចុចរកទីតាំងខ្ញុំ', 'ស្វែងរកទីតាំង GPS ជិតខ្ញុំ');
       setIsLocating(true);
       if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
@@ -3397,7 +3622,7 @@ return matchesLevel;
             <button onClick={handleFindMyLocation} disabled={isLocating} className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm hover:bg-emerald-100 transition-colors whitespace-nowrap">
                 {isLocating ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <MapPin className="w-3.5 h-3.5"/>} ទីតាំងខ្ញុំ
             </button>
-            <button onClick={() => setIsHowToModalOpen(true)} className="bg-white text-[#0F2B5C] border border-slate-200 px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm hover:bg-slate-50 transition-colors whitespace-nowrap">
+            <button onClick={() => { setIsHowToModalOpen(true); if (onLogAction) onLogAction('action_guide', 'ចុចមើលរបៀបប្រើប្រាស់', 'របៀបប្រើប្រាស់ Web App'); }} className="bg-white text-[#0F2B5C] border border-slate-200 px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm hover:bg-slate-50 transition-colors whitespace-nowrap">
                 <Info className="w-3.5 h-3.5"/> របៀបប្រើប្រាស់
             </button>
             <button onClick={handleOpenAdd} className="btn-gradient px-2.5 py-2 rounded-lg font-bold flex items-center gap-1 text-[11px] shadow-sm whitespace-nowrap text-white">
@@ -3408,13 +3633,13 @@ return matchesLevel;
 
       <div className="flex bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
          {['រតនមណ្ឌល', 'ស្រុកផ្សេងៗ'].map(tab => (
-             <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-1.5 rounded-lg text-[13px] font-black transition-all ${activeTab === tab ? 'bg-slate-100 text-[#0F2B5C] shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>{tab}</button>
+             <button key={tab} onClick={() => { setActiveTab(tab); if (onLogAction) onLogAction('action_filter', 'ចុចមើលតំបន់', tab); }} className={`flex-1 py-1.5 rounded-lg text-[13px] font-black transition-all ${activeTab === tab ? 'bg-slate-100 text-[#0F2B5C] shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}>{tab}</button>
          ))}
       </div>
 
       <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
         {['ទាំងអស់', 'ឃុំ', 'ភូមិ', 'ប៉ូលីស', 'ពេទ្យ', 'សាលារៀន'].map(cat => (
-          <button key={cat} onClick={() => setActiveFilter(cat)} className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap border shadow-sm ${activeFilter === cat ? 'bg-[#0F2B5C] text-white border-transparent' : 'bg-white text-slate-600 border-slate-200'}`}>{cat}</button>
+          <button key={cat} onClick={() => { setActiveFilter(cat); if (onLogAction) onLogAction('action_filter', 'ចុចមើលប្រភេទទិន្នន័យ', cat); }} className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap border shadow-sm ${activeFilter === cat ? 'bg-[#0F2B5C] text-white border-transparent' : 'bg-white text-slate-600 border-slate-200'}`}>{cat}</button>
         ))}
       </div>
       
@@ -5202,7 +5427,9 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
   const [activeTab, setActiveTab] = useState('data'); 
   const [sendMode, setSendMode] = useState('all');
   const [selectedMsgTargets, setSelectedMsgTargets] = useState([]);
+  const [msgUserSearch, setMsgUserSearch] = useState('');
   const [activitySubTab, setActivitySubTab] = useState('actions');
+  const [activityFilter, setActivityFilter] = useState('all');
   const [editingLoc, setEditingLoc] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [selectedUsersForDelete, setSelectedUsersForDelete] = useState([]);
@@ -6030,10 +6257,24 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
                      <div>
                         <h3 className="font-black text-[13.5px] text-[#0F2B5C] flex items-center gap-1.5">
-                           <ShieldAlert className="w-4.5 h-4.5 text-sky-500" /> ការតាមដានអ្នកប្រើប្រាស់ & Alerts
+                           <ShieldAlert className="w-4.5 h-4.5 text-sky-500" /> ការតាមដានសកម្មភាពអ្នកប្រើប្រាស់ & Alerts
                         </h3>
-                        <p className="text-[10px] text-slate-500 font-bold mt-0.5">ដឹងពីអ្នកចុះឈ្មោះថ្មីៗ និងតាមដានទីតាំងអ្នកដែលបានចុច Call ឬប្រើប្រាស់ទិន្នន័យ</p>
+                        <p className="text-[10px] text-slate-500 font-bold mt-0.5">តាមដាន និង Alert រាល់សកម្មភាពទាំងអស់របស់ User (ចូលកម្មវិធី, Call, ចុចមើលទិន្នន័យ, មើលផែនទី, ស្វែងរក, Pin ។ល។)</p>
                      </div>
+                     {activityLogs.length > 0 && (
+                        <button
+                           onClick={() => openConfirm('សម្អាត Logs', 'តើអ្នកចង់លុបកំណត់ត្រាសកម្មភាពទាំងអស់មែនទេ?', async () => {
+                              if (!db) return;
+                              for (const lg of activityLogs) {
+                                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_activity_logs', lg.id)).catch(() => {});
+                              }
+                              showToast('បានសម្អាតកំណត់ត្រាសកម្មភាពរួចរាល់ ✅');
+                           })}
+                           className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1.5 rounded-lg font-black flex items-center gap-1 shrink-0"
+                        >
+                           <Trash2 className="w-3.5 h-3.5"/> សម្អាត Logs
+                        </button>
+                     )}
                  </div>
 
                  <div className="flex bg-slate-100 p-1 rounded-xl">
@@ -6047,7 +6288,7 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                        onClick={() => setActivitySubTab('actions')} 
                        className={`flex-1 py-2 rounded-lg text-[11.5px] font-black transition-all ${activitySubTab === 'actions' ? 'bg-[#0F2B5C] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}
                     >
-                       📞 ២. សកម្មភាព & Call ({activityLogs.filter(a => a.category !== 'new_user').length})
+                       🔔 ២. សកម្មភាពទាំងអស់ ({activityLogs.filter(a => a.category !== 'new_user').length})
                     </button>
                  </div>
 
@@ -6083,40 +6324,68 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
                        )}
                     </div>
                  ) : (
-                    <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hide-scrollbar">
-                       {activityLogs.filter(a => a.category !== 'new_user').length === 0 ? (
-                          <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px]">
-                             មិនទាន់មានសកម្មភាពប្រើប្រាស់ថ្មីទេ
-                          </div>
-                       ) : (
-                          activityLogs.filter(a => a.category !== 'new_user').map(log => (
-                             <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center gap-3 hover:bg-white transition">
-                                <div className="flex-1">
-                                   <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="font-black text-[12.5px] text-slate-800">👤 {safeStr(log.userName)}</span>
-                                      <span className={`text-[9.5px] px-2 py-0.5 rounded font-black ${log.actionType?.includes('Call') ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'}`}>
-                                         {safeStr(log.actionType)}
-                                      </span>
+                    <div className="space-y-2.5">
+                       <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                          {[
+                            { id: 'all', label: 'ទាំងអស់' },
+                            { id: 'action_call', label: '📞 Call' },
+                            { id: 'action_view', label: '👁️ មើលទិន្នន័យ' },
+                            { id: 'action_map', label: '📍 មើលផែនទី' },
+                            { id: 'other', label: '📱 ចូលកម្មវិធី / ផ្សេងៗ' }
+                          ].map(f => (
+                            <button
+                              key={f.id}
+                              onClick={() => setActivityFilter(f.id)}
+                              className={`px-3 py-1.5 rounded-lg text-[10.5px] font-black whitespace-nowrap border transition-all ${activityFilter === f.id ? 'bg-[#0F2B5C] text-white border-[#0F2B5C]' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                       </div>
+                       <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1 hide-scrollbar">
+                          {(() => {
+                             const nonRegLogs = activityLogs.filter(a => a.category !== 'new_user');
+                             const filteredLogs = nonRegLogs.filter(a => {
+                                if (activityFilter === 'all') return true;
+                                if (activityFilter === 'other') return !['action_call', 'action_view', 'action_map'].includes(a.category);
+                                return a.category === activityFilter;
+                             });
+                             if (filteredLogs.length === 0) {
+                                return (
+                                   <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400 font-bold text-[11px]">
+                                      មិនទាន់មានសកម្មភាពប្រើប្រាស់ក្នុងប្រភេទនេះទេ
                                    </div>
-                                   <p className="text-[11px] text-slate-600 font-bold mt-1">
-                                      គោលដៅ: <span className="text-[#0F2B5C]">{safeStr(log.targetTitle)}</span>
-                                      {log.targetPhone && <span className="ml-2 font-mono text-sky-600">({safeStr(log.targetPhone)})</span>}
-                                   </p>
-                                   <span className="text-[9px] text-slate-400 block mt-1">{new Date(log.timestamp).toLocaleString()}</span>
+                                );
+                             }
+                             return filteredLogs.map(log => (
+                                <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center gap-3 hover:bg-white transition">
+                                   <div className="flex-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                         <span className="font-black text-[12.5px] text-slate-800">👤 {safeStr(log.userName)}</span>
+                                         <span className={`text-[9.5px] px-2 py-0.5 rounded font-black ${log.actionType?.includes('Call') ? 'bg-emerald-100 text-emerald-800' : log.category === 'action_map' ? 'bg-amber-100 text-amber-800' : log.category === 'action_view' ? 'bg-indigo-100 text-indigo-800' : 'bg-sky-100 text-sky-800'}`}>
+                                            {safeStr(log.actionType)}
+                                         </span>
+                                      </div>
+                                      <p className="text-[11px] text-slate-600 font-bold mt-1">
+                                         គោលដៅ: <span className="text-[#0F2B5C]">{safeStr(log.targetTitle)}</span>
+                                         {log.targetPhone && <span className="ml-2 font-mono text-sky-600">({safeStr(log.targetPhone)})</span>}
+                                      </p>
+                                      <span className="text-[9px] text-slate-400 block mt-1">{new Date(log.timestamp).toLocaleString()}</span>
+                                   </div>
+                                   {log.coords && log.coords.lat && log.coords.lng && (
+                                      <a 
+                                         href={`https://www.google.com/maps?q=${log.coords.lat},${log.coords.lng}`}
+                                         target="_blank"
+                                         rel="noreferrer"
+                                         className="px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-black rounded-lg shadow-sm hover:bg-emerald-700 active:scale-95 transition flex items-center gap-1 shrink-0"
+                                      >
+                                         <MapPin className="w-3.5 h-3.5"/> តាមដាន
+                                      </a>
+                                   )}
                                 </div>
-                                {log.coords && log.coords.lat && log.coords.lng && (
-                                   <a 
-                                      href={`https://www.google.com/maps?q=${log.coords.lat},${log.coords.lng}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-black rounded-lg shadow-sm hover:bg-emerald-700 active:scale-95 transition flex items-center gap-1 shrink-0"
-                                   >
-                                      <MapPin className="w-3.5 h-3.5"/> តាមដាន
-                                   </a>
-                                )}
-                             </div>
-                          ))
-                       )}
+                             ));
+                          })()}
+                       </div>
                     </div>
                  )}
              </div>
@@ -6129,17 +6398,61 @@ const AdminDashboard = ({ locations = [], setLocations, pendingLocations = [], u
         <button key={k} onClick={() => setSendMode(k)} className={`flex-1 py-2 rounded-lg text-[12px] font-black ${sendMode === k ? 'bg-[#0F2B5C] text-white' : 'text-slate-500'}`}>{label}</button>
       ))}
     </div>
-    {sendMode === 'select' && (
-      <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
-        {(usersList || []).filter(u => u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ').map(u => (
-          <label key={u.id} className="flex items-center gap-2.5 p-2.5 cursor-pointer">
-            <input type="checkbox" checked={selectedMsgTargets.includes(u.id)}
-              onChange={e => setSelectedMsgTargets(e.target.checked ? [...selectedMsgTargets, u.id] : selectedMsgTargets.filter(x => x !== u.id))} />
-            <span className="text-[12.5px] font-bold text-slate-700">{safeStr(u.username)}</span>
-          </label>
-        ))}
+    <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={msgUserSearch}
+          onChange={e => {
+            setMsgUserSearch(e.target.value);
+            if (e.target.value.trim() && sendMode !== 'select') setSendMode('select');
+          }}
+          placeholder="វាយឈ្មោះសមាជិកដើម្បីស្វែងរក..."
+          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-8 text-[12.5px] font-bold text-slate-800 outline-none focus:border-[#38BDF8]"
+        />
+        {msgUserSearch && (
+          <button
+            type="button"
+            onClick={() => setMsgUserSearch('')}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
-    )}
+      <button
+        type="button"
+        onClick={() => setSendMode('select')}
+        className="px-3.5 py-2 bg-[#0F2B5C] hover:bg-[#1e3a8a] text-white rounded-xl text-[12px] font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition shrink-0"
+      >
+        <Search className="w-3.5 h-3.5 text-[#38BDF8]" /> ស្វែងរក
+      </button>
+    </div>
+    {sendMode === 'select' && (() => {
+      const q = msgUserSearch.trim().toLowerCase();
+      const filteredTargets = (usersList || []).filter(u =>
+        u && u.id !== 'admin_ramit_fixed_uid' && u.username && u.username !== 'ភ្ញៀវ' &&
+        (!q || safeStr(u.username).toLowerCase().includes(q))
+      );
+      return (
+        <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+          {filteredTargets.length === 0 ? (
+            <p className="p-4 text-center text-[11.5px] font-bold text-slate-400">
+              {q ? `រកមិនឃើញឈ្មោះ "${msgUserSearch.trim()}" ទេ` : 'គ្មានឈ្មោះសមាជិកទេ'}
+            </p>
+          ) : (
+            filteredTargets.map(u => (
+              <label key={u.id} className="flex items-center gap-2.5 p-2.5 cursor-pointer hover:bg-slate-50">
+                <input type="checkbox" checked={selectedMsgTargets.includes(u.id)}
+                  onChange={e => setSelectedMsgTargets(e.target.checked ? [...selectedMsgTargets, u.id] : selectedMsgTargets.filter(x => x !== u.id))} />
+                <span className="text-[12.5px] font-bold text-slate-700">{safeStr(u.username)}</span>
+              </label>
+            ))
+          )}
+        </div>
+      );
+    })()}
     <textarea value={broadcastMessage} onChange={e => setBroadcastMessage(e.target.value)} placeholder="សរសេរសារនៅទីនេះ..." className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-[14px] h-28 resize-none font-medium" />
     <button onClick={handleSendAdminMessage} className="w-full btn-gradient py-3 rounded-xl font-black text-[13px]">ផ្ញើសារ</button>
   </div>
@@ -6844,6 +7157,7 @@ const LocationDetailModal = ({ location, onClose, favorites = {}, toggleFavorite
                          </div>
                          <a 
                            href={`tel:${c.phone}`}
+                           onClick={() => onLogAction && onLogAction('action_call', 'Call ទូរស័ព្ទ', `${displayTitle} - ${safeStr(c.name)}`, c.phone)}
                            className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm border active:scale-90 transition-transform ${theme.solid}`}
                          >
                             <Phone className="w-4 h-4"/>
@@ -6883,6 +7197,7 @@ const LocationDetailModal = ({ location, onClose, favorites = {}, toggleFavorite
                 href={location.coords ? `https://www.google.com/maps/dir/?api=1&destination=${location.coords.lat},${location.coords.lng}&travelmode=driving&dir_action=navigate` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(displayTitle + ' ' + (location.commune||''))}&travelmode=driving&dir_action=navigate`} 
                 target="_blank" 
                 rel="noreferrer"
+                onClick={() => onLogAction && onLogAction('action_map', 'ចុចមើលផែនទី', displayTitle)}
                 className="flex-1 py-2.5 bg-[#0F2B5C] text-white border border-[#0F2B5C] rounded-xl font-black text-[11.5px] flex flex-col items-center justify-center gap-1 shadow-sm active:scale-95 transition-all"
               >
                 <MapSvgIcon className="text-[#38BDF8] w-4.5 h-4.5"/>
